@@ -10,23 +10,37 @@ Turn any old Android phone into a local AI server using [Ollama](https://ollama.
 
 ## Quick Start
 
-**In Termux on your phone:**
+**In Termux on your phone** — one line:
 
 ```bash
-# 1. Install git, clone the repo
+curl -fsSL https://s1dd4rth.github.io/ollama-pocket/install.sh | bash
+```
+
+That's it. The installer pins a known-good Termux mirror, clones the repo
+to `~/ollama-pocket`, installs Debian inside `proot-distro`, installs
+Ollama, and copies the PWA chat UI to `/sdcard/ollama-pocket/pwa/`. When
+it finishes it prints the exact command to start the server.
+
+Then:
+
+```bash
+# Pull a model (pick one that fits your RAM — see table below)
+proot-distro login debian -- ollama pull qwen2.5:1.5b
+
+# Start the server + chat UI (opens Chrome at http://localhost:8000/chat.html)
+bash ~/ollama-pocket/scripts/start-ollama.sh --wifi --chat
+```
+
+**Prefer to inspect before you run?** The `curl | bash` one-liner is
+convenient but blindly trusts the install script. If you'd rather read it
+first, clone the repo manually:
+
+```bash
 pkg install -y git
 git clone https://github.com/s1dd4rth/ollama-pocket
 cd ollama-pocket
-
-# 2. Run the installer — sets up Debian inside proot, installs Ollama,
-#    installs the PWA chat UI at /sdcard/ollama-pocket/pwa/
-bash scripts/install-ollama.sh
-
-# 3. Pull a model (pick one that fits your RAM — see table below)
-proot-distro login debian -- ollama pull qwen2.5:1.5b
-
-# 4. Start the server + chat UI
-bash scripts/start-ollama.sh --wifi --chat
+less scripts/install-ollama.sh      # read it
+bash scripts/install-ollama.sh      # run it
 ```
 
 The last command starts Ollama on the LAN, serves the PWA over

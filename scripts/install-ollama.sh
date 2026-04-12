@@ -45,6 +45,43 @@ if [ ! -d "/data/data/com.termux" ]; then
 fi
 ok "Running in Termux"
 
+# -- Step 1a: Self-bootstrap for the `curl | bash` install path --
+# When the user runs `curl -fsSL .../install.sh | bash`, there is no local
+# checkout of the repo for the rest of the script to read pwa/ from (and no
+# scripts/start-ollama.sh to point the user at in the post-install message).
+#
+# Detect that case by checking whether $BASH_SOURCE (or $0) points at a real
+# file that has a sibling pwa/ directory. If it doesn't, we're running from
+# a pipe — pin the mirror, install git, clone the repo to ~/ollama-pocket,
+# and re-exec this script from the clone. The second invocation finds the
+# pwa/ directory, skips this bootstrap block, and proceeds normally.
+_INSTALL_SELF="${BASH_SOURCE[0]:-$0}"
+if [ ! -f "$_INSTALL_SELF" ] || [ ! -d "$(dirname "$_INSTALL_SELF")/../pwa" ]; then
+  info "No local checkout detected (curl | bash path). Bootstrapping..."
+
+  # The mirror pin and `pkg install git` both need a working Termux APT
+  # source, so pin the mirror FIRST. The full install will pin it again
+  # after the re-exec; that's idempotent.
+  TERMUX_PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+  echo 'deb https://packages-cf.termux.dev/apt/termux-main/ stable main' \
+    > "$TERMUX_PREFIX/etc/apt/sources.list"
+  pkg update -y >/dev/null
+  pkg install -y git >/dev/null
+
+  REPO_DIR="$HOME/ollama-pocket"
+  if [ -d "$REPO_DIR/.git" ]; then
+    info "Updating existing clone at $REPO_DIR"
+    (cd "$REPO_DIR" && git fetch origin main && git reset --hard origin/main)
+  else
+    info "Cloning https://github.com/s1dd4rth/ollama-pocket to $REPO_DIR"
+    git clone --depth 1 https://github.com/s1dd4rth/ollama-pocket "$REPO_DIR"
+  fi
+
+  ok "Bootstrap complete. Re-executing from $REPO_DIR/scripts/install-ollama.sh"
+  echo ""
+  exec bash "$REPO_DIR/scripts/install-ollama.sh" "$@"
+fi
+
 # -- Step 1b: Pin Termux to a known-good mirror BEFORE any pkg command --
 # Termux picks a random mirror on first `pkg update`, and any given mirror can
 # be broken on any given day — v0.2.0 validation hit a `mirror.textcord.xyz`
