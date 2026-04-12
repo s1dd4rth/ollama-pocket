@@ -55,43 +55,26 @@ Open a GitHub issue with the `feature request` template if you want to discuss b
 
 This repo is compatible with [GitButler](https://docs.gitbutler.com/cli-overview) if you want to work on multiple virtual branches in parallel. GitButler is entirely optional — plain `git` works fine.
 
-### Recovering after a squash merge
+### Merge strategy: rebase merge only
 
-When a PR is **squash-merged** on GitHub the merge commit hash differs from the virtual branch tip, and `but pull` fails with:
+This repo is configured to **rebase merge only** — squash and merge-commit strategies are disabled in repository settings. This is deliberate: GitButler tracks virtual branches by commit SHA, and squash merging rewrites hashes on merge, which tangles GitButler's internal state and forces a workspace reset after every PR.
 
-> Chosen resolutions do not match quantity of applied virtual branches.
+Because branch protection already requires the PR head to be up-to-date with `main`, every rebase merge is a true fast-forward — commit hashes are preserved across the merge, and `but pull` can cleanly integrate the now-upstream commits.
 
-Try these fixes in order — escalate only when the previous step doesn't clear the error.
+### If `but pull` still tangles
 
-**1. Unapply the merged branch, then pull** (works for a single merged branch):
-
-```bash
-but unapply <merged-branch>
-git fetch origin
-but pull
-```
-
-**2. Drop to plain git and rebase** (use when step 1 fails, typically with multiple virtual branches in flight):
-
-```bash
-git checkout <your-feature-branch>   # auto-exits the GitButler workspace
-git rebase origin/main
-git push --force-with-lease
-# later, back in GitButler mode:
-but setup
-```
-
-**3. Nuclear reset of GitButler state** (only when `but status` shows ghost or duplicate branches that survive `but teardown` + `but setup`):
+Rare, but if `but status` starts throwing errors like "Id needs to be at least 2 characters long", or `but branch list` shows ghost or duplicate entries that survive `but teardown`, reset GitButler's workspace cache:
 
 ```bash
 but teardown
 git checkout main
+git pull --ff-only
 git branch -D $(git branch | grep -E 'gitbutler/|<stale-branches>')
 rm -rf .git/gitbutler          # GitButler's workspace cache, not git refs
 but setup
 ```
 
-This is safe: `.git/gitbutler/` holds GitButler's own workspace state (`virtual_branches.toml`, `but.sqlite`) — no commits, no refs, no user work.
+Safe: `.git/gitbutler/` only holds GitButler's own state files (`virtual_branches.toml`, `but.sqlite`) — no commits, no refs, no user work. The git history itself is untouched.
 
 ### Exiting GitButler
 
