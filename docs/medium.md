@@ -10,7 +10,7 @@ Meanwhile, every AI service wants your data, a subscription, or both.
 
 What if you could run a real language model — privately, offline, for free — on that phone? No cloud. No API keys. No accounts. Your prompts never leave the device.
 
-I did this on an **LG G8X ThinQ** (Snapdragon 855, 6GB RAM, circa 2019) and it works surprisingly well. This guide covers everything, step by step. No terminal experience required.
+I did this on a **Snapdragon 855 phone from ~2019** (6GB RAM) and it works surprisingly well. This guide covers everything, step by step. No terminal experience required.
 
 **What you'll end up with:**
 - A local AI chat running entirely on your phone
@@ -18,7 +18,7 @@ I did this on an **LG G8X ThinQ** (Snapdragon 855, 6GB RAM, circa 2019) and it w
 - An API server any device on your WiFi can talk to
 - All without rooting your phone
 
-The full code is at: **github.com/s1dd4/ollama-pocket**
+The full code is at: **github.com/s1dd4rth/ollama-pocket**
 
 ---
 
@@ -55,7 +55,7 @@ You should see your device listed. If it says "unauthorized", check your phone f
 
 ## Step 2: Debloat Your Phone (Optional but Recommended)
 
-Old phones come loaded with bloatware that eats RAM. My LG G8X had 4 Gameloft games, Facebook (with 3 background services), Instagram, Booking.com, and about 60 LG apps I never touched.
+Old phones come loaded with bloatware that eats RAM. My test phone had 4 Gameloft games, Facebook (with 3 background services), Instagram, Booking.com, and about 60 vendor apps I never touched.
 
 Removing them freed up roughly **500MB of RAM** — the difference between your AI model fitting in memory or not.
 
@@ -180,7 +180,7 @@ With `--wifi`, any device on your network can use the API at `http://<phone-ip>:
 ### Use from your PC
 
 ```
-curl http://192.168.1.8:11434/api/generate \
+curl http://192.168.1.100:11434/api/generate \
   -d '{"model":"qwen2.5:1.5b","prompt":"Explain quicksort"}'
 ```
 
@@ -221,8 +221,8 @@ An old phone gathering dust is now running a real AI model, privately, with no r
 
 It won't replace GPT-4. A 1.5B parameter model has its limits. But for quick questions, drafting text, brainstorming, summarizing, and simple code? It's genuinely useful. And it's *yours*.
 
-**Full repo: github.com/s1dd4/ollama-pocket**
+**Full repo: github.com/s1dd4rth/ollama-pocket**
 
 ---
 
-*Built with an LG G8X ThinQ, Termux, proot-distro, Ollama, and stubbornness.*
+*Built on a 2019-era Android phone with Termux, proot-distro, Ollama, and stubbornness.*
