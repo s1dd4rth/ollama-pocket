@@ -10,21 +10,42 @@ Turn any old Android phone into a local AI server using [Ollama](https://ollama.
 
 ## Quick Start
 
-**On your PC** (with phone connected via USB):
+**In Termux on your phone:**
 
 ```bash
-# 1. Free up RAM by removing bloatware (reversible)
-./scripts/debloat.sh
+# 1. Install git, clone the repo
+pkg install -y git
+git clone https://github.com/s1dd4rth/ollama-pocket
+cd ollama-pocket
 
-# 2. Copy install script to phone, run it in Termux
-adb push scripts/install-ollama.sh //sdcard/
-# Then in Termux: bash /sdcard/install-ollama.sh
+# 2. Run the installer — sets up Debian inside proot, installs Ollama,
+#    installs the PWA chat UI at /sdcard/ollama-pocket/pwa/
+bash scripts/install-ollama.sh
 
-# 3. Start the server
-# In Termux: bash /sdcard/start-ollama.sh --wifi --chat
+# 3. Pull a model (pick one that fits your RAM — see table below)
+proot-distro login debian -- ollama pull qwen2.5:1.5b
+
+# 4. Start the server + chat UI
+bash scripts/start-ollama.sh --wifi --chat
 ```
 
-That's it. You now have a private AI running on your phone, accessible from any device on your WiFi.
+The last command starts Ollama on the LAN, serves the PWA over
+`http://localhost:8000`, and launches Chrome pointed at the chat UI. Press
+**Ctrl+C** in Termux to stop everything cleanly.
+
+Once the chat UI is open, use Chrome's overflow menu → **Install app** (or
+**Add to Home Screen**) to install it as a standalone PWA with real offline
+support.
+
+**Optional: debloat your phone first** (requires a PC with ADB to free ~1 GB
+of RAM by removing bloatware). Do this **before** the Termux steps above:
+
+```bash
+# On your PC, with phone connected via USB and USB debugging enabled
+git clone https://github.com/s1dd4rth/ollama-pocket
+cd ollama-pocket
+./scripts/debloat.sh              # or --dry-run to preview
+```
 
 ## How It Works
 
@@ -97,6 +118,9 @@ Tested on a Snapdragon 855 phone from ~2019 (6GB RAM, ~2.8GB available after deb
 | ADB path mangling on Git Bash | Use double-slash: `adb push file //sdcard/` |
 | Connection refused in chat UI | Ollama server isn't running. Start it first with `start-ollama.sh` |
 | Termux from Play Store crashes | Uninstall, reinstall from [F-Droid](https://f-droid.org/en/packages/com.termux/) |
+| `PWA server did not respond on port 8000` | Another process is using port 8000. Kill it (`pkill -f "http.server 8000"`) or edit `PWA_PORT` in `scripts/start-ollama.sh` |
+| `Could not launch Chrome automatically` | Chrome isn't installed or is disabled. Install Chrome from the Play Store, or open `http://localhost:8000/chat.html` manually in any Chromium-based browser. Firefox and Samsung Internet are not currently supported. |
+| Fonts look like Courier/Arial fallback | Service worker install failed on first load (flaky network during install). Close Chrome, reopen, reload once. The fonts are shipped locally in `pwa/fonts/` so they'll cache on a successful load. |
 
 ## Use It As an API Server
 
