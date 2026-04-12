@@ -50,3 +50,16 @@ Add a bullet under `## [Unreleased]` in `CHANGELOG.md` for any user-facing chang
 ## Questions
 
 Open a GitHub issue with the `feature request` template if you want to discuss before writing code.
+
+## GitButler notes (optional)
+
+This repo is compatible with [GitButler](https://docs.gitbutler.com/cli-overview) if you want to work on multiple virtual branches in parallel. GitButler is entirely optional — plain `git` works fine.
+
+One gotcha worth knowing: when a PR is **squash-merged** on GitHub, the commit hash of the merge differs from the virtual branch tip, and `but pull` will fail with a "Chosen resolutions do not match quantity of applied virtual branches" error. Clear it with:
+
+```bash
+but unapply <branch-name>   # drop the now-merged virtual branch
+but pull                    # sync workspace with origin/main
+```
+
+To leave GitButler entirely, run `but teardown` — the repo returns to plain git with no residue.
