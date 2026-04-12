@@ -1,9 +1,10 @@
-const CACHE = 'ollama-v3';
+const CACHE = 'ollama-v4';
 const ASSETS = [
   './',
   './chat.html',
   './manifest.json',
   './icon.svg',
+  './icon-maskable.svg',
   './fonts/space-mono-regular.woff2',
   './fonts/space-mono-bold.woff2',
   './fonts/dm-sans-variable.woff2',
