@@ -8,6 +8,9 @@
 *.swo
 *~
 
+# Claude Code
+.claude/
+
 # Jekyll
 _site/
 .jekyll-cache/

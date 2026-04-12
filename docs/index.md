@@ -18,7 +18,7 @@ Meanwhile, every AI service wants your data, a subscription, or both.
 
 What if you could run a real language model — privately, offline, for free — on that phone? No cloud. No API keys. No accounts. Your prompts never leave the device.
 
-That's what this guide does. I did it on an **LG G8X ThinQ** (Snapdragon 855, 6GB RAM, circa 2019) and it works surprisingly well. Any similar-era Android phone should work too.
+That's what this guide does. I did it on a **Snapdragon 855 phone from ~2019** (6GB RAM) and it works surprisingly well. Any similar-era Android phone should work too.
 
 **What you'll end up with:**
 - A local AI chat running entirely on your phone
@@ -68,7 +68,7 @@ You should see your device listed. If it says "unauthorized", check your phone �
 
 ```
 List of devices attached
-LMG850EMW6200e32f    device
+ABCD1234EFGH5678    device
 ```
 
 > **Git Bash on Windows:** ADB paths get mangled. Use double-slash for sdcard paths: `adb push file //sdcard/` instead of `adb push file /sdcard/`.
@@ -77,7 +77,7 @@ LMG850EMW6200e32f    device
 
 ## Step 2: Debloat Your Phone
 
-This is optional but recommended. Old phones come loaded with bloatware that eats RAM. On my LG G8X, there were **4 Gameloft games**, Facebook (with 3 background services), Instagram, Booking.com, and about 60 LG apps I never used.
+This is optional but recommended. Old phones come loaded with bloatware that eats RAM. On my test phone, there were **4 Gameloft games**, Facebook (with 3 background services), Instagram, Booking.com, and about 60 vendor apps I never used.
 
 Removing them freed up roughly **500MB of RAM** — that's the difference between your AI model fitting in memory or not.
 
@@ -140,7 +140,7 @@ Phone, Contacts, Settings, Camera, Keyboard, Chrome, Play Store, Play Services, 
 
 ### After debloat
 
-On the LG G8X (6GB total):
+On my 6GB test phone:
 - **Before:** ~1.8GB available RAM
 - **After:** ~2.8GB available RAM
 
@@ -342,7 +342,7 @@ Now any device on your WiFi network can use the AI:
 
   Mode:  WiFi (all interfaces)
   Local: http://localhost:11434
-  WiFi:  http://192.168.1.8:11434
+  WiFi:  http://192.168.1.100:11434
 
   Press Ctrl+C to stop
 ```
@@ -359,11 +359,11 @@ After that, just type `ollama-start-wifi` in Termux to start the server.
 
 ```bash
 # One-shot question
-curl http://192.168.1.8:11434/api/generate \
+curl http://192.168.1.100:11434/api/generate \
   -d '{"model":"qwen2.5:1.5b","prompt":"Explain quicksort in 3 sentences"}'
 
 # Or use as an OpenAI-compatible API
-# Base URL: http://192.168.1.8:11434/v1
+# Base URL: http://192.168.1.100:11434/v1
 # Model: qwen2.5:1.5b
 ```
 
@@ -465,8 +465,8 @@ An old phone that was gathering dust is now running a real AI model, privately, 
 
 It won't replace GPT-4 — a 1.5B parameter model is what it is. But for quick questions, drafting text, brainstorming, summarizing, and simple code tasks? It's genuinely useful. And it's *yours*.
 
-The repo has everything you need to replicate this: **[github.com/s1dd4/ollama-pocket](https://github.com/s1dd4/ollama-pocket)**
+The repo has everything you need to replicate this: **[github.com/s1dd4rth/ollama-pocket](https://github.com/s1dd4rth/ollama-pocket)**
 
 ---
 
-*Built with an LG G8X ThinQ, Termux, proot-distro, Ollama, and stubbornness.*
+*Built on a 2019-era Android phone with Termux, proot-distro, Ollama, and stubbornness.*
