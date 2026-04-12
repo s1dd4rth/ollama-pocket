@@ -86,3 +86,42 @@ bundles that are loaded by default but can be toggled with flags:
   re-flashing.
 - `--dry-run` prints what would be removed without touching anything. Always
   start there.
+
+## Two restore modes — pick the right one
+
+`debloat.sh` has two distinct ways to put packages back on your device. They
+behave differently and it matters which one you use.
+
+### `--restore` (broad restore)
+
+Walks the **entire current manifest set** (vendor + categories) and reinstalls
+every listed package that is currently uninstalled. This is the v0.1.0
+behaviour and is useful when you want to undo *all* debloating ever done by
+this script on this phone, or when you've lost track of what was removed and
+just want to reset to "everything the manifest knows about, installed".
+
+**Gotcha:** if your phone had packages uninstalled by a previous `debloat.sh`
+session (or by any other tool), `--restore` will reinstall those too, not
+just the ones removed in your most recent run. The end state is "fully
+populated manifest", not "the state you were in before the last session".
+
+### `--restore-from <report.json>` (precise restore)
+
+Reinstalls **only** the packages listed in a previous `--save-report` JSON
+file. This is the precise inverse of a single previous `debloat.sh` run —
+the end state is exactly the state you were in before that run, no more and
+no less.
+
+Workflow:
+
+```bash
+# Before: snapshot + real remove with report
+./scripts/debloat.sh --save-report ~/debloat-$(date +%F).json
+
+# Later: precise undo using that same report
+./scripts/debloat.sh --restore-from ~/debloat-$(date +%F).json
+```
+
+**Use `--restore-from` by default.** It does exactly what users expect from
+an "undo" button. Reach for `--restore` only when you deliberately want the
+broad-reset semantics.

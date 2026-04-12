@@ -14,7 +14,14 @@
 # Usage:
 #   ./debloat.sh                          # dry-run is safer — see --dry-run
 #   ./debloat.sh --dry-run                # preview without changes
-#   ./debloat.sh --restore                # reinstall previously removed pkgs
+#   ./debloat.sh --restore                # reinstall EVERY manifest-listed
+#                                         # package that is currently uninstalled
+#                                         # (v0.1.0 parity — this is NOT the
+#                                         #  inverse of a single previous run;
+#                                         #  for that, use --restore-from)
+#   ./debloat.sh --restore-from r.json    # precise undo: reinstall ONLY the
+#                                         # packages listed in a previous
+#                                         # --save-report file
 #   ./debloat.sh --vendor samsung         # override auto-detected manufacturer
 #   ./debloat.sh --list                   # list available manifests and exit
 #   ./debloat.sh --category games,lge     # load only these manifests
@@ -52,6 +59,7 @@ RESTORE=false
 LIST_ONLY=false
 OVERRIDE_VENDOR=""
 SAVE_REPORT=""
+RESTORE_FROM=""
 # Default categories loaded alongside the detected vendor. Matches v0.1.0
 # behaviour on LG (games + social + google-apps removed).
 DEFAULT_CATEGORIES="social,games,google-apps"
@@ -84,6 +92,11 @@ while [ $# -gt 0 ]; do
     --save-report)
       [ $# -lt 2 ] && err "--save-report requires a file path"
       SAVE_REPORT="$2"; shift
+      ;;
+    --restore-from)
+      [ $# -lt 2 ] && err "--restore-from requires a report file path"
+      RESTORE_FROM="$2"; shift
+      RESTORE=true
       ;;
     -h|--help) show_help; exit 0 ;;
     *) err "unknown flag: $1 (try --help)" ;;
@@ -141,43 +154,45 @@ else
   esac
 fi
 
-# -- Resolve which files to load --
+# -- Resolve which files to load (only when not in --restore-from mode) --
 FILES_TO_LOAD=()
 FILE_LABELS=()
-
-add_file() {
-  local label="$1"
-  local path="$2"
-  if [ -f "$path" ]; then
-    FILES_TO_LOAD+=("$path")
-    FILE_LABELS+=("$label")
-    return 0
-  fi
-  return 1
-}
-
 VENDOR_LOADED=false
-if add_file "vendor:$VENDOR" "$DEBLOAT_DIR/$VENDOR.txt"; then
-  VENDOR_LOADED=true
-fi
 
-# Filter out skipped categories.
-SKIP_RE=""
-if [ -n "$SKIP_CATEGORIES" ]; then
-  SKIP_RE="${SKIP_CATEGORIES//,/|}"
-fi
+if [ -z "$RESTORE_FROM" ]; then
+  add_file() {
+    local label="$1"
+    local path="$2"
+    if [ -f "$path" ]; then
+      FILES_TO_LOAD+=("$path")
+      FILE_LABELS+=("$label")
+      return 0
+    fi
+    return 1
+  }
 
-IFS=',' read -r -a _CATS <<< "$INCLUDE_CATEGORIES"
-for cat in "${_CATS[@]}"; do
-  cat="$(echo "$cat" | xargs)"
-  [ -z "$cat" ] && continue
-  if [ -n "$SKIP_RE" ] && echo "$cat" | grep -qE "^($SKIP_RE)$"; then
-    continue
+  if add_file "vendor:$VENDOR" "$DEBLOAT_DIR/$VENDOR.txt"; then
+    VENDOR_LOADED=true
   fi
-  if ! add_file "category:$cat" "$DEBLOAT_DIR/$cat.txt"; then
-    warn "Category '$cat' has no manifest at $DEBLOAT_DIR/$cat.txt, skipping."
+
+  # Filter out skipped categories.
+  SKIP_RE=""
+  if [ -n "$SKIP_CATEGORIES" ]; then
+    SKIP_RE="${SKIP_CATEGORIES//,/|}"
   fi
-done
+
+  IFS=',' read -r -a _CATS <<< "$INCLUDE_CATEGORIES"
+  for cat in "${_CATS[@]}"; do
+    cat="$(echo "$cat" | xargs)"
+    [ -z "$cat" ] && continue
+    if [ -n "$SKIP_RE" ] && echo "$cat" | grep -qE "^($SKIP_RE)$"; then
+      continue
+    fi
+    if ! add_file "category:$cat" "$DEBLOAT_DIR/$cat.txt"; then
+      warn "Category '$cat' has no manifest at $DEBLOAT_DIR/$cat.txt, skipping."
+    fi
+  done
+fi
 
 # -- Banner --
 echo -e "${BOLD}"
@@ -198,19 +213,22 @@ if [ -n "$OVERRIDE_VENDOR" ]; then
 else
   info "Vendor:       $VENDOR ${DIM}(auto-detected from ro.product.manufacturer)${NC}"
 fi
-if ! $VENDOR_LOADED; then
-  warn "No vendor manifest at $DEBLOAT_DIR/$VENDOR.txt."
-  warn "See debloat/README.md to contribute a list for this device."
+if [ -z "$RESTORE_FROM" ]; then
+  if ! $VENDOR_LOADED; then
+    warn "No vendor manifest at $DEBLOAT_DIR/$VENDOR.txt."
+    warn "See debloat/README.md to contribute a list for this device."
+  fi
+  if [ "${#FILES_TO_LOAD[@]}" -eq 0 ]; then
+    err "No manifests to load. Nothing to do."
+  fi
+  info "Manifests:"
+  for label in "${FILE_LABELS[@]}"; do
+    echo -e "  ${CYAN}→${NC} $label"
+  done
+else
+  info "Restore source:"
+  echo -e "  ${CYAN}→${NC} ${RESTORE_FROM}"
 fi
-
-if [ "${#FILES_TO_LOAD[@]}" -eq 0 ]; then
-  err "No manifests to load. Nothing to do."
-fi
-
-info "Manifests:"
-for label in "${FILE_LABELS[@]}"; do
-  echo -e "  ${CYAN}→${NC} $label"
-done
 echo ""
 
 # -- Read packages from manifests --
@@ -225,13 +243,44 @@ parse_manifest() {
   ' "$f"
 }
 
+# Pull the "removed" array out of a --save-report JSON file.
+# The JSON is written by this script itself with a known, single-line array
+# shape — portable shell grep+sed is enough, no python dependency required.
+extract_removed_from_report() {
+  local report="$1"
+  # Match the details.removed line which looks like:
+  #   "removed": ["com.foo","com.bar","com.baz"],
+  # The summary.removed line is an integer and has no `[`, so we only match
+  # the array form.
+  grep '"removed":[[:space:]]*\[' "$report" \
+    | sed -e 's/.*\[//' -e 's/\].*//' -e 's/"//g' -e 's/,[[:space:]]*/\n/g' \
+    | awk 'NF > 0'
+}
+
 ALL_PACKAGES=()
-for f in "${FILES_TO_LOAD[@]}"; do
+if [ -n "$RESTORE_FROM" ]; then
+  # Precise-undo path: load only the packages that were removed by a previous
+  # --save-report run. Ignore the manifests entirely for this session.
+  [ ! -f "$RESTORE_FROM" ] && err "Report file not found: $RESTORE_FROM"
+  info "Loading restore list from $RESTORE_FROM"
   while IFS= read -r pkg; do
     [ -z "$pkg" ] && continue
     ALL_PACKAGES+=("$pkg")
-  done < <(parse_manifest "$f")
-done
+  done < <(extract_removed_from_report "$RESTORE_FROM")
+  if [ "${#ALL_PACKAGES[@]}" -eq 0 ]; then
+    err "No 'removed' entries found in $RESTORE_FROM (is it a --save-report file?)"
+  fi
+  # Reset labels for the report so the provenance is obvious
+  FILE_LABELS=("restore-from:$(basename "$RESTORE_FROM")")
+else
+  # Normal path: load from manifests
+  for f in "${FILES_TO_LOAD[@]}"; do
+    while IFS= read -r pkg; do
+      [ -z "$pkg" ] && continue
+      ALL_PACKAGES+=("$pkg")
+    done < <(parse_manifest "$f")
+  done
+fi
 
 # De-dupe while preserving order. `awk '!seen[$0]++'` is the classic
 # portable one-liner for this and works on any awk, including BusyBox.
