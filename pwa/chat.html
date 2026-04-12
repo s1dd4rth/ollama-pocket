@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>OLLAMA_LOCAL</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --gray-1: #111111;
+  --gray-2: #1a1a1a;
+  --gray-3: #222222;
+  --gray-4: #333333;
+  --gray-5: #666666;
+  --gray-6: #999999;
+  --gray-7: #cccccc;
+  --orange: #ff5c00;
+  --mono: 'Space Mono', 'Courier New', monospace;
+  --sans: 'DM Sans', -apple-system, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--mono);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* -- HEADER -- */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(10px + var(--safe-top)) 16px 10px;
+  border-bottom: 1px solid var(--gray-3);
+  background: var(--black);
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.te-logo {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--white);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--white);
+}
+
+.header-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gray-6);
+}
+
+#status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--orange);
+  border-radius: 0;
+}
+
+#status-dot.active { background: var(--white); }
+#status-dot.thinking { animation: blink-sq 0.6s step-end infinite; }
+#status-dot.error { background: var(--gray-5); }
+
+@keyframes blink-sq {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* -- INFO BAR -- */
+#info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--gray-3);
+  background: var(--gray-1);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gray-5);
+}
+
+.info-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--gray-4);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gray-6);
+}
+
+/* -- MESSAGES -- */
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+#messages::-webkit-scrollbar { width: 2px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
+#messages::-webkit-scrollbar-thumb { background: var(--gray-4); }
+
+/* -- WELCOME -- */
+#welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 20px;
+  text-align: center;
+  animation: fade-in 0.4s ease;
+}
+
+.welcome-box {
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--gray-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--gray-5);
+  position: relative;
+}
+
+.welcome-box::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1px solid var(--gray-3);
+}
+
+#welcome h2 {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+#welcome p {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--gray-5);
+  line-height: 1.7;
+  max-width: 260px;
+}
+
+.welcome-specs {
+  display: flex;
+  gap: 16px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gray-5);
+}
+
+.welcome-specs span {
+  padding: 4px 10px;
+  border: 1px solid var(--gray-3);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* -- MESSAGE ROWS -- */
+.msg-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  animation: msg-in 0.2s ease;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gray-2);
+}
+
+.msg-row:last-child { border-bottom: none; }
+
+.msg-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.msg-who {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.msg-row.user .msg-who { color: var(--white); }
+.msg-row.assistant .msg-who { color: var(--orange); }
+
+.msg-time {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gray-5);
+}
+
+.msg-line {
+  flex: 1;
+  height: 1px;
+  background: var(--gray-3);
+}
+
+.msg-body {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gray-7);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.msg-row.user .msg-body {
+  color: var(--white);
+}
+
+.msg-body code {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  background: var(--gray-2);
+  border: 1px solid var(--gray-3);
+  color: var(--orange);
+}
+
+.msg-body pre {
+  margin: 10px 0;
+  padding: 12px;
+  background: var(--gray-1);
+  border: 1px solid var(--gray-3);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.msg-body pre::before {
+  content: 'CODE';
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--gray-5);
+  background: var(--gray-2);
+  border-left: 1px solid var(--gray-3);
+  border-bottom: 1px solid var(--gray-3);
+}
+
+.msg-body pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--gray-7);
+}
+
+.msg-body strong {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.msg-error { color: var(--gray-5) !important; }
+
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* -- CURSOR BLINK -- */
+.cursor {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  background: var(--orange);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 0.8s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* -- INPUT -- */
+#input-area {
+  z-index: 10;
+  padding: 0 16px calc(12px + var(--safe-bottom));
+  background: var(--black);
+  border-top: 1px solid var(--gray-3);
+}
+
+.input-label {
+  padding: 8px 0 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gray-5);
+}
+
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+#prompt {
+  flex: 1;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--gray-4);
+  color: var(--white);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+  max-height: 120px;
+  min-height: 38px;
+  transition: border-color 0.2s;
+}
+
+#prompt:focus {
+  border-color: var(--white);
+}
+
+#prompt::placeholder {
+  color: var(--gray-4);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+#send {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: 2px solid var(--white);
+  border-radius: 0;
+  background: var(--white);
+  color: var(--black);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+#send:active {
+  background: var(--black);
+  color: var(--white);
+}
+
+#send:disabled {
+  border-color: var(--gray-4);
+  background: transparent;
+  color: var(--gray-4);
+}
+
+#send svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* -- CLEAR -- */
+#clear-btn {
+  position: absolute;
+  top: calc(var(--safe-top) + 48px);
+  right: 16px;
+  z-index: 20;
+  padding: 4px 10px;
+  border: 1px solid var(--gray-3);
+  background: var(--black);
+  color: var(--gray-5);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: none;
+  transition: all 0.15s;
+}
+
+#clear-btn:active { background: var(--white); color: var(--black); }
+
+/* -- RESPONSIVE -- */
+@media (min-width: 768px) {
+  #messages { padding: 20px 15%; }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="header-left">
+    <div class="te-logo">OL</div>
+    <span class="header-title">Ollama_Local</span>
+  </div>
+  <div class="header-right">
+    <div id="status-indicator">
+      <div id="status-dot" class="active"></div>
+      <span id="status-text">Online</span>
+    </div>
+  </div>
+</div>
+
+<div id="info-bar">
+  <span>Model</span>
+  <span class="info-tag" id="model-tag">detecting...</span>
+  <span>CPU</span>
+  <span>Local</span>
+</div>
+
+<div id="messages">
+  <div id="welcome">
+    <div class="welcome-box">LLM</div>
+    <h2>Terminal Ready</h2>
+    <p>Running entirely on-device. No cloud. No tracking. Your data stays here.</p>
+    <div class="welcome-specs">
+      <span>Offline</span>
+      <span>Private</span>
+      <span>Local</span>
+    </div>
+  </div>
+</div>
+
+<button id="clear-btn" onclick="clearChat()">CLR</button>
+
+<div id="input-area">
+  <div class="input-label">Input</div>
+  <div class="input-row">
+    <textarea id="prompt" rows="1" placeholder="Type here..." onkeydown="handleKey(event)"></textarea>
+    <button id="send" onclick="send()">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// Auto-detect Ollama server: use current hostname (works on WiFi too)
+const BASE = window.location.protocol === 'file:'
+  ? 'http://localhost:11434'
+  : `${window.location.protocol}//${window.location.hostname}:11434`;
+
+let MODEL = '';
+const messagesEl = document.getElementById('messages');
+const promptEl = document.getElementById('prompt');
+const sendBtn = document.getElementById('send');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+const clearBtn = document.getElementById('clear-btn');
+const modelTag = document.getElementById('model-tag');
+let history = [];
+let welcomeEl = document.getElementById('welcome');
+
+// Detect available model on startup
+async function detectModel() {
+  try {
+    const res = await fetch(BASE + '/api/tags');
+    const data = await res.json();
+    if (data.models && data.models.length > 0) {
+      MODEL = data.models[0].name;
+      modelTag.textContent = MODEL;
+      setStatus('active', 'Online');
+    }
+  } catch (e) {
+    modelTag.textContent = 'offline';
+    setStatus('error', 'Offline');
+  }
+}
+detectModel();
+
+function setStatus(state, text) {
+  statusDot.className = state;
+  statusText.textContent = text;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+}
+
+function getTime() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' +
+         d.getMinutes().toString().padStart(2,'0') + ':' +
+         d.getSeconds().toString().padStart(2,'0');
+}
+
+function addMsg(role, text) {
+  if (welcomeEl) { welcomeEl.remove(); welcomeEl = null; }
+  clearBtn.style.display = 'block';
+
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+
+  const header = document.createElement('div');
+  header.className = 'msg-header';
+
+  const who = document.createElement('span');
+  who.className = 'msg-who';
+  who.textContent = role === 'user' ? 'You' : 'System';
+
+  const line = document.createElement('span');
+  line.className = 'msg-line';
+
+  const time = document.createElement('span');
+  time.className = 'msg-time';
+  time.textContent = getTime();
+
+  header.appendChild(who);
+  header.appendChild(line);
+  header.appendChild(time);
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  if (role === 'assistant' && !text) {
+    body.innerHTML = '<span class="cursor"></span>';
+  } else {
+    body.textContent = text;
+  }
+
+  row.appendChild(header);
+  row.appendChild(body);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return body;
+}
+
+function formatContent(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  return html;
+}
+
+async function send() {
+  const text = promptEl.value.trim();
+  if (!text || !MODEL) return;
+  promptEl.value = '';
+  promptEl.style.height = 'auto';
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  sendBtn.disabled = true;
+  setStatus('thinking', 'Processing');
+
+  const body = addMsg('assistant', '');
+  let full = '';
+
+  try {
+    const res = await fetch(BASE + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, messages: history, stream: true })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      for (const line of chunk.split('\n')) {
+        if (!line.trim()) continue;
+        try {
+          const j = JSON.parse(line);
+          if (j.message && j.message.content) {
+            full += j.message.content;
+            body.innerHTML = formatContent(full) + '<span class="cursor"></span>';
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+        } catch(e) {}
+      }
+    }
+
+    body.innerHTML = formatContent(full);
+    history.push({ role: 'assistant', content: full });
+    setStatus('active', 'Online');
+  } catch(e) {
+    body.innerHTML = '';
+    body.textContent = '// ERR: Connection failed. Is Ollama running?';
+    body.classList.add('msg-error');
+    setStatus('error', 'Offline');
+  }
+
+  sendBtn.disabled = false;
+  promptEl.focus();
+}
+
+function clearChat() {
+  history = [];
+  messagesEl.innerHTML = '';
+  clearBtn.style.display = 'none';
+  const w = document.createElement('div');
+  w.id = 'welcome';
+  w.innerHTML = '<div class="welcome-box">LLM</div><h2>Terminal Ready</h2><p>Running entirely on-device. No cloud. No tracking. Your data stays here.</p><div class="welcome-specs"><span>Offline</span><span>Private</span><span>Local</span></div>';
+  messagesEl.appendChild(w);
+  welcomeEl = w;
+}
+
+promptEl.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+document.body.addEventListener('touchmove', function(e) {
+  if (e.target.closest('#messages') || e.target.closest('#prompt')) return;
+  e.preventDefault();
+}, { passive: false });
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

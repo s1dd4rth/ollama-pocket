@@ -1,0 +1,13 @@
+title: "ollama-pocket"
+description: "Run a free, private AI on your old Android phone — no root required"
+theme: minima
+baseurl: "/ollama-pocket"
+url: ""
+
+header_pages: []
+
+minima:
+  skin: dark
+
+plugins:
+  - jekyll-seo-tag
