@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Vendor-aware debloat** (closes #8): `scripts/debloat.sh` now auto-detects the phone's manufacturer via `adb shell getprop ro.product.manufacturer` and loads the matching manifest from the new `debloat/` directory. v0.1.0 hardcoded ~60 LG-specific packages into the script itself, which meant running it on a Samsung / Pixel / Xiaomi device was a silent no-op for 80% of the list. Package lists are now plain-text manifests (one per line, `#` comments allowed) split by vendor (`debloat/lge.txt`) and by opt-in category (`debloat/social.txt`, `debloat/games.txt`, `debloat/google-apps.txt`). The default behaviour on an LG phone is unchanged; non-LG phones no longer see a wall of "Not found" for LG-specific packages.
+- `debloat/README.md` — contribution workflow for adding a new vendor list. Every non-LG owner can fix the gap for their phone with a one-file PR. Bar: a `# Verified on: <device>, Android <N>` header is required.
+- New flags on `debloat.sh`: `--list` (show available manifests without touching the device), `--vendor <name>` (override auto-detection), `--category <a,b>` (subset the opt-in bundles), `--no-categories` (vendor only), `--skip-categories <name>` (drop a specific category from the default set), `--save-report <path>` (machine-readable JSON report of what was removed / skipped / failed, device info, and the list of loaded manifests — useful for audit logs and for reviewer-friendly vendor list contributions).
+- `.github/ISSUE_TEMPLATE/debloat_contribution.md` — structured template for submitting a new vendor manifest, including a verification checklist.
+- `CONTRIBUTING.md` section documenting the debloat contribution workflow and the bash 3.2 portability rule for shell scripts (macOS `/bin/bash` is still bash 3.2, so scripts must avoid associative arrays and handle empty array expansion under `set -u`).
 - `CONTRIBUTING.md` with PR-based development workflow, conventional commits, shell style guide, and GitButler virtual-branch notes.
 - GitHub pull request and issue templates under `.github/`.
 - GitHub Actions CI running shellcheck on `scripts/`, with a status badge in the README.

@@ -42,6 +42,36 @@ This keeps history readable and lets us automate `CHANGELOG.md` later.
 - Double-quote all variable expansions: `"$var"`, not `$var`
 - Scripts should be idempotent — safe to re-run
 - Explain non-obvious commands with a short comment
+- **Target bash 3.2+.** macOS ships bash 3.2 as `/bin/bash` and many
+  contributors will run scripts from there before testing in Termux. Avoid
+  associative arrays (`declare -A`) and the `[@]` expansion of empty arrays
+  under `set -u` — use `awk '!seen[$0]++'` for de-dupe and the
+  `"${ARRAY[@]+"${ARRAY[@]}"}"` idiom for possibly-empty expansion.
+
+## Contributing a debloat list for your phone
+
+`scripts/debloat.sh` is vendor-aware and reads plain-text package manifests
+from `debloat/`. v0.2.0 ships `lge.txt` (verified on an LG V60) plus opt-in
+category lists (`social`, `games`, `google-apps`). Every non-LG owner can help
+by contributing a manifest for their OEM — it's usually a one-file PR.
+
+See [`debloat/README.md`](debloat/README.md) for the full workflow. The short
+version:
+
+1. Connect your phone via ADB, run `./scripts/debloat.sh --list` to see what's
+   already available.
+2. List your OEM's packages: `adb shell pm list packages | grep -i <oem>`.
+3. Create `debloat/<vendor>.txt` with a `# Verified on: <device>, Android <N>`
+   header and one package per line.
+4. Dry-run it: `./scripts/debloat.sh --dry-run --vendor <vendor>` to confirm
+   the manifest is picked up.
+5. Attach the JSON report from `--save-report` to your PR so reviewers can see
+   what would be removed on your device.
+6. Open a PR with the `debloat_contribution` issue template (under
+   `.github/ISSUE_TEMPLATE/`).
+
+Quality bar: don't include packages you haven't actually removed on a real
+device without something breaking. The `# Verified on:` header is required.
 
 ## Changelog
 

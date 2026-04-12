@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 # ============================================================================
-# debloat.sh — Safe, reversible debloat for Android phones via ADB
+# debloat.sh — Vendor-aware, manifest-driven debloat for Android phones
 #
-# Removes bloatware to free RAM for Ollama. All removals are reversible
-# with: adb shell cmd package install-existing <package>
+# Reads plain-text package manifests from ../debloat/ and removes the listed
+# packages via ADB. Auto-detects the phone's manufacturer and picks the
+# matching vendor manifest; opt-in category manifests (social, games,
+# google-apps) are loaded by default and can be toggled with --category /
+# --no-categories / --skip-categories.
+#
+# All removals are reversible with `--restore` or
+# `adb shell cmd package install-existing <package>`.
 #
 # Usage:
-#   ./debloat.sh              # Remove bloatware
-#   ./debloat.sh --dry-run    # Preview what would be removed
-#   ./debloat.sh --restore    # Restore all removed packages
+#   ./debloat.sh                          # dry-run is safer — see --dry-run
+#   ./debloat.sh --dry-run                # preview without changes
+#   ./debloat.sh --restore                # reinstall previously removed pkgs
+#   ./debloat.sh --vendor samsung         # override auto-detected manufacturer
+#   ./debloat.sh --list                   # list available manifests and exit
+#   ./debloat.sh --category games,lge     # load only these manifests
+#   ./debloat.sh --no-categories          # vendor manifest only
+#   ./debloat.sh --skip-categories google-apps  # drop google-apps from default
+#   ./debloat.sh --save-report report.json      # write machine-readable result
 # ============================================================================
 
 set -euo pipefail
@@ -17,206 +29,359 @@ set -euo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 DIM='\033[2m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+info()  { echo -e "${CYAN}[INFO]${NC} $*"; }
+ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
+err()   { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
+
+# -- Resolve debloat/ directory relative to this script --
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEBLOAT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/debloat"
+if [ ! -d "$DEBLOAT_DIR" ]; then
+  err "debloat/ directory not found at $DEBLOAT_DIR. Run from a checkout of the ollama-pocket repo."
+fi
+
+# -- Default flags --
 DRY_RUN=false
 RESTORE=false
-REMOVED=0
-SKIPPED=0
-FAILED=0
+LIST_ONLY=false
+OVERRIDE_VENDOR=""
+SAVE_REPORT=""
+# Default categories loaded alongside the detected vendor. Matches v0.1.0
+# behaviour on LG (games + social + google-apps removed).
+DEFAULT_CATEGORIES="social,games,google-apps"
+INCLUDE_CATEGORIES="$DEFAULT_CATEGORIES"
+SKIP_CATEGORIES=""
 
-# -- Parse args --
-for arg in "$@"; do
-  case "$arg" in
+show_help() {
+  sed -n '3,23p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+# -- Parse flags --
+while [ $# -gt 0 ]; do
+  case "$1" in
     --dry-run) DRY_RUN=true ;;
     --restore) RESTORE=true ;;
-    -h|--help)
-      echo "Usage: $0 [--dry-run] [--restore]"
-      echo "  --dry-run   Preview removals without executing"
-      echo "  --restore   Restore previously removed packages"
-      exit 0
+    --list) LIST_ONLY=true ;;
+    --vendor)
+      [ $# -lt 2 ] && err "--vendor requires a value (e.g. --vendor samsung)"
+      OVERRIDE_VENDOR="$2"; shift
       ;;
+    --category)
+      [ $# -lt 2 ] && err "--category requires a value (e.g. --category games,social)"
+      INCLUDE_CATEGORIES="$2"; shift
+      ;;
+    --no-categories) INCLUDE_CATEGORIES="" ;;
+    --skip-categories)
+      [ $# -lt 2 ] && err "--skip-categories requires a value"
+      SKIP_CATEGORIES="$2"; shift
+      ;;
+    --save-report)
+      [ $# -lt 2 ] && err "--save-report requires a file path"
+      SAVE_REPORT="$2"; shift
+      ;;
+    -h|--help) show_help; exit 0 ;;
+    *) err "unknown flag: $1 (try --help)" ;;
   esac
+  shift
 done
+
+# -- --list: show available manifests and exit (no ADB needed) --
+if $LIST_ONLY; then
+  echo -e "${BOLD}Available debloat manifests in $DEBLOAT_DIR:${NC}"
+  echo ""
+  found_any=false
+  for f in "$DEBLOAT_DIR"/*.txt; do
+    [ ! -f "$f" ] && continue
+    found_any=true
+    name="$(basename "$f" .txt)"
+    count=$(grep -cvE '^[[:space:]]*(#|$)' "$f" || true)
+    verified=$(grep -m1 -E '^[[:space:]]*#[[:space:]]*Verified on' "$f" | sed 's/^[[:space:]]*#[[:space:]]*//' || true)
+    printf "  ${CYAN}%-16s${NC} %3d packages" "$name" "$count"
+    if [ -n "$verified" ]; then
+      printf "  ${DIM}(%s)${NC}" "$verified"
+    fi
+    echo ""
+  done
+  $found_any || warn "No manifests found in $DEBLOAT_DIR."
+  echo ""
+  echo -e "${DIM}Use --category <name,...> to select, or --vendor <name> to override detection.${NC}"
+  exit 0
+fi
 
 # -- Check ADB --
-if ! command -v adb &>/dev/null; then
-  echo -e "${RED}Error: adb not found. Install Android SDK Platform Tools.${NC}"
-  exit 1
-fi
+command -v adb >/dev/null 2>&1 || err "adb not found. Install Android SDK Platform Tools."
+adb get-state >/dev/null 2>&1 || err "No device connected. Enable USB debugging and connect your phone."
 
-if ! adb get-state &>/dev/null; then
-  echo -e "${RED}Error: No device connected. Enable USB debugging and connect your phone.${NC}"
-  exit 1
-fi
+# -- Detect vendor from ro.product.manufacturer --
+MANUFACTURER_RAW=$(adb shell getprop ro.product.manufacturer 2>/dev/null | tr -d '\r')
+MANUFACTURER=$(echo "$MANUFACTURER_RAW" | tr '[:upper:]' '[:lower:]' | xargs)
+MODEL_RAW=$(adb shell getprop ro.product.model 2>/dev/null | tr -d '\r' | xargs)
+ANDROID_VERSION=$(adb shell getprop ro.build.version.release 2>/dev/null | tr -d '\r' | xargs)
 
-echo -e "${BOLD}======================================${NC}"
-if $DRY_RUN; then
-  echo -e "${YELLOW}  DEBLOAT — DRY RUN (no changes)${NC}"
-elif $RESTORE; then
-  echo -e "${GREEN}  DEBLOAT — RESTORE MODE${NC}"
+if [ -n "$OVERRIDE_VENDOR" ]; then
+  VENDOR="$OVERRIDE_VENDOR"
 else
-  echo -e "${CYAN}  DEBLOAT — REMOVING BLOATWARE${NC}"
+  # Map common ro.product.manufacturer values to manifest file basenames.
+  case "$MANUFACTURER" in
+    lge|lg)            VENDOR="lge" ;;
+    samsung)           VENDOR="samsung" ;;
+    xiaomi|redmi|poco) VENDOR="xiaomi" ;;
+    google)            VENDOR="pixel" ;;
+    motorola|moto)     VENDOR="motorola" ;;
+    oneplus)           VENDOR="oneplus" ;;
+    oppo)              VENDOR="oppo" ;;
+    realme)            VENDOR="realme" ;;
+    *)                 VENDOR="$MANUFACTURER" ;;
+  esac
 fi
-echo -e "${BOLD}======================================${NC}"
-echo ""
 
-# -- Package lists by category --
+# -- Resolve which files to load --
+FILES_TO_LOAD=()
+FILE_LABELS=()
 
-declare -A CATEGORIES
+add_file() {
+  local label="$1"
+  local path="$2"
+  if [ -f "$path" ]; then
+    FILES_TO_LOAD+=("$path")
+    FILE_LABELS+=("$label")
+    return 0
+  fi
+  return 1
+}
 
-CATEGORIES[Games]="
-com.gameloft.android.GN.GLOFTGGHM
-com.gameloft.android.ANMP.GlsoftAsphal
-com.gameloft.android.ANMP.GloftR4HM
-com.gameloft.android.ANMP.GloftSGHM
-"
+VENDOR_LOADED=false
+if add_file "vendor:$VENDOR" "$DEBLOAT_DIR/$VENDOR.txt"; then
+  VENDOR_LOADED=true
+fi
 
-CATEGORIES[Social]="
-com.facebook.katana
-com.facebook.orca
-com.facebook.system
-com.facebook.appmanager
-com.facebook.services
-com.instagram.android
-com.booking
-"
+# Filter out skipped categories.
+SKIP_RE=""
+if [ -n "$SKIP_CATEGORIES" ]; then
+  SKIP_RE="${SKIP_CATEGORIES//,/|}"
+fi
 
-CATEGORIES[LG_Bloatware]="
-com.lge.smartworld
-com.lge.lgworld
-com.lge.qmemoplus
-com.lge.bnr
-com.lge.email
-com.lge.emailcommon
-com.lge.gamepad
-com.lge.ime
-com.lge.sizechangable.weather
-com.lge.theme.highcontrast
-com.lge.theme.white
-com.lge.themesettings
-com.lge.qhelp
-com.lge.wfds.service.v2
-com.lge.smartdoctor
-com.lge.camera.front.overlay
-com.lge.dualscreen.dualplay
-com.lge.dualscreen.guide
-com.lge.update
-com.lge.updatecenter
-com.lge.appbox.client
-com.lge.appbox.bridge
-com.lge.sso
-com.lge.pushservice
-com.lge.euicc
-com.lge.ia
-com.lge.ia.task
-com.lge.aiwallpaper
-com.lge.clock
-com.lge.ava
-com.lge.avphoto
-com.lge.avnavi
-com.lge.avskin
-com.lge.hifi.player
-com.lge.music
-com.lge.musiclink
-com.lge.hificam
-com.lge.provider.signboard
-com.lge.launcher3
-com.lge.launcher.theme
-com.lge.sticker.provider
-"
-
-CATEGORIES[Google_Apps]="
-com.google.android.apps.docs
-com.google.android.apps.docs.editors.docs
-com.google.android.apps.docs.editors.sheets
-com.google.android.apps.docs.editors.slides
-com.google.android.gm
-com.google.android.youtube
-com.google.android.apps.youtube.music
-com.google.android.apps.photos
-com.google.android.apps.maps
-com.google.android.calendar
-com.google.android.keep
-com.google.android.googlequicksearchbox
-com.google.android.apps.googleassistant
-com.google.android.apps.wellbeing
-com.google.android.apps.nbu.files
-com.google.android.apps.tachyon
-com.google.android.videos
-com.google.android.apps.podcasts
-"
-
-CATEGORIES[Other]="
-com.naver.whale
-com.lge.arzone
-com.lge.arsticker
-com.lge.arsupport
-com.lge.remotesupport
-"
-
-# -- Process each category --
-for category in "Games" "Social" "LG_Bloatware" "Google_Apps" "Other"; do
-  packages="${CATEGORIES[$category]}"
-  echo -e "${BLUE}[$category]${NC}"
-
-  for pkg in $packages; do
-    pkg=$(echo "$pkg" | tr -d '[:space:]')
-    [ -z "$pkg" ] && continue
-
-    if $RESTORE; then
-      if $DRY_RUN; then
-        echo -e "  ${DIM}Would restore:${NC} $pkg"
-      else
-        if adb shell cmd package install-existing "$pkg" &>/dev/null; then
-          echo -e "  ${GREEN}Restored:${NC} $pkg"
-          ((REMOVED++))
-        else
-          echo -e "  ${DIM}Not found:${NC} $pkg"
-          ((SKIPPED++))
-        fi
-      fi
-    else
-      # Check if package exists
-      if adb shell pm list packages 2>/dev/null | grep -q "$pkg"; then
-        if $DRY_RUN; then
-          echo -e "  ${YELLOW}Would remove:${NC} $pkg"
-          ((REMOVED++))
-        else
-          if adb shell pm uninstall -k --user 0 "$pkg" &>/dev/null; then
-            echo -e "  ${GREEN}Removed:${NC} $pkg"
-            ((REMOVED++))
-          else
-            echo -e "  ${RED}Failed:${NC} $pkg"
-            ((FAILED++))
-          fi
-        fi
-      else
-        echo -e "  ${DIM}Not found:${NC} $pkg"
-        ((SKIPPED++))
-      fi
-    fi
-  done
-  echo ""
+IFS=',' read -r -a _CATS <<< "$INCLUDE_CATEGORIES"
+for cat in "${_CATS[@]}"; do
+  cat="$(echo "$cat" | xargs)"
+  [ -z "$cat" ] && continue
+  if [ -n "$SKIP_RE" ] && echo "$cat" | grep -qE "^($SKIP_RE)$"; then
+    continue
+  fi
+  if ! add_file "category:$cat" "$DEBLOAT_DIR/$cat.txt"; then
+    warn "Category '$cat' has no manifest at $DEBLOAT_DIR/$cat.txt, skipping."
+  fi
 done
 
+# -- Banner --
+echo -e "${BOLD}"
+echo "  ┌──────────────────────────────────────┐"
+if $DRY_RUN; then
+  echo "  │   DEBLOAT — DRY RUN (no changes)     │"
+elif $RESTORE; then
+  echo "  │   DEBLOAT — RESTORE MODE             │"
+else
+  echo "  │   DEBLOAT — REMOVING PACKAGES        │"
+fi
+echo "  └──────────────────────────────────────┘"
+echo -e "${NC}"
+
+info "Device:       $MODEL_RAW ($MANUFACTURER_RAW), Android $ANDROID_VERSION"
+if [ -n "$OVERRIDE_VENDOR" ]; then
+  info "Vendor:       $VENDOR ${DIM}(override)${NC}"
+else
+  info "Vendor:       $VENDOR ${DIM}(auto-detected from ro.product.manufacturer)${NC}"
+fi
+if ! $VENDOR_LOADED; then
+  warn "No vendor manifest at $DEBLOAT_DIR/$VENDOR.txt."
+  warn "See debloat/README.md to contribute a list for this device."
+fi
+
+if [ "${#FILES_TO_LOAD[@]}" -eq 0 ]; then
+  err "No manifests to load. Nothing to do."
+fi
+
+info "Manifests:"
+for label in "${FILE_LABELS[@]}"; do
+  echo -e "  ${CYAN}→${NC} $label"
+done
+echo ""
+
+# -- Read packages from manifests --
+# Parse: strip leading whitespace, skip `#` comments and blank lines, keep
+# only the first whitespace-separated token so inline `com.foo  # note`
+# comments work.
+parse_manifest() {
+  local f="$1"
+  awk '
+    /^[[:space:]]*(#|$)/ { next }
+    { print $1 }
+  ' "$f"
+}
+
+ALL_PACKAGES=()
+for f in "${FILES_TO_LOAD[@]}"; do
+  while IFS= read -r pkg; do
+    [ -z "$pkg" ] && continue
+    ALL_PACKAGES+=("$pkg")
+  done < <(parse_manifest "$f")
+done
+
+# De-dupe while preserving order. `awk '!seen[$0]++'` is the classic
+# portable one-liner for this and works on any awk, including BusyBox.
+# Avoids bash associative arrays so the script runs on bash 3.2 (macOS
+# /bin/bash) as well as modern bash on Termux.
+UNIQUE_PACKAGES=()
+while IFS= read -r p; do
+  [ -n "$p" ] && UNIQUE_PACKAGES+=("$p")
+done < <(printf '%s\n' "${ALL_PACKAGES[@]}" | awk '!seen[$0]++')
+
+info "Total unique packages: ${#UNIQUE_PACKAGES[@]}"
+echo ""
+
+# -- Build the installed-packages set once (one ADB call, not one per pkg) --
+INSTALLED_TXT="$(adb shell pm list packages 2>/dev/null | tr -d '\r' | sed 's/^package://')"
+
+pkg_is_installed() {
+  echo "$INSTALLED_TXT" | grep -qxF "$1"
+}
+
+# -- Process each package --
+REMOVED_LIST=()
+SKIPPED_LIST=()
+FAILED_LIST=()
+
+for pkg in "${UNIQUE_PACKAGES[@]}"; do
+  if $RESTORE; then
+    # Try to restore, whether or not it's currently installed (installed ones
+    # become a no-op in install-existing).
+    if $DRY_RUN; then
+      echo -e "  ${DIM}Would restore:${NC} $pkg"
+      REMOVED_LIST+=("$pkg")
+    else
+      if adb shell cmd package install-existing "$pkg" 2>/dev/null | grep -q 'installed for user'; then
+        echo -e "  ${GREEN}Restored:${NC} $pkg"
+        REMOVED_LIST+=("$pkg")
+      else
+        echo -e "  ${DIM}Not found / already present:${NC} $pkg"
+        SKIPPED_LIST+=("$pkg")
+      fi
+    fi
+    continue
+  fi
+
+  # Removal path.
+  if ! pkg_is_installed "$pkg"; then
+    echo -e "  ${DIM}Not installed:${NC} $pkg"
+    SKIPPED_LIST+=("$pkg")
+    continue
+  fi
+
+  if $DRY_RUN; then
+    echo -e "  ${YELLOW}Would remove:${NC} $pkg"
+    REMOVED_LIST+=("$pkg")
+  else
+    if adb shell pm uninstall -k --user 0 "$pkg" 2>/dev/null | grep -q Success; then
+      echo -e "  ${GREEN}Removed:${NC} $pkg"
+      REMOVED_LIST+=("$pkg")
+    else
+      echo -e "  ${RED}Failed:${NC} $pkg"
+      FAILED_LIST+=("$pkg")
+    fi
+  fi
+done
+
+echo ""
+
 # -- Summary --
-echo -e "${BOLD}======================================${NC}"
+REMOVED_COUNT=${#REMOVED_LIST[@]}
+SKIPPED_COUNT=${#SKIPPED_LIST[@]}
+FAILED_COUNT=${#FAILED_LIST[@]}
+
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if $DRY_RUN; then
   echo -e "  ${YELLOW}DRY RUN COMPLETE${NC}"
-  echo -e "  Would process: ${REMOVED} packages"
-  echo -e "  Not found:     ${SKIPPED} packages"
+  echo -e "  Would process: ${REMOVED_COUNT}"
+  echo -e "  Not installed: ${SKIPPED_COUNT}"
+elif $RESTORE; then
+  echo -e "  ${GREEN}Restored:${NC} ${REMOVED_COUNT}"
+  echo -e "  Skipped:  ${SKIPPED_COUNT}"
 else
-  ACTION=$($RESTORE && echo "Restored" || echo "Removed")
-  echo -e "  ${GREEN}$ACTION: ${REMOVED}${NC}"
-  echo -e "  Skipped: ${SKIPPED}"
-  [ $FAILED -gt 0 ] && echo -e "  ${RED}Failed: ${FAILED}${NC}"
+  echo -e "  ${GREEN}Removed:${NC} ${REMOVED_COUNT}"
+  echo -e "  Skipped (not installed): ${SKIPPED_COUNT}"
+  [ "$FAILED_COUNT" -gt 0 ] && echo -e "  ${RED}Failed:${NC} ${FAILED_COUNT}"
 fi
-echo -e "${BOLD}======================================${NC}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${DIM}To restore any package:${NC}"
 echo -e "  adb shell cmd package install-existing <package>"
+echo -e "${DIM}Or to restore everything this script removed:${NC}"
+echo -e "  $(basename "$0") --restore"
+
+# -- Write JSON report if requested --
+if [ -n "$SAVE_REPORT" ]; then
+  mode="remove"
+  $DRY_RUN && mode="dry-run"
+  $RESTORE && mode="restore"
+  $DRY_RUN && $RESTORE && mode="dry-run-restore"
+
+  # Package names are [a-z0-9._], so no JSON escaping needed. Other string
+  # fields may contain spaces but no special chars in practice — still safe.
+  json_array() {
+    local first=true
+    printf '['
+    for item in "$@"; do
+      if $first; then first=false; else printf ','; fi
+      printf '"%s"' "$item"
+    done
+    printf ']'
+  }
+
+  timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  {
+    printf '{\n'
+    printf '  "timestamp": "%s",\n' "$timestamp"
+    printf '  "mode": "%s",\n' "$mode"
+    printf '  "device": {\n'
+    printf '    "manufacturer": "%s",\n' "$MANUFACTURER_RAW"
+    printf '    "model": "%s",\n' "$MODEL_RAW"
+    printf '    "android_version": "%s"\n' "$ANDROID_VERSION"
+    printf '  },\n'
+    printf '  "vendor": "%s",\n' "$VENDOR"
+    printf '  "vendor_manifest_loaded": %s,\n' "$($VENDOR_LOADED && echo true || echo false)"
+    printf '  "manifests": '
+    json_array "${FILE_LABELS[@]+"${FILE_LABELS[@]}"}"
+    printf ',\n'
+    printf '  "summary": {\n'
+    printf '    "total": %d,\n' "${#UNIQUE_PACKAGES[@]}"
+    printf '    "removed": %d,\n' "$REMOVED_COUNT"
+    printf '    "skipped": %d,\n' "$SKIPPED_COUNT"
+    printf '    "failed": %d\n' "$FAILED_COUNT"
+    printf '  },\n'
+    printf '  "details": {\n'
+    printf '    "removed": '
+    json_array "${REMOVED_LIST[@]+"${REMOVED_LIST[@]}"}"
+    printf ',\n'
+    printf '    "skipped": '
+    json_array "${SKIPPED_LIST[@]+"${SKIPPED_LIST[@]}"}"
+    printf ',\n'
+    printf '    "failed": '
+    json_array "${FAILED_LIST[@]+"${FAILED_LIST[@]}"}"
+    printf '\n'
+    printf '  }\n'
+    printf '}\n'
+  } > "$SAVE_REPORT"
+  echo ""
+  ok "Report written to $SAVE_REPORT"
+fi
+
+# Exit non-zero if any removals failed (not a dry-run, not a restore).
+if ! $DRY_RUN && ! $RESTORE && [ "$FAILED_COUNT" -gt 0 ]; then
+  exit 2
+fi

@@ -1,0 +1,48 @@
+# debloat/google-apps.txt — Google preinstalled apps (opt-in category)
+#
+# This list is loaded by default when you run `./debloat.sh`. If you use any
+# of these apps, pass `--category lge,social,games` (whichever you DO want)
+# and leave google-apps out — or list them in `--skip-categories google-apps`.
+#
+# IMPORTANT: removing these saves RAM but breaks features the rest of Android
+# may expect (e.g., Assistant, Voice, Gmail sync). Only remove what you
+# actively don't use. All removals are reversible with:
+#   adb shell cmd package install-existing <package>
+
+# -- Docs / editing --
+com.google.android.apps.docs
+com.google.android.apps.docs.editors.docs
+com.google.android.apps.docs.editors.sheets
+com.google.android.apps.docs.editors.slides
+
+# -- Gmail --
+com.google.android.gm
+
+# -- YouTube --
+com.google.android.youtube
+com.google.android.apps.youtube.music
+
+# -- Photos / Media --
+com.google.android.apps.photos
+com.google.android.videos
+com.google.android.apps.podcasts
+
+# -- Maps / Navigation --
+com.google.android.apps.maps
+
+# -- Productivity --
+com.google.android.calendar
+com.google.android.keep
+
+# -- Search / Assistant --
+com.google.android.googlequicksearchbox
+com.google.android.apps.googleassistant
+
+# -- Digital wellbeing --
+com.google.android.apps.wellbeing
+
+# -- Files --
+com.google.android.apps.nbu.files
+
+# -- Duo / Meet --
+com.google.android.apps.tachyon

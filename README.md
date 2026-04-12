@@ -44,8 +44,25 @@ of RAM by removing bloatware). Do this **before** the Termux steps above:
 # On your PC, with phone connected via USB and USB debugging enabled
 git clone https://github.com/s1dd4rth/ollama-pocket
 cd ollama-pocket
-./scripts/debloat.sh              # or --dry-run to preview
+
+# Always start with --dry-run to preview what would be removed on your phone
+./scripts/debloat.sh --dry-run
+
+# If it looks sane, run for real
+./scripts/debloat.sh
+
+# Or write a JSON report alongside — useful for auditing, or for contributing
+# a new vendor list
+./scripts/debloat.sh --dry-run --save-report /tmp/debloat.json
 ```
+
+`debloat.sh` auto-detects your phone's manufacturer via ADB (`LGE`, `Samsung`,
+`Xiaomi`, `Google`, …) and loads the matching manifest from `debloat/`. If no
+manifest exists for your OEM yet, you'll see a warning — see
+[`debloat/README.md`](debloat/README.md) for how to contribute one (usually
+one PR, one file). Opt-in category bundles for social apps, preloaded games,
+and Google first-party apps load by default; toggle with `--category`,
+`--no-categories`, or `--skip-categories google-apps`.
 
 ## How It Works
 
@@ -81,10 +98,11 @@ cd ollama-pocket
 
 | File | What it does |
 |------|-------------|
-| `scripts/debloat.sh` | Remove bloatware via ADB to free RAM. Reversible, with `--dry-run` mode |
+| `scripts/debloat.sh` | Vendor-aware ADB debloat. Auto-detects your phone's manufacturer, loads the matching manifest from `debloat/`, and removes preinstalled bloat. Reversible, with `--dry-run` and `--save-report` modes |
 | `scripts/install-ollama.sh` | Full install: Termux → proot Debian → Ollama. Run once |
 | `scripts/start-ollama.sh` | Start server with `--wifi` and `--chat` flags |
 | `scripts/setup-autostart.sh` | Add shell aliases + optional boot-on-start |
+| `debloat/*.txt` | Plain-text package manifests consumed by `debloat.sh`. One file per OEM (`lge.txt`, ...) plus opt-in category bundles (`social.txt`, `games.txt`, `google-apps.txt`). See [`debloat/README.md`](debloat/README.md) for how to add a list for your phone |
 | `pwa/chat.html` | Standalone chat UI — zero overhead, auto-detects model |
 | `pwa/manifest.json` | PWA manifest for "Add to Home Screen" |
 | `pwa/sw.js` | Service worker for offline caching |

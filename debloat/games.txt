@@ -1,0 +1,12 @@
+# debloat/games.txt — Preinstalled games (opt-in category)
+#
+# This list is loaded by default when you run `./debloat.sh`. Disable with
+# `./debloat.sh --no-categories` or selectively with `--category lge,social`.
+#
+# Gameloft ships preloaded demo/full games on many OEM builds. These are
+# heavy, rarely used, and safe to remove.
+
+com.gameloft.android.GN.GLOFTGGHM
+com.gameloft.android.ANMP.GlsoftAsphal
+com.gameloft.android.ANMP.GloftR4HM
+com.gameloft.android.ANMP.GloftSGHM
