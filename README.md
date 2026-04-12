@@ -1,5 +1,7 @@
 # ollama-pocket
 
+[![CI](https://github.com/s1dd4rth/ollama-pocket/actions/workflows/ci.yml/badge.svg)](https://github.com/s1dd4rth/ollama-pocket/actions/workflows/ci.yml)
+
 Run a free, private AI on your old Android phone — no root required.
 
 Turn any old Android phone into a local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev), and a lightweight PWA chat interface. Everything runs on-device. No cloud, no API keys, no subscriptions.
