@@ -45,6 +45,20 @@ if [ ! -d "/data/data/com.termux" ]; then
 fi
 ok "Running in Termux"
 
+# -- Step 1b: Pin Termux to a known-good mirror BEFORE any pkg command --
+# Termux picks a random mirror on first `pkg update`, and any given mirror can
+# be broken on any given day — v0.2.0 validation hit a `mirror.textcord.xyz`
+# that was returning a malformed clearsigned InRelease file, killing the
+# install before step 2 could even begin. Pin to the official Cloudflare
+# mirror (`packages-cf.termux.dev`), which is the most reliable global Termux
+# mirror and is maintained by the Termux team. Idempotent — re-running the
+# installer just rewrites the same line.
+TERMUX_PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+info "Pinning Termux APT mirror to packages-cf.termux.dev..."
+echo 'deb https://packages-cf.termux.dev/apt/termux-main/ stable main' \
+  > "$TERMUX_PREFIX/etc/apt/sources.list"
+ok "Mirror pinned"
+
 # -- Step 2: Update Termux packages --
 info "Updating Termux packages..."
 pkg update -y && pkg upgrade -y
