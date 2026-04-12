@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable variant: all foreground content fits inside the 80% safe circle
+       (radius 204.8 from center 256,256). The border rect sits at 120/392 so
+       its corners are at distance sqrt(136^2+136^2) = 192.3 — ~12 px inside
+       the safe radius, which gives headroom for launchers that use a slightly
+       stricter safe zone than the 80% spec. -->
+  <rect width="512" height="512" fill="#000"/>
+  <rect x="120" y="120" width="272" height="272" fill="none" stroke="#fff" stroke-width="18"/>
+  <text x="256" y="246" text-anchor="middle" dominant-baseline="middle"
+        fill="#fff" font-family="monospace" font-weight="bold" font-size="128">OL</text>
+  <text x="256" y="328" text-anchor="middle" dominant-baseline="middle"
+        fill="#666" font-family="monospace" font-size="36">LOCAL</text>
+  <rect x="372" y="136" width="18" height="18" fill="#ff5c00"/>
+</svg>
