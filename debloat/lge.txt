@@ -1,0 +1,63 @@
+# debloat/lge.txt — LG Electronics bloatware
+#
+# Verified on: LG V60 ThinQ (LM-G850), Android 12, build LMG850EMW6200e32f
+# Auto-loaded when `adb shell getprop ro.product.manufacturer` returns "LGE" or "LG".
+# See debloat/README.md for how to add / extend a vendor list.
+#
+# Format:
+#   - One package per line.
+#   - Lines starting with `#` are comments (also inline with `  # comment`).
+#   - Blank lines are ignored.
+
+# -- LG core bloat --
+com.lge.smartworld
+com.lge.lgworld
+com.lge.qmemoplus
+com.lge.bnr
+com.lge.email
+com.lge.emailcommon
+com.lge.gamepad
+com.lge.ime
+com.lge.sizechangable.weather
+com.lge.theme.highcontrast
+com.lge.theme.white
+com.lge.themesettings
+com.lge.qhelp
+com.lge.wfds.service.v2
+com.lge.smartdoctor
+com.lge.camera.front.overlay
+com.lge.dualscreen.dualplay
+com.lge.dualscreen.guide
+com.lge.update
+com.lge.updatecenter
+com.lge.appbox.client
+com.lge.appbox.bridge
+com.lge.sso
+com.lge.pushservice
+com.lge.euicc
+com.lge.ia
+com.lge.ia.task
+com.lge.aiwallpaper
+com.lge.clock
+com.lge.ava
+com.lge.avphoto
+com.lge.avnavi
+com.lge.avskin
+com.lge.hifi.player
+com.lge.music
+com.lge.musiclink
+com.lge.hificam
+com.lge.provider.signboard
+com.lge.launcher3
+com.lge.launcher.theme
+com.lge.sticker.provider
+
+# -- LG AR suite (rarely used, heavy) --
+com.lge.arzone
+com.lge.arsticker
+com.lge.arsupport
+com.lge.remotesupport
+
+# -- Optional: Korean carrier preloads on some LG devices --
+# Uncomment the line below if your device shipped with Naver Whale browser:
+# com.naver.whale

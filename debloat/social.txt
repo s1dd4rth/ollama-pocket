@@ -1,0 +1,21 @@
+# debloat/social.txt — Social media / lifestyle preloads (opt-in category)
+#
+# This list is loaded by default when you run `./debloat.sh`. Disable with
+# `./debloat.sh --no-categories` or selectively with `--category games,lge`.
+#
+# Packages here are not vendor-specific — they're preloaded social apps that
+# ship on many phones regardless of manufacturer. Safe to remove on any
+# device (they'll just disappear from the app drawer; no system breakage).
+
+# -- Facebook family --
+com.facebook.katana
+com.facebook.orca
+com.facebook.system
+com.facebook.appmanager
+com.facebook.services
+
+# -- Instagram --
+com.instagram.android
+
+# -- Travel --
+com.booking
