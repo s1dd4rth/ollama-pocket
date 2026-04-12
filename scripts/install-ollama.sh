@@ -60,12 +60,42 @@ pkg install -y proot-distro python iproute2 curl
 ok "Termux packages installed"
 
 # -- Step 4: Install Debian --
+# Detecting whether Debian is already installed is fiddly because proot-distro
+# has changed its output format across versions. The plain `proot-distro list`
+# command returns the *catalog of supported distros* on 4.x, not installed
+# ones. Older versions annotated installed distros inline. We try several
+# detection paths and, if all fail, fall back to running the install and
+# treating the "already installed" error as success.
+debian_already_installed() {
+  # Path 1: newer proot-distro has a --installed flag that lists only installed
+  # distros, one per line, possibly with ANSI colour codes. Match the alias.
+  if proot-distro list --installed 2>/dev/null | grep -qiw debian; then
+    return 0
+  fi
+  # Path 2: the installed rootfs lives at a well-known location under $PREFIX.
+  # The exact directory name has been debian in every proot-distro version so
+  # far; if upstream renames it to debian-trixie one day, add that here.
+  if [ -d "$PREFIX/var/lib/proot-distro/installed-rootfs/debian" ]; then
+    return 0
+  fi
+  return 1
+}
+
 info "Installing Debian via proot-distro..."
-if proot-distro list 2>/dev/null | grep -q "debian.*installed"; then
+if debian_already_installed; then
   ok "Debian already installed"
 else
-  proot-distro install debian
-  ok "Debian installed"
+  # Install — but capture output so we can distinguish a real failure from
+  # the "already installed" error that slips through when both detection
+  # paths above miss a version we don't know about.
+  if debian_install_output="$(proot-distro install debian 2>&1)"; then
+    ok "Debian installed"
+  elif echo "$debian_install_output" | grep -qi "already installed"; then
+    ok "Debian already installed (detected after install attempt)"
+  else
+    echo "$debian_install_output" >&2
+    err "Debian installation failed"
+  fi
 fi
 
 # -- Step 5: Install Ollama inside Debian --
