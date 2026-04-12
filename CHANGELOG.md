@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-12
+
+**Highlights:** the PWA chat UI now actually works as a PWA (served over HTTP with self-hosted fonts, installs to the home screen, works in airplane mode with real local inference); `scripts/debloat.sh` is vendor-aware with plain-text manifests under `debloat/` (closes #8); and the install path is now a **one-line paste** — `curl -fsSL https://s1dd4rth.github.io/ollama-pocket/install.sh | bash` in Termux. Every change was validated end-to-end on a real LG V60 ThinQ (Android 12) before merging, which surfaced — and fixed — four latent v0.1.0 regressions and two new UX issues that would have shipped otherwise.
+
 ### Added
 - **One-liner `curl | bash` install** (closes the "Quick Start has 4 lines of setup before you can run anything" gap). `curl -fsSL https://s1dd4rth.github.io/ollama-pocket/install.sh | bash` in Termux is now the primary install path. The installer self-bootstraps — it detects that it's running from stdin (no local checkout available), pins the Termux mirror, `pkg install`s git, clones the repo to `~/ollama-pocket`, and `exec`s itself from the clone so the rest of the flow has `pwa/` and `scripts/` available. Cuts the Quick Start from 4 lines of git clone + cd + bash to 1. Zero change in what gets installed — the second invocation runs exactly the same code path as the v0.2.0 manual-clone flow.
 - `docs/install.sh` — small redirector served by GitHub Pages at `https://s1dd4rth.github.io/ollama-pocket/install.sh` that fetches and execs the real `scripts/install-ollama.sh` from the `main` branch. Exists so the pasted URL is pretty (`s1dd4rth.github.io/ollama-pocket/install.sh`) instead of a raw-githubusercontent.com URL. Users who prefer to inspect before running are pointed at the manual clone path in the README.

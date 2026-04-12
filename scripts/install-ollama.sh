@@ -58,6 +58,7 @@ ok "Running in Termux"
 _INSTALL_SELF="${BASH_SOURCE[0]:-$0}"
 if [ ! -f "$_INSTALL_SELF" ] || [ ! -d "$(dirname "$_INSTALL_SELF")/../pwa" ]; then
   info "No local checkout detected (curl | bash path). Bootstrapping..."
+  info "This takes about 30-60 seconds on a fresh Termux. Progress below."
 
   # The mirror pin and `pkg install git` both need a working Termux APT
   # source, so pin the mirror FIRST. The full install will pin it again
@@ -65,8 +66,11 @@ if [ ! -f "$_INSTALL_SELF" ] || [ ! -d "$(dirname "$_INSTALL_SELF")/../pwa" ]; t
   TERMUX_PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
   echo 'deb https://packages-cf.termux.dev/apt/termux-main/ stable main' \
     > "$TERMUX_PREFIX/etc/apt/sources.list"
-  pkg update -y >/dev/null
-  pkg install -y git >/dev/null
+  # Show progress during pkg operations. The earlier draft silenced these
+  # with >/dev/null which left the user staring at a blank terminal for ~45s
+  # wondering if the install had hung. Real-device testing caught this.
+  pkg update -y
+  pkg install -y git
 
   REPO_DIR="$HOME/ollama-pocket"
   if [ -d "$REPO_DIR/.git" ]; then
