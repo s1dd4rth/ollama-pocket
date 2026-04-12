@@ -364,9 +364,14 @@ Manual, on the target device. No automated tests in this PR.
 7. `--chat` running, Chrome → overflow menu → **"Install app"** or **"Add to Home Screen"** (manual path, not the auto-prompt).
    - The auto-install prompt has an engagement heuristic (multiple visits / 30s+ SW lifetime) and will *not* fire on first visit. That's expected — use the manual menu item.
    - ✓ Manifest picked up, "OLLAMA_LOCAL" added to home screen with correct icon.
-   - ✓ Launching from home screen opens in standalone mode (no Chrome chrome).
-8. Close all Chrome tabs, relaunch from home screen, airplane mode on.
-   - ✓ PWA still loads, fonts still render.
+   - ✓ Icon uses the maskable variant (`icon-maskable.svg`) so the border, OL letters, and orange accent all survive the device's adaptive icon mask. Non-maskable contexts (app info screens) still use the bold edge-to-edge `icon.svg`.
+   - ✓ Launching from home screen opens in standalone mode — `dumpsys activity activities` shows `WebappActivity`, not `ChromeTabbedActivity`. No Chrome URL bar visible.
+8. **Airplane mode test** — with the PWA already installed and Ollama + the python PWA server running on the phone, toggle airplane mode ON, then launch the installed PWA from the home screen.
+   - ✓ PWA loads (SW cache covers it, and live localhost python server is also reachable — loopback is unaffected by airplane mode).
+   - ✓ Fonts render from cached WOFF2.
+   - ✓ **Status stays `ONLINE`, not Offline** — `localhost:11434` is in-kernel loopback, airplane mode never touches it. The model badge still shows the installed Ollama model.
+   - ✓ Sending a chat message still produces a real streamed response from Ollama. This is the whole point of "local AI on phone": zero network dependency, zero behavioural difference between online and offline.
+   - If the PWA shows `Offline` in airplane mode, that is a **bug** — something in the code is reaching for an external URL. Investigate with Chrome DevTools remote → Network tab.
 
 **LAN path:**
 9. Start with `--wifi --chat`, from a laptop on the same WiFi visit `http://<phone-ip>:8000/chat.html`.
