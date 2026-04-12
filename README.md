@@ -70,7 +70,7 @@ That's it. You now have a private AI running on your phone, accessible from any 
 
 ## Model Recommendations
 
-Tested on an LG G8X ThinQ (Snapdragon 855, 6GB RAM, ~2.8GB available after debloat):
+Tested on a Snapdragon 855 phone from ~2019 (6GB RAM, ~2.8GB available after debloat):
 
 | Model | Download | RAM Used | Speed | Best For |
 |-------|----------|----------|-------|----------|
