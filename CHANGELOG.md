@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`scripts/bench.sh`** — benchmark harness for the local Ollama server. Runs a fixed prompt set from `benchmarks/prompts.json` (5 prompts covering minimal/structured/code/reasoning outputs) and computes per-prompt tok/s from Ollama's `eval_count` / `eval_duration` response fields. Reports cold vs warm runs separately (the first call is always cold — the script unloads any in-memory model via `keep_alive: 0` before running). Writes a markdown report to `benchmarks/<device-slug>.md` where the slug is auto-derived from `ro.product.manufacturer` + `ro.product.model` + `ro.board.platform`. Supports `--model`, `--host`, `--runs N`, `--output`, `--dry-run`.
+- `benchmarks/` directory with `README.md` (contribution workflow), `prompts.json` (versioned fixed prompt set), and the first committed benchmark at `benchmarks/lge-lm-g850-msmnile.md` (LG V60 ThinQ on Snapdragon 865 — **7.38 tok/s warm median** for `qwen2.5:1.5b`, generated via `bench.sh --runs 2` on a real phone).
+- `.github/ISSUE_TEMPLATE/benchmark_contribution.md` — structured template for submitting a benchmark, with a verification checklist covering phone thermal state, plugged-in/battery, background apps, and prompts.json version.
+- `CONTRIBUTING.md` section documenting the benchmark workflow and quality bar.
+- README "Model Recommendations" table now cites the measured 7.38 tok/s number from the first committed benchmark, with a link to the markdown file.
+
 ## [0.2.0] - 2026-04-12
 
 **Highlights:** the PWA chat UI now actually works as a PWA (served over HTTP with self-hosted fonts, installs to the home screen, works in airplane mode with real local inference); `scripts/debloat.sh` is vendor-aware with plain-text manifests under `debloat/` (closes #8); and the install path is now a **one-line paste** — `curl -fsSL https://s1dd4rth.github.io/ollama-pocket/install.sh | bash` in Termux. Every change was validated end-to-end on a real LG V60 ThinQ (Android 12) before merging, which surfaced — and fixed — four latent v0.1.0 regressions and two new UX issues that would have shipped otherwise.

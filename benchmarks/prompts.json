@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "description": "Fixed prompt set for ollama-pocket bench.sh. Changing this file breaks cross-device comparability — bump the version if you do.",
+  "prompts": [
+    {
+      "id": "hello",
+      "prompt": "Hello! Reply with a short friendly greeting.",
+      "num_predict": 20,
+      "notes": "Minimal input, short output. First call is cold (model load included)."
+    },
+    {
+      "id": "math",
+      "prompt": "What is 47 * 13? Answer with just the number, nothing else.",
+      "num_predict": 20,
+      "notes": "Short exact answer. Stresses the model's arithmetic grounding."
+    },
+    {
+      "id": "list",
+      "prompt": "List 10 common fruits, one per line, no numbering, no commentary.",
+      "num_predict": 80,
+      "notes": "Structured output, tests format adherence."
+    },
+    {
+      "id": "python",
+      "prompt": "Write a Python function that returns the reverse of a string. Just the function, no explanation.",
+      "num_predict": 100,
+      "notes": "Code generation. Representative of the main 'useful' use case on a phone."
+    },
+    {
+      "id": "explain",
+      "prompt": "Explain how a hash table works in two sentences.",
+      "num_predict": 120,
+      "notes": "Natural language reasoning, longer output."
+    }
+  ]
+}

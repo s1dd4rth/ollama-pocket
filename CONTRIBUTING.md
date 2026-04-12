@@ -48,6 +48,33 @@ This keeps history readable and lets us automate `CHANGELOG.md` later.
   under `set -u` — use `awk '!seen[$0]++'` for de-dupe and the
   `"${ARRAY[@]+"${ARRAY[@]}"}"` idiom for possibly-empty expansion.
 
+## Contributing a benchmark for your phone
+
+`scripts/bench.sh` runs a fixed prompt set against your local Ollama and
+writes a markdown report to `benchmarks/<device-slug>.md`. Contributing
+your phone's numbers is **one command + one PR**:
+
+```bash
+# In Termux, with the Ollama server running
+bash ~/ollama-pocket/scripts/bench.sh --runs 3
+```
+
+See [`benchmarks/README.md`](benchmarks/README.md) for the full workflow
+and what's measured. The fixed prompt set at `benchmarks/prompts.json`
+means every contributed benchmark is comparable to every other. Don't
+modify the prompts — changing them invalidates all prior benchmarks.
+
+Quality bar:
+- Phone plugged in to power (not on battery) at the start of the run
+- Phone cool (not thermally throttling from prior activity)
+- `--runs 3` or more for a stable warm median
+- No background apps fighting for CPU (airplane mode is fine)
+- The `<!-- Verified on: ... -->` header at the top of the generated file
+  left intact
+
+Open the PR with the `benchmark_contribution` issue template (under
+`.github/ISSUE_TEMPLATE/`).
+
 ## Contributing a debloat list for your phone
 
 `scripts/debloat.sh` is vendor-aware and reads plain-text package manifests
