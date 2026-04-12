@@ -50,14 +50,14 @@ info "Updating Termux packages..."
 pkg update -y && pkg upgrade -y
 ok "Termux packages updated"
 
-# -- Step 3: Install proot-distro --
-info "Installing proot-distro..."
-if command -v proot-distro &>/dev/null; then
-  ok "proot-distro already installed"
-else
-  pkg install -y proot-distro
-  ok "proot-distro installed"
-fi
+# -- Step 3: Install required Termux packages --
+# proot-distro: runs Debian on Android (needed for glibc-linked Ollama)
+# python:       runs a local static server for the PWA chat UI (--chat flag)
+# iproute2:     provides the `ip` command used by start-ollama.sh for IP detection
+# curl:         used by the PWA copy fallback to fetch the repo tarball from GitHub
+info "Installing proot-distro, python, iproute2, curl..."
+pkg install -y proot-distro python iproute2 curl
+ok "Termux packages installed"
 
 # -- Step 4: Install Debian --
 info "Installing Debian via proot-distro..."
@@ -85,8 +85,10 @@ proot-distro login debian -- bash -c '
     echo "Ollama installed successfully: $(ollama --version)"
   elif [ -f /usr/local/bin/ollama ]; then
     echo "Ollama installed at /usr/local/bin/ollama"
-    # Ensure it is in PATH
-    echo "export PATH=\$PATH:/usr/local/bin" >> /root/.bashrc
+    # Ensure it is in PATH (idempotent — only append if not already present).
+    if ! grep -q "/usr/local/bin" /root/.bashrc 2>/dev/null; then
+      echo "export PATH=\$PATH:/usr/local/bin" >> /root/.bashrc
+    fi
   else
     echo "ERROR: Ollama installation failed"
     exit 1
@@ -94,34 +96,65 @@ proot-distro login debian -- bash -c '
 '
 ok "Ollama installed inside Debian"
 
-# -- Step 6: Create convenience script --
-info "Creating start script..."
-cat > "$HOME/start-ollama.sh" << 'SCRIPT'
-#!/data/data/com.termux/files/usr/bin/bash
-# Start Ollama server inside Debian proot
-echo "Starting Ollama server..."
-echo "Access the API at: http://localhost:11434"
-echo "Press Ctrl+C to stop."
-echo ""
-proot-distro login debian -- bash -c 'export PATH=$PATH:/usr/local/bin && ollama serve'
-SCRIPT
-chmod +x "$HOME/start-ollama.sh"
-ok "Start script created at ~/start-ollama.sh"
+# -- Step 6: Copy PWA files to /sdcard so the chat UI can be served --
+# The PWA needs to be served over http:// (not file://) for service workers to
+# register. start-ollama.sh --chat spins up `python3 -m http.server` pointed at
+# this directory. Primary source: the local repo checkout. Fallback: fetch the
+# repo tarball from GitHub over HTTPS.
+copy_pwa_files() {
+  local target="/sdcard/ollama-pocket/pwa"
+  local repo_root
+  repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+
+  info "Copying PWA files to $target..."
+  mkdir -p "$target"
+
+  if [ -d "$repo_root/pwa" ]; then
+    cp -r "$repo_root/pwa/." "$target/"
+    ok "PWA copied from local repo ($repo_root/pwa)"
+    return 0
+  fi
+
+  # Fallback: script was run standalone (curl | bash path, or adb push of just
+  # this one file). Fetch the repo tarball from GitHub. TLS verifies the
+  # endpoint; the tarball itself is trusted. Document this in failure modes.
+  info "No local pwa/ directory found, fetching from GitHub..."
+  local tmp
+  tmp="$(mktemp -d)"
+  if curl -fsSL https://github.com/s1dd4rth/ollama-pocket/archive/refs/heads/main.tar.gz \
+        | tar xz -C "$tmp" 2>/dev/null; then
+    cp -r "$tmp/ollama-pocket-main/pwa/." "$target/"
+    rm -rf "$tmp"
+    ok "PWA downloaded and installed"
+    return 0
+  fi
+
+  rm -rf "$tmp"
+  warn "Could not fetch PWA. Chat UI will not be available until you copy pwa/ manually."
+  return 1
+}
+
+copy_pwa_files || true
 
 # -- Done --
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 echo ""
 echo -e "${BOLD}======================================${NC}"
 echo -e "${GREEN}  INSTALLATION COMPLETE${NC}"
 echo -e "${BOLD}======================================${NC}"
 echo ""
-echo "  To start the Ollama server:"
-echo "    bash ~/start-ollama.sh"
+echo "  To start the Ollama server + chat UI:"
+echo "    bash ${SCRIPTS_DIR}/start-ollama.sh --wifi --chat"
 echo ""
-echo "  Then in a new Termux session, pull a model:"
+echo "  Or just the server (no UI):"
+echo "    bash ${SCRIPTS_DIR}/start-ollama.sh --wifi"
+echo ""
+echo "  To install shell aliases (ollama-start, ollama-chat, ...):"
+echo "    bash ${SCRIPTS_DIR}/setup-autostart.sh"
+echo ""
+echo "  Pull a model:"
 echo "    proot-distro login debian -- ollama pull qwen2.5:1.5b"
-echo ""
-echo "  Or chat directly:"
-echo "    proot-distro login debian -- ollama run qwen2.5:1.5b"
 echo ""
 echo -e "  ${YELLOW}Recommended models for phones:${NC}"
 echo "    qwen2.5:1.5b  — Best quality for 4-6GB RAM"
