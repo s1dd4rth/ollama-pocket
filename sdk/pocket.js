@@ -139,8 +139,20 @@
       options = options || {};
       this.host = options.host || this._detectHost();
       this.defaultModel = options.model || null;
-      // Injectable for tests. Falls back to the runtime's global fetch.
-      this._fetch = options.fetch || (typeof fetch !== 'undefined' ? fetch : null);
+      // Injectable for tests. Falls back to the runtime's global fetch,
+      // but wraps it in a closure so the call site isn't `this._fetch(...)`
+      // — WebIDL-backed browser implementations throw
+      // "Illegal invocation" when fetch is invoked with a receiver other
+      // than the global (Chrome, Safari). Node's global fetch doesn't care,
+      // but the browser path is the one that actually ships to users.
+      if (options.fetch) {
+        var userFetch = options.fetch;
+        this._fetch = function (url, init) { return userFetch(url, init); };
+      } else if (typeof fetch !== 'undefined') {
+        this._fetch = function (url, init) { return fetch(url, init); };
+      } else {
+        this._fetch = null;
+      }
       // Memoised version check (populated on first structuredChat)
       this._versionCache = null;
       this._versionWarned = false;

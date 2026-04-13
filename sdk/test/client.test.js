@@ -31,6 +31,31 @@ function textResponse(body, status) {
   };
 }
 
+// ----- browser-parity: fetch is not called with the client as `this` -----
+//
+// Chrome + Safari implement `fetch` with a WebIDL [[Call]] that throws
+// "Illegal invocation" when the receiver is not the global. Node's global
+// fetch is lenient, so a naive `this._fetch = fetch` in the SDK passed
+// every Node test but blew up in real browsers. The regression test below
+// pins the fix: the injected fetch must see a `this` that is NOT the
+// OllamaClient instance.
+
+test('OllamaClient: fetch is called without the client as receiver', async () => {
+  let capturedThis = 'never-called';
+  // Regular async function (not arrow) so `this` reflects the call site.
+  const stubFetch = async function (url, init) {
+    capturedThis = this;
+    return jsonResponse({ models: [] });
+  };
+  const client = new OllamaClient({ host: 'http://test', fetch: stubFetch });
+  await client.ping();
+  assert.notStrictEqual(
+    capturedThis,
+    client,
+    'fetch must not be invoked with the OllamaClient as `this`'
+  );
+});
+
 // ----- ping() -----
 
 test('ping: returns models array on success', async () => {
