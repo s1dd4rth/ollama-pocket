@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <title><!-- APP_NAME --></title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <style><!-- STYLE_INLINE --></style>
+  <script type="application/json" id="app-config"><!-- APP_CONFIG --></script>
+  <script><!-- SDK_INLINE --></script>
+</head>
+<body>
+  <header class="pocket-header">
+    <span id="app-title"><!-- APP_NAME --></span>
+    <span id="model-badge"></span>
+    <span id="connection-status"></span>
+  </header>
+  <main id="app-root"><!-- APP_BODY --></main>
+  <script><!-- APP_SCRIPT --></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    }
+  </script>
+</body>
+</html>

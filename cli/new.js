@@ -1,0 +1,393 @@
+#!/usr/bin/env node
+// =============================================================================
+// cli/new.js — scaffold a new ollama-pocket app
+//
+// Two modes:
+//
+//   Interactive:
+//     $ node cli/new.js
+//     walks the user through slug / category / template / age-group /
+//     default model / host / output dir, then calls cli/scaffold.js.
+//
+//   Non-interactive (used by CI and scripts):
+//     $ node cli/new.js --non-interactive \
+//         --slug spell-bee \
+//         --template kids-game/spell-bee \
+//         --age-group 6-8 \
+//         --model qwen2.5:1.5b \
+//         --host http://localhost:11434 \
+//         --output examples/spell-bee \
+//         --skip-detection
+//
+//     Zero prompts, deterministic output (modulo the scaffoldedAt
+//     timestamp, which CI fixes via SOURCE_DATE_EPOCH — see
+//     scaffold-drift job when it lands).
+//
+// Flags:
+//   --non-interactive     disable all prompts (requires other flags)
+//   --slug <slug>         app slug, /^[a-z0-9][a-z0-9-]*$/
+//   --app-name <name>     human-facing name (default: title-cased slug)
+//   --template <cat/name> e.g. kids-game/spell-bee
+//   --age-group <grp>     4-6 | 6-8 | 8-12
+//   --model <name>        default model for the runtime
+//   --host <url>          Ollama host URL
+//   --output <dir>        output directory (default: apps/<slug>)
+//   --skip-detection      skip the /api/tags pre-flight
+//   --force               overwrite output dir without prompting
+//   --help, -h            print usage and exit
+// =============================================================================
+
+'use strict';
+
+const path = require('path');
+
+const prompts = require('./prompts.js');
+const scaffold = require('./scaffold.js');
+const models = require('./models.js');
+const update = require('./update.js');
+
+const REPO_ROOT = update.findRepoRoot(__dirname);
+
+const DEFAULT_HOST = 'http://localhost:11434';
+const CATEGORIES = [
+  { value: 'kids-game', label: 'kids-game' },
+  { value: 'productivity', label: 'productivity (stubs only, v2+)' },
+];
+const TEMPLATES_BY_CATEGORY = {
+  'kids-game': [{ value: 'kids-game/spell-bee', label: 'spell-bee (stub — real game in scaffolding PR 4)' }],
+  productivity: [],
+};
+const AGE_GROUPS = [
+  { value: '4-6', label: '4-6 (pre-readers, very easy words)' },
+  { value: '6-8', label: '6-8 (early readers)' },
+  { value: '8-12', label: '8-12 (confident readers)' },
+];
+
+function printUsage() {
+  const usage = [
+    'usage: node cli/new.js [options]',
+    '',
+    'interactive mode (no flags): walks through every prompt',
+    '',
+    'non-interactive flags:',
+    '  --non-interactive      disable all prompts',
+    '  --slug <slug>          app slug [a-z0-9-]',
+    '  --app-name <name>      human-facing name (default: derived from slug)',
+    '  --template <cat/name>  e.g. kids-game/spell-bee',
+    '  --age-group <grp>      4-6 | 6-8 | 8-12',
+    '  --model <name>         default model for the scaffolded runtime',
+    '  --host <url>           Ollama host URL (default: ' + DEFAULT_HOST + ')',
+    '  --output <dir>         output directory (default: apps/<slug>)',
+    '  --skip-detection       skip the /api/tags pre-flight',
+    '  --force                overwrite output directory without prompting',
+    '  --help, -h             print this message',
+    '',
+  ].join('\n');
+  process.stdout.write(usage);
+}
+
+function parseFlags(argv) {
+  // Tiny flag parser — avoids pulling in a dep. Accepts:
+  //   --flag value
+  //   --flag=value
+  //   --boolean (no value)
+  // Stops at the first non-flag token and treats it as an error so we
+  // surface typos loudly instead of ignoring extras.
+  const booleanFlags = new Set(['non-interactive', 'skip-detection', 'force', 'help']);
+  const out = {};
+  const args = argv.slice(2);
+  let i = 0;
+  while (i < args.length) {
+    const token = args[i];
+    if (token === '-h') {
+      out.help = true;
+      i += 1;
+      continue;
+    }
+    if (!token.startsWith('--')) {
+      throw new Error('unexpected argument: ' + token);
+    }
+    let name;
+    let value;
+    const eq = token.indexOf('=');
+    if (eq >= 0) {
+      name = token.slice(2, eq);
+      value = token.slice(eq + 1);
+    } else {
+      name = token.slice(2);
+      if (booleanFlags.has(name)) {
+        value = true;
+        i += 1;
+        out[name] = value;
+        continue;
+      }
+      value = args[i + 1];
+      if (value == null || value.startsWith('--')) {
+        throw new Error('flag --' + name + ' expects a value');
+      }
+      i += 2;
+      out[name] = value;
+      continue;
+    }
+    i += 1;
+    out[name] = value;
+  }
+  return out;
+}
+
+function titleCase(slug) {
+  return slug
+    .split('-')
+    .map(function (w) {
+      return w ? w[0].toUpperCase() + w.slice(1) : '';
+    })
+    .join(' ');
+}
+
+function defaultOutputDir(slug) {
+  return path.join('apps', slug);
+}
+
+// -----------------------------------------------------------------------------
+// Non-interactive mode: validate flags, call scaffold, report
+// -----------------------------------------------------------------------------
+
+function validateFlags(flags) {
+  const required = ['slug', 'template', 'age-group', 'model'];
+  const missing = required.filter(function (k) {
+    return !flags[k];
+  });
+  if (missing.length) {
+    throw new Error('missing required flag(s) for --non-interactive: --' + missing.join(', --'));
+  }
+  const v =
+    prompts.validateSlug(flags.slug) ||
+    prompts.validateTemplate(flags.template) ||
+    prompts.validateAgeGroup(flags['age-group']) ||
+    prompts.validateHost(flags.host || DEFAULT_HOST);
+  if (v) throw new Error(v);
+  if (flags['app-name']) {
+    const nameErr = prompts.validateAppName(flags['app-name']);
+    if (nameErr) throw new Error(nameErr);
+  }
+  return null;
+}
+
+function optsFromFlags(flags) {
+  const slug = flags.slug;
+  const appName = flags['app-name'] || titleCase(slug);
+  const [category] = flags.template.split('/');
+  return {
+    appName: appName,
+    slug: slug,
+    category: category,
+    templateName: flags.template,
+    ageGroup: flags['age-group'],
+    model: flags.model,
+    host: flags.host || DEFAULT_HOST,
+  };
+}
+
+async function runNonInteractive(flags) {
+  validateFlags(flags);
+  const opts = optsFromFlags(flags);
+  const outputDir = path.resolve(flags.output || defaultOutputDir(opts.slug));
+
+  process.stdout.write('scaffolding ' + opts.slug + ' → ' + outputDir + '\n');
+
+  const result = await scaffold.scaffold({
+    repoRoot: REPO_ROOT,
+    outputDir: outputDir,
+    opts: opts,
+    force: flags.force === true,
+    onProgress: function (msg) {
+      process.stdout.write('  ' + msg + '\n');
+    },
+  });
+
+  process.stdout.write('done. wrote ' + result.files.length + ' files, index.html ' + result.sizeBytes + ' bytes\n');
+  return 0;
+}
+
+// -----------------------------------------------------------------------------
+// Interactive mode
+// -----------------------------------------------------------------------------
+
+async function runInteractive(flags) {
+  const rl = prompts.createInterface();
+  try {
+    process.stdout.write('\nollama-pocket — new app scaffolder\n');
+    process.stdout.write('-----------------------------------\n\n');
+
+    const slug = await prompts.askText(rl, {
+      label: 'App slug',
+      defaultValue: flags.slug,
+      validate: prompts.validateSlug,
+      hint: 'lowercase letters, digits, dashes',
+    });
+
+    const appName = await prompts.askText(rl, {
+      label: 'App name',
+      defaultValue: flags['app-name'] || titleCase(slug),
+      validate: prompts.validateAppName,
+      hint: 'letters, digits, spaces, dashes',
+    });
+
+    const category = await prompts.askChoice(rl, {
+      label: 'Category',
+      options: CATEGORIES,
+      defaultIndex: 0,
+    });
+
+    const templateOptions = TEMPLATES_BY_CATEGORY[category] || [];
+    if (templateOptions.length === 0) {
+      throw new Error('no templates available for category ' + category + ' in this release');
+    }
+    const templateName = await prompts.askChoice(rl, {
+      label: 'Template',
+      options: templateOptions,
+      defaultIndex: 0,
+    });
+
+    const ageGroup = await prompts.askChoice(rl, {
+      label: 'Age group',
+      options: AGE_GROUPS,
+      defaultIndex: 1,
+    });
+
+    const host = await prompts.askText(rl, {
+      label: 'Ollama host',
+      defaultValue: flags.host || DEFAULT_HOST,
+      validate: prompts.validateHost,
+    });
+
+    // Model detection — skip if the user asked, otherwise try to pick a
+    // good default. We still let them override.
+    let detectedDefault = flags.model || null;
+    let detectionNote = '';
+    if (!flags['skip-detection']) {
+      process.stdout.write('\ndetecting installed models at ' + host + '...\n');
+      const detection = await models.detectInstalledModels(host);
+      if (detection.ok) {
+        const picked = models.pickModel(detection.models, 'structured');
+        if (picked) {
+          detectedDefault = detectedDefault || picked;
+          detectionNote = '  ✓ picked ' + picked + ' from ' + detection.models.length + ' installed';
+        } else if (detection.models.length) {
+          detectionNote =
+            '  ! installed models (' +
+            detection.models.join(', ') +
+            ') are not in the structured-output preference list.\n' +
+            '    Spell Bee may fail mid-round. Install qwen2.5:1.5b for best results:\n' +
+            '      ollama pull qwen2.5:1.5b';
+        } else {
+          detectionNote = '  ! no models installed — run `ollama pull qwen2.5:1.5b`';
+        }
+      } else {
+        detectionNote = '  (ollama not reachable at ' + host + ': ' + detection.error + ' — falling back to user default)';
+      }
+      if (detectionNote) process.stdout.write(detectionNote + '\n');
+    }
+
+    const model = await prompts.askText(rl, {
+      label: 'Default model',
+      defaultValue: detectedDefault || 'qwen2.5:1.5b',
+    });
+
+    const outputDir = await prompts.askText(rl, {
+      label: 'Output directory',
+      defaultValue: flags.output || defaultOutputDir(slug),
+    });
+
+    const opts = {
+      appName: appName,
+      slug: slug,
+      category: category,
+      templateName: templateName,
+      ageGroup: ageGroup,
+      model: model,
+      host: host,
+    };
+
+    const resolved = path.resolve(outputDir);
+    let force = flags.force === true;
+    if (!force && (await scaffold.pathExists(resolved))) {
+      const ok = await prompts.askYesNo(rl, {
+        label: resolved + ' exists. Overwrite?',
+        defaultYes: false,
+      });
+      if (!ok) {
+        process.stdout.write('aborted.\n');
+        return 1;
+      }
+      force = true;
+    }
+
+    process.stdout.write('\nscaffolding...\n');
+    const result = await scaffold.scaffold({
+      repoRoot: REPO_ROOT,
+      outputDir: resolved,
+      opts: opts,
+      force: force,
+      onProgress: function (msg) {
+        process.stdout.write('  ' + msg + '\n');
+      },
+    });
+
+    process.stdout.write('\ndone.\n');
+    process.stdout.write('  wrote ' + result.files.length + ' files, index.html ' + result.sizeBytes + ' bytes\n');
+    process.stdout.write('  serve locally:\n');
+    process.stdout.write('    python3 -m http.server 8000 --directory ' + resolved + '\n');
+    process.stdout.write('  open: http://localhost:8000/\n');
+    return 0;
+  } finally {
+    rl.close();
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Main
+// -----------------------------------------------------------------------------
+
+async function main(argv) {
+  let flags;
+  try {
+    flags = parseFlags(argv);
+  } catch (err) {
+    process.stderr.write('new: ' + err.message + '\n\n');
+    printUsage();
+    return 2;
+  }
+  if (flags.help) {
+    printUsage();
+    return 0;
+  }
+  if (flags['non-interactive']) {
+    return runNonInteractive(flags);
+  }
+  return runInteractive(flags);
+}
+
+if (require.main === module) {
+  main(process.argv).then(
+    function (code) {
+      process.exit(code || 0);
+    },
+    function (err) {
+      process.stderr.write('new: ' + ((err && err.message) || String(err)) + '\n');
+      if (err && err.code === 'EEXIST') {
+        process.stderr.write('  (rerun with --force to overwrite)\n');
+      }
+      process.exit(1);
+    }
+  );
+}
+
+module.exports = {
+  main: main,
+  parseFlags: parseFlags,
+  validateFlags: validateFlags,
+  optsFromFlags: optsFromFlags,
+  titleCase: titleCase,
+  defaultOutputDir: defaultOutputDir,
+};
