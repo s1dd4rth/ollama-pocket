@@ -319,12 +319,24 @@ test('scaffold() produces a complete app from the real templates', async () => {
       force: false,
     });
 
-    assert.deepEqual(result.files.sort(), ['icon.svg', 'index.html', 'manifest.json', 'sw.js']);
+    // Scaffold result lists both the top-level files and the copied fonts
+    // (as "fonts/<name>"). Assert the top-level files are present — font
+    // entries depend on what's in pwa/fonts/ so we check the count
+    // separately below.
+    const topLevel = result.files.filter((f) => !f.startsWith('fonts/'));
+    assert.deepEqual(topLevel.sort(), ['icon.svg', 'index.html', 'manifest.json', 'sw.js']);
 
     const files = await fs.readdir(outDir);
-    assert.deepEqual(
-      files.sort(),
-      ['icon.svg', 'index.html', 'manifest.json', 'sw.js']
+    assert.ok(files.includes('index.html'));
+    assert.ok(files.includes('manifest.json'));
+    assert.ok(files.includes('icon.svg'));
+    assert.ok(files.includes('sw.js'));
+    // Fonts directory is created because pwa/fonts/ exists in the real repo.
+    assert.ok(files.includes('fonts'), 'scaffolder should copy pwa/fonts/ into the app dir');
+    const fontFiles = await fs.readdir(path.join(outDir, 'fonts'));
+    assert.ok(
+      fontFiles.some((f) => /\.woff2$/i.test(f)),
+      'fonts/ should contain at least one .woff2 file'
     );
 
     // index.html: SDK inlined, app-config present, no stray markers
@@ -348,12 +360,14 @@ test('scaffold() produces a complete app from the real templates', async () => {
     const sw = await fs.readFile(path.join(outDir, 'sw.js'), 'utf8');
     assert.match(sw, /pocket-spell-bee-v1/);
 
-    // _base layout pin: the real templates/_base/style.css defines design
-    // tokens as CSS variables with a `--pocket-` prefix. If someone
-    // replaces the base with a placeholder again, this assertion will fail.
+    // _base layout pin: TE-flavoured tokens and fonts. If someone replaces
+    // the base with a placeholder again, or drops the TE palette, these
+    // assertions fail loudly.
     assert.match(html, /--pocket-bg/, 'scaffolded output should include the real _base tokens');
     assert.match(html, /--pocket-tap-min/);
-    assert.match(html, /prefers-color-scheme: light/);
+    assert.match(html, /--pocket-orange:\s*#ff5c00/i, 'TE orange accent must be in the tokens');
+    assert.match(html, /Space Mono/, 'base must reference Space Mono for chrome typography');
+    assert.match(html, /DM Sans/, 'base must reference DM Sans for body typography');
     assert.match(html, /prefers-reduced-motion: reduce/);
     // The `[hidden]` attribute must always win over author display rules.
     assert.match(

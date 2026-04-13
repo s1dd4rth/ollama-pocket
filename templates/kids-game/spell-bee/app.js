@@ -33,13 +33,38 @@
     console.error('[spell-bee] app-config JSON parse failed:', err);
   }
 
-  // Populate the shared header from config. Done early so even if the SDK
-  // fails to load, the app title and model badge still render.
+  // Populate the shared header + info-bar from config. Done early so even
+  // if the SDK fails to load, the chrome still renders correctly.
   var titleEl = document.getElementById('app-title');
-  if (titleEl && config.appName) titleEl.textContent = config.appName;
+  if (titleEl && config.appName) titleEl.textContent = formatTitleMono(config.appName);
+  var logoEl = document.getElementById('app-logo');
+  if (logoEl && config.appName) logoEl.textContent = buildLogoGlyph(config.appName);
   var modelBadgeEl = document.getElementById('model-badge');
   if (modelBadgeEl && config.defaultModel) modelBadgeEl.textContent = config.defaultModel;
+  var hostBadgeEl = document.getElementById('host-badge');
+  if (hostBadgeEl) hostBadgeEl.textContent = formatHostLabel(config.host);
+  var ageSubtitleEl = document.getElementById('age-subtitle');
+  if (ageSubtitleEl) ageSubtitleEl.textContent = 'AGE ' + (config.ageGroup || '—');
   var connectionStatusEl = document.getElementById('connection-status');
+
+  function buildLogoGlyph(name) {
+    // Two-letter app mark. "Spell Bee" → "SB", "spell-bee" → "SB".
+    var cleaned = (name || '').replace(/[^a-zA-Z0-9 ]/g, ' ').trim();
+    var parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return '::';
+  }
+
+  function formatHostLabel(host) {
+    if (!host) return 'local';
+    return host.replace(/^https?:\/\//, '').replace(/:11434$/, '') || 'local';
+  }
+
+  function formatTitleMono(name) {
+    // TE chrome convention: uppercase with underscores for spaces.
+    return (name || '').toUpperCase().replace(/\s+/g, '_');
+  }
 
   if (!window.Pocket || !window.Pocket.OllamaClient) {
     console.error('[spell-bee] window.Pocket is not loaded — is sdk/pocket.js inlined correctly?');
@@ -162,7 +187,8 @@
   var hintTextEl = $('hint-text');
   var attemptInputEl = $('attempt-input');
   var feedbackCardEl = $('feedback-card');
-  var feedbackEmojiEl = $('feedback-emoji');
+  var feedbackStatusEl = $('feedback-status');
+  var feedbackDeltaEl = $('feedback-delta');
   var feedbackTextEl = $('feedback-text');
   var feedbackWordLineEl = $('feedback-word-line');
   var modelWarningEl = $('model-warning');
@@ -365,15 +391,19 @@
     persist();
 
     if (feedbackCardEl) feedbackCardEl.dataset.result = correct ? 'correct' : 'wrong';
-    if (feedbackEmojiEl) feedbackEmojiEl.textContent = correct ? '🎉' : '💪';
+    if (feedbackStatusEl) feedbackStatusEl.textContent = correct ? 'Correct' : 'Not quite';
+    if (feedbackDeltaEl) {
+      var sign = delta > 0 ? '+' : '';
+      feedbackDeltaEl.textContent = sign + delta + ' PTS';
+    }
     if (feedbackTextEl) {
       feedbackTextEl.textContent =
-        result.feedback || (correct ? 'Nice work!' : 'Good try — keep going!');
+        result.feedback || (correct ? 'Nice work.' : 'Good try — keep going.');
     }
     if (feedbackWordLineEl) {
       feedbackWordLineEl.innerHTML = correct
-        ? ''
-        : 'The word was <b></b>';
+        ? 'Word&nbsp;&nbsp;<b></b>'
+        : 'Word was&nbsp;&nbsp;<b></b>';
       var bold = feedbackWordLineEl.querySelector('b');
       if (bold) bold.textContent = currentWord;
     }

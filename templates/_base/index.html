@@ -2,22 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f0f0f" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <title><!-- APP_NAME --></title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
   <style><!-- STYLE_INLINE --></style>
   <script type="application/json" id="app-config"><!-- APP_CONFIG --></script>
   <script><!-- SDK_INLINE --></script>
 </head>
 <body>
-  <header class="pocket-header">
-    <span id="app-title"><!-- APP_NAME --></span>
-    <span id="model-badge"></span>
-    <span id="connection-status"></span>
+  <header class="pocket-header" role="banner">
+    <div class="pocket-header__left">
+      <div class="pocket-logo" id="app-logo" aria-hidden="true">::</div>
+      <span id="app-title"><!-- APP_NAME --></span>
+    </div>
+    <div class="pocket-header__right">
+      <span id="connection-status" aria-live="polite"></span>
+    </div>
   </header>
+
+  <div class="pocket-info-bar" id="info-bar" role="region" aria-label="Session info">
+    <span class="pocket-info-bar__group">
+      <span>Model</span>
+      <span class="pocket-info-tag" id="model-badge">—</span>
+    </span>
+    <span class="pocket-info-bar__group">
+      <span>Host</span>
+      <span class="pocket-info-tag" id="host-badge">local</span>
+    </span>
+  </div>
+
   <main id="app-root"><!-- APP_BODY --></main>
+
   <script><!-- APP_SCRIPT --></script>
   <script>
     if ('serviceWorker' in navigator) {
