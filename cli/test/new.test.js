@@ -220,7 +220,13 @@ test('main() runs non-interactive scaffold against real templates', async () => 
     assert.equal(code, 0);
 
     const files = (await fs.readdir(outDir)).sort();
-    assert.deepEqual(files, ['icon.svg', 'index.html', 'manifest.json', 'sw.js']);
+    // Top-level entries: the four core artefacts plus a fonts/ directory
+    // copied from pwa/fonts/. The fonts/ contents are exercised in
+    // scaffold.test.js; here we just confirm the four core files are
+    // present (the scaffolder may add other dirs in future).
+    for (const name of ['icon.svg', 'index.html', 'manifest.json', 'sw.js']) {
+      assert.ok(files.includes(name), 'expected scaffolded output to include ' + name);
+    }
   });
 });
 

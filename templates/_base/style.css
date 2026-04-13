@@ -1,36 +1,106 @@
 /* =============================================================================
  * templates/_base/style.css — ollama-pocket shared base layout
  *
+ * Design language: Teenage Engineering, mirroring pwa/chat.html.
+ *   - Black background (#000000), white text, seven-step gray ramp.
+ *   - Single accent: #ff5c00 (TE orange).
+ *   - Space Mono for UI chrome (labels, tags, status indicators).
+ *   - DM Sans for body text (hints, feedback sentences).
+ *   - Square corners. 1–2px borders. No drop shadows, no gradients.
+ *   - Uppercase labels with heavy letter-spacing (1–3px) at 9–11px.
+ *   - Square status dots, not round. Invert-on-active buttons.
+ *
  * Design constraints (from requirements/plans/scaffolding-system.md):
  *   - Mobile-first. Every scaffolded app must be usable on a phone in one hand.
- *   - Zero web-font dependencies. System fonts only.
- *   - Respect prefers-color-scheme AND prefers-reduced-motion.
- *   - 48px minimum tap target (WCAG 2.5.5 + Material guidelines).
- *   - Keyboard focus must always be visible (no `outline: none` without a
- *     replacement).
- *   - Safe-area insets for notches, gesture bars, and rounded corners.
+ *   - Respect prefers-reduced-motion.
+ *   - 48px minimum tap target where the user actually needs to tap (WCAG 2.5.5).
+ *   - Keyboard focus must always be visible.
+ *   - Safe-area insets for notches, gesture bars, rounded corners.
  *   - Tokens as CSS variables so per-template overrides stay scoped.
+ *   - Dark only. The TE aesthetic is dark — no prefers-color-scheme flip.
+ *
+ * Fonts: Space Mono + DM Sans. Scaffolder copies pwa/fonts/ into each app
+ * so these @font-face URLs resolve; if they 404 (test env), font-display:
+ * swap falls through to the system monospace / system-ui stacks.
  *
  * What lives here vs in a per-template stylesheet:
  *   - Tokens (colour, space, radius, type scale)
  *   - Element defaults (button, input, h1-h4, p, pre, code, a)
- *   - The shared header (`.pocket-header`) and main (`#app-root`)
- *   - Utility primitives: `.pocket-banner`, `.pocket-stack`
- * Per-template CSS goes inline in body.html / app.js or in a future
- * per-template stylesheet marker; don't bloat _base with game-specific
- * layout.
+ *   - The shared header (.pocket-header) + info bar + main
+ *   - Utility primitives: .pocket-banner, .pocket-stack, .pocket-info-tag
+ * Per-template CSS goes inline in body.html; don't bloat _base with
+ * game-specific layout.
  * ========================================================================== */
+
+/* -----------------------------------------------------------------------------
+ * Fonts — woff2 shipped from pwa/fonts/, copied per-app by cli/scaffold.js
+ * -------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Space Mono';
+  src: url('./fonts/space-mono-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  src: url('./fonts/space-mono-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/dm-sans-variable.woff2') format('woff2-variations'),
+       url('./fonts/dm-sans-variable.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* -----------------------------------------------------------------------------
  * Tokens
  * -------------------------------------------------------------------------- */
 
 :root {
-  /* Let the UA render native form controls in the matching theme, and
-   * advertise that we support both dark and light. */
-  color-scheme: dark light;
+  color-scheme: dark;
 
-  /* Spacing scale — base 4px, tighter than Tailwind so mobile feels compact. */
+  /* Greyscale ramp — matches pwa/chat.html so the whole project reads as
+   * one design system. */
+  --pocket-black: #000000;
+  --pocket-white: #ffffff;
+  --pocket-gray-1: #111111;
+  --pocket-gray-2: #1a1a1a;
+  --pocket-gray-3: #222222;
+  --pocket-gray-4: #333333;
+  --pocket-gray-5: #666666;
+  --pocket-gray-6: #999999;
+  --pocket-gray-7: #cccccc;
+  --pocket-orange: #ff5c00;
+
+  /* Semantic aliases — keeps `--pocket-bg` etc. consistent with earlier
+   * scaffolding work without flipping every template ref when the palette
+   * changes. */
+  --pocket-bg: var(--pocket-black);
+  --pocket-bg-raised: var(--pocket-gray-1);
+  --pocket-bg-hover: var(--pocket-gray-2);
+  --pocket-fg: var(--pocket-white);
+  --pocket-fg-muted: var(--pocket-gray-6);
+  --pocket-fg-subtle: var(--pocket-gray-5);
+  --pocket-border-color: var(--pocket-gray-3);
+  --pocket-border-strong: var(--pocket-gray-4);
+  --pocket-accent: var(--pocket-orange);
+  --pocket-accent-hover: #ff7722;
+  --pocket-accent-fg: var(--pocket-black);
+  --pocket-success: var(--pocket-white);  /* TE palette encodes state via typography, not colour */
+  --pocket-warning: var(--pocket-orange);
+  --pocket-error: var(--pocket-gray-5);
+  --pocket-focus-ring: var(--pocket-orange);
+
+  /* Spacing scale — base 4px, tight on mobile. */
   --pocket-space-1: 0.25rem;
   --pocket-space-2: 0.5rem;
   --pocket-space-3: 0.75rem;
@@ -39,27 +109,23 @@
   --pocket-space-6: 2rem;
   --pocket-space-7: 3rem;
 
-  /* Type scale — modular-ish, skewed small so long words in Spell Bee fit. */
-  --pocket-font-size-xs: 0.75rem;
-  --pocket-font-size-sm: 0.875rem;
-  --pocket-font-size-base: 1rem;
-  --pocket-font-size-lg: 1.125rem;
-  --pocket-font-size-xl: 1.5rem;
-  --pocket-font-size-2xl: 2rem;
-  --pocket-font-size-3xl: 2.5rem;
+  /* Type scale — small by default; chrome is intentionally tiny (9–11px)
+   * with heavy tracking, body text reads at 13–14px. */
+  --pocket-font-size-2xs: 0.5625rem;  /* 9px  — chrome labels */
+  --pocket-font-size-xs: 0.6875rem;   /* 11px — tags, captions */
+  --pocket-font-size-sm: 0.8125rem;   /* 13px — body */
+  --pocket-font-size-base: 0.875rem;  /* 14px — controls */
+  --pocket-font-size-md: 1rem;        /* 16px — prompts */
+  --pocket-font-size-lg: 1.125rem;    /* 18px — hints */
+  --pocket-font-size-xl: 1.5rem;      /* 24px — emphasis */
+  --pocket-font-size-2xl: 2rem;       /* 32px — hero */
 
   --pocket-line-height-tight: 1.15;
-  --pocket-line-height-body: 1.55;
-
-  /* Radius */
-  --pocket-radius-sm: 0.375rem;
-  --pocket-radius-md: 0.625rem;
-  --pocket-radius-lg: 1rem;
-  --pocket-radius-pill: 9999px;
+  --pocket-line-height-body: 1.6;
 
   /* Layout */
   --pocket-max-width: 40rem;
-  --pocket-header-height: 3.25rem;
+  --pocket-header-height: 48px;
 
   /* Accessibility */
   --pocket-tap-min: 48px;
@@ -67,57 +133,17 @@
   --pocket-focus-ring-offset: 2px;
 
   /* Motion */
-  --pocket-transition-fast: 120ms cubic-bezier(0.2, 0, 0, 1);
-  --pocket-transition-slow: 240ms cubic-bezier(0.2, 0, 0, 1);
+  --pocket-transition-fast: 120ms ease;
+  --pocket-transition-slow: 240ms ease;
 
-  /* Font stack — system only, no network fetch. */
-  --pocket-font-body: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --pocket-font-mono: ui-monospace, "SF Mono", "Fira Code", Menlo, Consolas,
-    monospace;
-}
+  /* Fonts — Space Mono fallbacks to Courier, DM Sans fallbacks to system-ui. */
+  --pocket-mono: 'Space Mono', 'SF Mono', 'Courier New', Menlo, Consolas, monospace;
+  --pocket-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-/* Dark theme — the default. */
-:root {
-  --pocket-bg: #0b0b0c;
-  --pocket-bg-raised: #141418;
-  --pocket-bg-hover: #1d1d22;
-  --pocket-fg: #f4f4f5;
-  --pocket-fg-muted: #a1a1aa;
-  --pocket-fg-subtle: #71717a;
-  --pocket-border-color: #27272a;
-  --pocket-border-strong: #3f3f46;
-  --pocket-accent: #7c9cff;
-  --pocket-accent-hover: #93abff;
-  --pocket-accent-fg: #0b0b0c;
-  --pocket-success: #4ade80;
-  --pocket-warning: #fbbf24;
-  --pocket-error: #f87171;
-  --pocket-focus-ring: var(--pocket-accent);
-  --pocket-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --pocket-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-}
-
-/* Light theme — applied when the OS says so. */
-@media (prefers-color-scheme: light) {
-  :root {
-    --pocket-bg: #fafafa;
-    --pocket-bg-raised: #ffffff;
-    --pocket-bg-hover: #f1f1f3;
-    --pocket-fg: #18181b;
-    --pocket-fg-muted: #52525b;
-    --pocket-fg-subtle: #a1a1aa;
-    --pocket-border-color: #e4e4e7;
-    --pocket-border-strong: #d4d4d8;
-    --pocket-accent: #4f46e5;
-    --pocket-accent-hover: #4338ca;
-    --pocket-accent-fg: #ffffff;
-    --pocket-success: #16a34a;
-    --pocket-warning: #d97706;
-    --pocket-error: #dc2626;
-    --pocket-shadow-sm: 0 1px 2px rgba(20, 20, 40, 0.06);
-    --pocket-shadow-md: 0 6px 18px rgba(20, 20, 40, 0.08);
-  }
+  --pocket-safe-top: env(safe-area-inset-top, 0px);
+  --pocket-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --pocket-safe-left: env(safe-area-inset-left, 0px);
+  --pocket-safe-right: env(safe-area-inset-right, 0px);
 }
 
 /* -----------------------------------------------------------------------------
@@ -127,22 +153,21 @@
 *,
 *::before,
 *::after {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
 body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  /* `100dvh` accounts for the mobile browser chrome that expands/contracts
-   * on scroll. Falls back to 100vh in browsers that don't support dvh. */
-  min-height: 100dvh;
   background: var(--pocket-bg);
   color: var(--pocket-fg);
-  font-family: var(--pocket-font-body);
+  font-family: var(--pocket-mono);
   font-size: var(--pocket-font-size-base);
   line-height: var(--pocket-line-height-body);
+  min-height: 100vh;
+  min-height: 100dvh;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -155,37 +180,41 @@ body {
 
 /* The `hidden` attribute must always win. The UA sheet sets
  * `[hidden] { display: none }`, but author rules like `button { display:
- * inline-flex }` out-cascade it and leave `<button hidden>` visible. This
- * one-liner with !important restores the expected semantics across every
- * element type we style below. */
+ * inline-flex }` out-cascade it and leave `<button hidden>` visible. */
 [hidden] {
   display: none !important;
 }
 
-/* Typography defaults — everything inside #app-root inherits from here. */
+/* Typography defaults */
 
 h1,
 h2,
 h3,
 h4 {
-  margin: 0 0 var(--pocket-space-3);
+  font-family: var(--pocket-mono);
   font-weight: 700;
   line-height: var(--pocket-line-height-tight);
-  letter-spacing: -0.015em;
 }
 
 h1 {
   font-size: var(--pocket-font-size-2xl);
+  letter-spacing: -0.01em;
 }
+
 h2 {
   font-size: var(--pocket-font-size-xl);
+  letter-spacing: -0.005em;
 }
+
 h3 {
   font-size: var(--pocket-font-size-lg);
 }
 
 p {
+  font-family: var(--pocket-sans);
   margin: 0 0 var(--pocket-space-3);
+  color: var(--pocket-gray-7);
+  line-height: 1.7;
 }
 
 p:last-child {
@@ -193,43 +222,51 @@ p:last-child {
 }
 
 a {
-  color: var(--pocket-accent);
+  color: var(--pocket-orange);
   text-decoration: underline;
   text-underline-offset: 0.2em;
   text-decoration-thickness: 1px;
 }
 
-a:hover {
-  color: var(--pocket-accent-hover);
-}
-
 code,
-pre,
 kbd,
 samp {
-  font-family: var(--pocket-font-mono);
+  font-family: var(--pocket-mono);
   font-size: 0.95em;
+  padding: 1px 6px;
+  background: var(--pocket-gray-2);
+  border: 1px solid var(--pocket-gray-3);
+  color: var(--pocket-orange);
 }
 
 pre {
   margin: 0 0 var(--pocket-space-3);
   padding: var(--pocket-space-3) var(--pocket-space-4);
-  background: var(--pocket-bg-raised);
-  border: 1px solid var(--pocket-border-color);
-  border-radius: var(--pocket-radius-md);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-3);
   overflow-x: auto;
-  line-height: 1.45;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  color: var(--pocket-gray-7);
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
 }
 
 hr {
   border: 0;
-  border-top: 1px solid var(--pocket-border-color);
+  border-top: 1px solid var(--pocket-gray-3);
   margin: var(--pocket-space-5) 0;
 }
 
-/* Keyboard focus — always visible, never replaced with nothing. */
+/* Keyboard focus — always visible, orange outline. */
 
 :focus {
   outline: none;
@@ -238,11 +275,10 @@ hr {
 :focus-visible {
   outline: var(--pocket-focus-ring-width) solid var(--pocket-focus-ring);
   outline-offset: var(--pocket-focus-ring-offset);
-  border-radius: var(--pocket-radius-sm);
 }
 
 /* -----------------------------------------------------------------------------
- * Layout — header + main
+ * Layout — header, info bar, main
  * -------------------------------------------------------------------------- */
 
 .pocket-header {
@@ -251,94 +287,146 @@ hr {
   z-index: 10;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--pocket-space-3);
   min-height: var(--pocket-header-height);
-  padding: var(--pocket-space-2) var(--pocket-space-4);
-  /* Safe-area insets for notches / rounded corners on modern phones. */
-  padding-top: calc(var(--pocket-space-2) + env(safe-area-inset-top));
-  padding-left: calc(var(--pocket-space-4) + env(safe-area-inset-left));
-  padding-right: calc(var(--pocket-space-4) + env(safe-area-inset-right));
-  background: color-mix(in srgb, var(--pocket-bg-raised) 92%, transparent);
-  border-bottom: 1px solid var(--pocket-border-color);
-  font-weight: 600;
-  font-size: var(--pocket-font-size-sm);
-  /* Subtle blur so content scrolling under the sticky header reads as
-   * "behind glass" rather than a hard cutoff. */
-  backdrop-filter: saturate(1.4) blur(8px);
-  -webkit-backdrop-filter: saturate(1.4) blur(8px);
+  padding: calc(10px + var(--pocket-safe-top)) var(--pocket-space-4) 10px;
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  background: var(--pocket-black);
+  border-bottom: 1px solid var(--pocket-gray-3);
+  font-family: var(--pocket-mono);
 }
 
-.pocket-header #app-title {
-  flex: 1 1 auto;
+.pocket-header__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  font-size: var(--pocket-font-size-base);
-  color: var(--pocket-fg);
+  flex: 1 1 auto;
+}
+
+.pocket-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+/* TE-style logo square with 2-letter app mark. Templates set textContent
+ * via JS (or leave the default markup). */
+.pocket-logo {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pocket-black);
+  border: 2px solid var(--pocket-white);
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--pocket-white);
+  flex: 0 0 auto;
+}
+
+#app-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pocket-white);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.pocket-header #model-badge {
-  flex: 0 0 auto;
+/* Status indicator — a square dot (not round) + uppercase label. */
+#connection-status {
   display: inline-flex;
   align-items: center;
-  max-width: 45%;
-  padding: 2px 8px;
-  background: var(--pocket-bg);
-  color: var(--pocket-fg-muted);
-  border: 1px solid var(--pocket-border-color);
-  border-radius: var(--pocket-radius-sm);
-  font-family: var(--pocket-font-mono);
-  font-size: var(--pocket-font-size-xs);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  gap: 6px;
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-6);
+  font-weight: 400;
 }
 
-.pocket-header #model-badge:empty {
-  display: none;
-}
-
-.pocket-header #connection-status {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--pocket-fg-muted);
-  font-size: var(--pocket-font-size-xs);
-}
-
-/* Status dot — driven by data-state="ok|warn|err" that templates set. */
-.pocket-header #connection-status::before {
+#connection-status::before {
   content: "";
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--pocket-fg-subtle);
-  box-shadow: 0 0 0 3px transparent;
-  transition: background var(--pocket-transition-fast),
-    box-shadow var(--pocket-transition-fast);
+  width: 6px;
+  height: 6px;
+  background: var(--pocket-gray-5);
+  border-radius: 0; /* square */
+  transition: background var(--pocket-transition-fast);
 }
 
-.pocket-header #connection-status:empty::before {
+#connection-status:empty {
   display: none;
 }
 
-.pocket-header #connection-status[data-state="ok"]::before {
-  background: var(--pocket-success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pocket-success) 20%, transparent);
+#connection-status[data-state="ok"]::before {
+  background: var(--pocket-white);
 }
 
-.pocket-header #connection-status[data-state="warn"]::before {
-  background: var(--pocket-warning);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pocket-warning) 20%, transparent);
+#connection-status[data-state="warn"]::before {
+  background: var(--pocket-orange);
+  animation: pocket-blink 0.8s step-end infinite;
 }
 
-.pocket-header #connection-status[data-state="err"]::before {
-  background: var(--pocket-error);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pocket-error) 20%, transparent);
+#connection-status[data-state="err"]::before {
+  background: var(--pocket-gray-5);
+}
+
+@keyframes pocket-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
+
+/* Info bar — renders model / ageGroup / score tags in a thin strip below
+ * the header. Optional; templates that don't want it simply omit the
+ * .pocket-info-bar block. */
+.pocket-info-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--pocket-space-3);
+  padding: 6px var(--pocket-space-4);
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  border-bottom: 1px solid var(--pocket-gray-3);
+  background: var(--pocket-gray-1);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-5);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pocket-info-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.pocket-info-bar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.pocket-info-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--pocket-gray-4);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1px;
+  color: var(--pocket-gray-6);
+  text-transform: none;
+  white-space: nowrap;
 }
 
 main#app-root {
@@ -346,79 +434,110 @@ main#app-root {
   max-width: var(--pocket-max-width);
   margin: 0 auto;
   padding: var(--pocket-space-5) var(--pocket-space-4);
-  padding-left: calc(var(--pocket-space-4) + env(safe-area-inset-left));
-  padding-right: calc(var(--pocket-space-4) + env(safe-area-inset-right));
-  padding-bottom: calc(var(--pocket-space-6) + env(safe-area-inset-bottom));
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  padding-bottom: calc(var(--pocket-space-6) + var(--pocket-safe-bottom));
   flex: 1 1 auto;
 }
 
 /* -----------------------------------------------------------------------------
- * Controls — buttons + form fields
+ * Controls — square buttons, invert on active
  * -------------------------------------------------------------------------- */
 
 button,
 input[type="button"],
 input[type="submit"],
 input[type="reset"] {
-  font: inherit;
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--pocket-space-2);
   min-height: var(--pocket-tap-min);
   min-width: var(--pocket-tap-min);
-  padding: 0.625rem 1.125rem;
-  background: var(--pocket-accent);
-  color: var(--pocket-accent-fg);
-  border: 1px solid transparent;
-  border-radius: var(--pocket-radius-md);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  padding: 0 var(--pocket-space-5);
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border: 2px solid var(--pocket-white);
+  border-radius: 0;
   cursor: pointer;
-  transition: filter var(--pocket-transition-fast),
-    transform var(--pocket-transition-fast),
-    background var(--pocket-transition-fast),
+  transition: background var(--pocket-transition-fast),
+    color var(--pocket-transition-fast),
     border-color var(--pocket-transition-fast);
-  -webkit-tap-highlight-color: transparent;
   user-select: none;
-  box-shadow: var(--pocket-shadow-sm);
 }
 
 button:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--pocket-gray-7);
+  border-color: var(--pocket-gray-7);
 }
 
 button:active:not(:disabled) {
-  transform: translateY(1px);
-  filter: brightness(0.95);
+  background: var(--pocket-black);
+  color: var(--pocket-white);
+  border-color: var(--pocket-white);
 }
 
 button:disabled {
-  opacity: 0.5;
+  background: transparent;
+  color: var(--pocket-gray-4);
+  border-color: var(--pocket-gray-4);
   cursor: not-allowed;
-  box-shadow: none;
+}
+
+button[data-variant="accent"] {
+  background: var(--pocket-orange);
+  color: var(--pocket-black);
+  border-color: var(--pocket-orange);
+}
+
+button[data-variant="accent"]:hover:not(:disabled) {
+  background: var(--pocket-accent-hover);
+  border-color: var(--pocket-accent-hover);
+}
+
+button[data-variant="accent"]:active:not(:disabled) {
+  background: var(--pocket-black);
+  color: var(--pocket-orange);
+  border-color: var(--pocket-orange);
 }
 
 button[data-variant="secondary"] {
-  background: var(--pocket-bg-raised);
-  color: var(--pocket-fg);
-  border-color: var(--pocket-border-color);
+  background: transparent;
+  color: var(--pocket-white);
+  border-color: var(--pocket-gray-4);
+}
+
+button[data-variant="secondary"]:hover:not(:disabled) {
+  background: var(--pocket-gray-2);
+  border-color: var(--pocket-gray-5);
+}
+
+button[data-variant="secondary"]:active:not(:disabled) {
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border-color: var(--pocket-white);
 }
 
 button[data-variant="ghost"] {
   background: transparent;
-  color: var(--pocket-fg);
+  color: var(--pocket-gray-6);
   border-color: transparent;
-  box-shadow: none;
 }
 
 button[data-variant="ghost"]:hover:not(:disabled) {
-  background: var(--pocket-bg-hover);
+  color: var(--pocket-white);
+  border-color: var(--pocket-gray-4);
 }
 
-button[data-variant="danger"] {
-  background: var(--pocket-error);
-  color: #fff;
+button[data-variant="ghost"]:active:not(:disabled) {
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border-color: var(--pocket-white);
 }
 
 input[type="text"],
@@ -430,50 +549,52 @@ input[type="url"],
 input[type="password"],
 textarea,
 select {
-  font: inherit;
+  font-family: var(--pocket-sans);
+  font-size: var(--pocket-font-size-md);
   display: block;
   width: 100%;
   min-height: var(--pocket-tap-min);
-  padding: 0.625rem 0.875rem;
-  background: var(--pocket-bg-raised);
-  color: var(--pocket-fg);
-  border: 1px solid var(--pocket-border-color);
-  border-radius: var(--pocket-radius-md);
-  line-height: 1.3;
-  transition: border-color var(--pocket-transition-fast),
-    background var(--pocket-transition-fast);
-}
-
-input:hover,
-textarea:hover,
-select:hover {
-  border-color: var(--pocket-border-strong);
+  padding: var(--pocket-space-3) 0;
+  background: transparent;
+  color: var(--pocket-white);
+  border: none;
+  border-bottom: 1px solid var(--pocket-gray-4);
+  border-radius: 0;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--pocket-transition-fast);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--pocket-accent);
+  border-bottom-color: var(--pocket-white);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--pocket-fg-subtle);
+  color: var(--pocket-gray-5);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 label {
   display: block;
   margin-bottom: var(--pocket-space-2);
-  font-size: var(--pocket-font-size-sm);
-  font-weight: 600;
-  color: var(--pocket-fg-muted);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-5);
 }
 
 /* -----------------------------------------------------------------------------
- * Utility primitives — reuseable by any template
+ * Utility primitives
  * -------------------------------------------------------------------------- */
 
-/* Vertical stack with consistent spacing between immediate children. */
 .pocket-stack {
   display: flex;
   flex-direction: column;
@@ -488,35 +609,82 @@ label {
   gap: var(--pocket-space-6);
 }
 
-/* Banner for inline warnings, errors, and offline notices. */
+/* Double-border card — TE-style section container. */
+.pocket-card {
+  position: relative;
+  padding: var(--pocket-space-4) var(--pocket-space-5);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-3);
+}
+
+.pocket-card--double::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1px solid var(--pocket-gray-3);
+  pointer-events: none;
+}
+
+/* Banner: inline notifications. Border-only, uppercase mono label. */
 .pocket-banner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--pocket-space-3);
   padding: var(--pocket-space-3) var(--pocket-space-4);
-  background: var(--pocket-bg-raised);
-  color: var(--pocket-fg);
-  border: 1px solid var(--pocket-border-color);
-  border-radius: var(--pocket-radius-md);
-  font-size: var(--pocket-font-size-sm);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-4);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  letter-spacing: 0.5px;
+  color: var(--pocket-gray-7);
+}
+
+.pocket-banner::before {
+  content: "!";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: var(--pocket-gray-4);
+  color: var(--pocket-white);
+  font-weight: 700;
+  border-radius: 0;
 }
 
 .pocket-banner[data-tone="warn"] {
-  border-color: color-mix(in srgb, var(--pocket-warning) 60%, transparent);
-  background: color-mix(in srgb, var(--pocket-warning) 10%, var(--pocket-bg-raised));
-  color: var(--pocket-fg);
+  border-color: var(--pocket-orange);
+  color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="warn"]::before {
+  background: var(--pocket-orange);
+  color: var(--pocket-black);
 }
 
 .pocket-banner[data-tone="err"] {
-  border-color: color-mix(in srgb, var(--pocket-error) 60%, transparent);
-  background: color-mix(in srgb, var(--pocket-error) 10%, var(--pocket-bg-raised));
-  color: var(--pocket-fg);
+  border-color: var(--pocket-gray-5);
+  color: var(--pocket-gray-6);
+}
+
+.pocket-banner[data-tone="err"]::before {
+  content: "X";
+  background: var(--pocket-gray-5);
+  color: var(--pocket-white);
 }
 
 .pocket-banner[data-tone="ok"] {
-  border-color: color-mix(in srgb, var(--pocket-success) 60%, transparent);
-  background: color-mix(in srgb, var(--pocket-success) 10%, var(--pocket-bg-raised));
-  color: var(--pocket-fg);
+  border-color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="ok"]::before {
+  content: "✓";
+  background: var(--pocket-white);
+  color: var(--pocket-black);
 }
 
 /* Visually hidden, still readable by screen readers. */
@@ -538,27 +706,28 @@ label {
 
 @media (min-width: 48rem) {
   :root {
-    --pocket-header-height: 3.75rem;
-  }
-
-  h1 {
-    font-size: var(--pocket-font-size-3xl);
+    --pocket-header-height: 56px;
   }
 
   .pocket-header {
-    padding-left: calc(var(--pocket-space-5) + env(safe-area-inset-left));
-    padding-right: calc(var(--pocket-space-5) + env(safe-area-inset-right));
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+
+  .pocket-info-bar {
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
   }
 
   main#app-root {
     padding: var(--pocket-space-6) var(--pocket-space-5);
-    padding-left: calc(var(--pocket-space-5) + env(safe-area-inset-left));
-    padding-right: calc(var(--pocket-space-5) + env(safe-area-inset-right));
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
   }
 }
 
 /* -----------------------------------------------------------------------------
- * Motion preferences — kill transitions for users who opt out.
+ * Motion preferences
  * -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {

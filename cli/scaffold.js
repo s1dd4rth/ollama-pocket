@@ -252,11 +252,59 @@ async function scaffold({ repoRoot, outputDir, opts, onProgress, force }) {
     fs.writeFile(path.join(outputDir, 'sw.js'), sw),
   ]);
 
+  // Copy Space Mono + DM Sans woff2 files from pwa/fonts/ so the TE-style
+  // base CSS resolves its @font-face URLs. If pwa/fonts/ is missing (a
+  // broken checkout, a future repo layout change, or a test fixture that
+  // points at a stripped temp dir) we skip silently — the base CSS's
+  // font-family fallbacks cover the degraded case.
+  const copiedFonts = await copyFontsIfPresent(repoRoot, outputDir, say);
+
+  const files = ['index.html', 'manifest.json', 'icon.svg', 'sw.js'];
+  for (const name of copiedFonts) files.push('fonts/' + name);
+
   return {
     outputDir: outputDir,
-    files: ['index.html', 'manifest.json', 'icon.svg', 'sw.js'],
+    files: files,
     sizeBytes: Buffer.byteLength(indexHTML, 'utf8'),
   };
+}
+
+// -----------------------------------------------------------------------------
+// Font copy — pwa/fonts/*.woff2 → apps/<slug>/fonts/*.woff2
+// -----------------------------------------------------------------------------
+
+async function copyFontsIfPresent(repoRoot, outputDir, say) {
+  const srcDir = path.join(repoRoot, 'pwa', 'fonts');
+  if (!(await pathExists(srcDir))) {
+    if (say) say('no pwa/fonts/ — skipping font copy');
+    return [];
+  }
+
+  let entries;
+  try {
+    entries = await fs.readdir(srcDir);
+  } catch (err) {
+    if (say) say('pwa/fonts/ unreadable — skipping font copy');
+    return [];
+  }
+
+  // Only copy .woff2 files. License/readme files are intentionally left
+  // out of each scaffolded app — they stay in the repo under pwa/fonts/.
+  const woff2 = entries.filter((name) => /\.woff2$/i.test(name));
+  if (woff2.length === 0) {
+    if (say) say('no .woff2 in pwa/fonts/ — skipping font copy');
+    return [];
+  }
+
+  const destDir = path.join(outputDir, 'fonts');
+  await fs.mkdir(destDir, { recursive: true });
+  await Promise.all(
+    woff2.map((name) =>
+      fs.copyFile(path.join(srcDir, name), path.join(destDir, name))
+    )
+  );
+  if (say) say('copied ' + woff2.length + ' font file(s) to fonts/');
+  return woff2;
 }
 
 module.exports = {
@@ -274,4 +322,5 @@ module.exports = {
   readTemplateSources: readTemplateSources,
   scaffold: scaffold,
   pathExists: pathExists,
+  copyFontsIfPresent: copyFontsIfPresent,
 };
