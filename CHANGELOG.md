@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/ISSUE_TEMPLATE/benchmark_contribution.md` — structured template for submitting a benchmark, with a verification checklist covering phone thermal state, plugged-in/battery, background apps, and prompts.json version.
 - `CONTRIBUTING.md` section documenting the benchmark workflow and quality bar.
 - README "Model Recommendations" table now cites the measured 7.38 tok/s number from the first committed benchmark, with a link to the markdown file.
+- **`scripts/bench.sh` filename now includes the Ollama model slug** (`lge-lm-g850-msmnile-qwen2-5-1-5b.md` instead of `lge-lm-g850-msmnile.md`). Previously, running bench.sh against multiple models on the same phone silently overwrote the same file each time — caught while benching all three README-recommended models on the LG V60. Existing `benchmarks/lge-lm-g850-msmnile.md` renamed to the new scheme.
+- **Two more reference benchmarks on the LG V60** (Snapdragon 865): `gemma3:1b` at **9.60 tok/s warm** and `smollm2:360m` at **12.72 tok/s warm**. Replaces the "estimate, needs bench" placeholders in the README Model Recommendations table with real numbers — all three recommended models now have measured tok/s on the same phone, same prompt set, same conditions.
+- `benchmarks/README.md` documents a known VmRSS limitation: the current single-process reading via `pidof ollama | awk '{print $1}'` picks only one of Ollama's two processes (`ollama serve` + `ollama runner`), and is suspiciously low for smaller models where it happens to pick the wrong one. Follow-up PR will sum VmRSS across all ollama PIDs. Does not affect tok/s numbers, which are the headline measurement.
 
 ## [0.2.0] - 2026-04-12
 

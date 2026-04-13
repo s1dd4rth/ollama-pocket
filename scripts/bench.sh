@@ -119,8 +119,15 @@ MODEL_SLUG=$(slugify "${MODEL_NAME:-unknown}")
 SOC_SLUG=$(slugify "${SOC}")
 DEVICE_SLUG="${MANUFACTURER_SLUG}-${MODEL_SLUG}-${SOC_SLUG}"
 
+# Include the Ollama model in the filename so benches against multiple
+# models on the same device don't overwrite each other. "qwen2.5:1.5b"
+# → "qwen2-5-1-5b". Caught during the initial round of benching the three
+# README-recommended models on an LG V60.
+OLLAMA_MODEL_SLUG=$(slugify "$MODEL")
+FILENAME_SLUG="${DEVICE_SLUG}-${OLLAMA_MODEL_SLUG}"
+
 if [ -z "$OUTPUT" ]; then
-  OUTPUT="$BENCHMARKS_DIR/$DEVICE_SLUG.md"
+  OUTPUT="$BENCHMARKS_DIR/$FILENAME_SLUG.md"
 fi
 
 # -- Banner --
@@ -133,7 +140,7 @@ echo -e "${NC}"
 info "Host:    $HOST"
 info "Model:   $MODEL"
 info "Device:  $MANUFACTURER $MODEL_NAME (SoC: $SOC, RAM: ${RAM_TOTAL_MB} MiB, Android: $ANDROID_VERSION)"
-info "Slug:    $DEVICE_SLUG"
+info "Slug:    $FILENAME_SLUG"
 info "Output:  $OUTPUT"
 info "Runs:    $RUNS per prompt"
 echo ""

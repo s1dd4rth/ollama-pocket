@@ -131,11 +131,17 @@ your own phone to generate a directly comparable report and submit it to
 [`benchmarks/prompts.json`](benchmarks/prompts.json) means every contributed
 benchmark is comparable to every other.
 
-| Model | Download | RAM Used | Speed (measured) | Best For |
-|-------|----------|----------|------------------|----------|
-| `qwen2.5:1.5b` | ~1 GB | ~1.5 GB | **7.4 tok/s** on Snapdragon 865 ([LG V60](benchmarks/lge-lm-g850-msmnile.md)) | General chat, reasoning, code |
-| `gemma3:1b` | ~0.8 GB | ~1 GB | ~4 tok/s (estimate, needs bench) | Simple chat, summaries |
-| `smollm2:360m` | ~200 MB | ~400 MB | ~8 tok/s (estimate, needs bench) | Quick answers, low RAM devices |
+| Model | Download | Speed (measured on Snapdragon 865, LG V60) | Best For |
+|-------|----------|---------------------------------------------|----------|
+| `qwen2.5:1.5b` | ~1 GB | **7.38 tok/s** warm, 7.28 cold ([report](benchmarks/lge-lm-g850-msmnile-qwen2-5-1-5b.md)) | General chat, reasoning, code |
+| `gemma3:1b`    | ~0.8 GB | **9.60 tok/s** warm, 9.58 cold ([report](benchmarks/lge-lm-g850-msmnile-gemma3-1b.md)) | Simple chat, summaries |
+| `smollm2:360m` | ~200 MB | **12.72 tok/s** warm, 12.99 cold ([report](benchmarks/lge-lm-g850-msmnile-smollm2-360m.md)) | Quick answers, low RAM devices |
+
+All three numbers are from the same LG V60 ThinQ (Snapdragon 865, 5497 MiB
+RAM, Android 12, Ollama 0.20.5, 2 runs each) against the fixed
+[`benchmarks/prompts.json`](benchmarks/prompts.json). Run the same bench on
+your phone and submit the result — see
+[`benchmarks/README.md`](benchmarks/README.md).
 
 > **Rule of thumb:** You need ~2x the model download size in available RAM. A 6GB phone with 2.8GB free can run anything up to ~1.5B parameters comfortably.
 
