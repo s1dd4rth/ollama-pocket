@@ -141,10 +141,13 @@ test('runUpdate re-renders a scaffolded app in place, preserving config', async 
     const before = await fs.readFile(path.join(outDir, 'index.html'), 'utf8');
     const beforeCfg = await update.extractConfig(path.join(outDir, 'index.html'));
 
-    // Hand-edit the file to simulate an outdated app
+    // Hand-edit the file to simulate an outdated app. We swap out a string
+    // that lives in the base template's inline SW registration script —
+    // not in any specific per-template body — so this test stays valid
+    // across template swaps without tracking per-template strings.
     await fs.writeFile(
       path.join(outDir, 'index.html'),
-      before.replace('Pinging', 'STALE_MARKER')
+      before.replace('serviceWorker', 'STALE_MARKER_SERVICEWORKER')
     );
 
     const code = await muteStdout(() =>
@@ -153,7 +156,14 @@ test('runUpdate re-renders a scaffolded app in place, preserving config', async 
     assert.equal(code, 0);
 
     const after = await fs.readFile(path.join(outDir, 'index.html'), 'utf8');
-    assert.ok(!after.includes('STALE_MARKER'), 'stale marker should be gone after update');
+    assert.ok(
+      !after.includes('STALE_MARKER_SERVICEWORKER'),
+      'stale marker should be gone after update'
+    );
+    assert.ok(
+      after.includes('serviceWorker'),
+      'serviceWorker (from base template SW registration) must be restored by update'
+    );
 
     const afterCfg = await update.extractConfig(path.join(outDir, 'index.html'));
     assert.equal(afterCfg.appName, beforeCfg.appName);
