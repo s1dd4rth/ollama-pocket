@@ -149,16 +149,36 @@ function hashHue(input) {
 // Compose an index.html from base + style + template + SDK + config
 // -----------------------------------------------------------------------------
 
+function escapeInlineScript(code) {
+  // Neutralise stray `</script>` / `</style>` sequences inside code that will
+  // land between <script>…</script> or <style>…</style>. The HTML5 parser
+  // scans raw text script/style content for the literal closing tag byte
+  // sequence regardless of surrounding JS/CSS syntax, so an innocent comment
+  // like `// handles </script> injection` in the SDK source would prematurely
+  // close the <script> element when inlined. `<\/script>` is identical to
+  // `</script>` in both JavaScript and CSS string/comment contexts — the
+  // backslash is a harmless escape that the language lexers discard — but the
+  // HTML parser's literal byte match no longer triggers.
+  //
+  // Case-insensitive because HTML5 recognises </SCRIPT>, </Script>, etc. as
+  // valid end tags.
+  return String(code).replace(/<\/(script|style)\b/gi, '<\\/$1');
+}
+
 function composeIndexHTML(sources, opts) {
   // sources: { baseHTML, styleCSS, appBodyHTML, appScriptJS, sdkJS }
   const configJSON = Pocket.safeJSONForHTMLScript(buildAppConfig(opts));
   const replacements = {
     APP_NAME: escapeHTMLText(opts.appName),
-    STYLE_INLINE: sources.styleCSS,
-    SDK_INLINE: sources.sdkJS,
+    // STYLE_INLINE lands inside <style>…</style>; escape any stray </style>.
+    STYLE_INLINE: escapeInlineScript(sources.styleCSS),
+    // SDK_INLINE + APP_SCRIPT both land inside <script>…</script>. The SDK
+    // source in particular has comments that reference `</script>` literally,
+    // which would break out without this pass.
+    SDK_INLINE: escapeInlineScript(sources.sdkJS),
     APP_CONFIG: configJSON,
     APP_BODY: sources.appBodyHTML,
-    APP_SCRIPT: sources.appScriptJS,
+    APP_SCRIPT: escapeInlineScript(sources.appScriptJS),
   };
   const { text } = substituteMarkers(sources.baseHTML, replacements);
   return text;
@@ -243,6 +263,7 @@ module.exports = {
   // Pure helpers (exported for unit tests)
   substituteMarkers: substituteMarkers,
   escapeHTMLText: escapeHTMLText,
+  escapeInlineScript: escapeInlineScript,
   buildAppConfig: buildAppConfig,
   buildManifest: buildManifest,
   buildIconSVG: buildIconSVG,
