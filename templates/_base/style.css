@@ -153,6 +153,15 @@ body {
   flex-direction: column;
 }
 
+/* The `hidden` attribute must always win. The UA sheet sets
+ * `[hidden] { display: none }`, but author rules like `button { display:
+ * inline-flex }` out-cascade it and leave `<button hidden>` visible. This
+ * one-liner with !important restores the expected semantics across every
+ * element type we style below. */
+[hidden] {
+  display: none !important;
+}
+
 /* Typography defaults — everything inside #app-root inherits from here. */
 
 h1,

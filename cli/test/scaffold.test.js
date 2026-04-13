@@ -355,6 +355,12 @@ test('scaffold() produces a complete app from the real templates', async () => {
     assert.match(html, /--pocket-tap-min/);
     assert.match(html, /prefers-color-scheme: light/);
     assert.match(html, /prefers-reduced-motion: reduce/);
+    // The `[hidden]` attribute must always win over author display rules.
+    assert.match(
+      html,
+      /\[hidden\]\s*\{\s*display:\s*none\s*!important/,
+      '_base should enforce [hidden] display: none !important so scaffolded apps can toggle visibility via the hidden attribute'
+    );
 
     // Script-breakout guard against the real SDK: the SDK source has a
     // comment with a literal `</script>` inside backticks. Before the
