@@ -20,5 +20,9 @@ Gemfile.lock
 # Node
 node_modules/
 
+# Scaffolded apps — generated output, not source
+apps/*
+!apps/.gitkeep
+
 # Logs
 *.log
