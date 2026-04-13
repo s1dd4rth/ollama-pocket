@@ -88,6 +88,20 @@ in-memory model via `keep_alive: 0` before running, so the first call is
 always a cold load). Subsequent runs are **warm** — the model stays in
 memory, no load cost.
 
+## Known issue: VmRSS undercount for smaller models
+
+`bench.sh` reads one VmRSS value via
+`pidof ollama | awk '{print $1}'`, but Ollama is split into two cooperating
+processes (`ollama serve` + a per-model `ollama runner`). `pidof` order is
+not guaranteed, so the reading can pick the wrong one. On the LG V60
+reference benchmarks, the reported VmRSS happens to be correct for
+`qwen2.5:1.5b` (~1137 MiB, matches the model size) but is suspiciously low
+for `gemma3:1b` (99 MiB for an 815 MB weights file) and `smollm2:360m`
+(96 MiB). **Fix coming in a follow-up PR** — sum VmRSS across all
+`pidof ollama` PIDs and report the total. Does NOT affect the tok/s
+numbers, which are read directly from Ollama's own
+`eval_count` / `eval_duration` response fields and are the headline metric.
+
 ## What's NOT measured (yet)
 
 - **Battery impact** — you'd need an external power meter for meaningful
