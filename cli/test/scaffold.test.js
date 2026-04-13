@@ -217,6 +217,71 @@ test('composeIndexHTML escapes </script> in APP_CONFIG values (XSS guard)', () =
   assert.equal(parsed.appName, 'Inject</script><script>alert(1)</script>');
 });
 
+test('escapeInlineScript neutralises stray </script> / </style>', () => {
+  assert.equal(
+    scaffold.escapeInlineScript('// comment with </script> inside'),
+    '// comment with <\\/script> inside'
+  );
+  assert.equal(
+    scaffold.escapeInlineScript('body { /* </style> */ color: red }'),
+    'body { /* <\\/style> */ color: red }'
+  );
+  // Case-insensitive
+  assert.equal(
+    scaffold.escapeInlineScript('</SCRIPT>'),
+    '<\\/SCRIPT>'
+  );
+  // Word-boundary: </scripted> should NOT be escaped
+  assert.equal(
+    scaffold.escapeInlineScript('foo </scripted> bar'),
+    'foo </scripted> bar'
+  );
+  // Idempotent: re-running is a no-op
+  const once = scaffold.escapeInlineScript('// </script>');
+  const twice = scaffold.escapeInlineScript(once);
+  assert.equal(once, twice);
+});
+
+test('composeIndexHTML escapes </script> inside SDK_INLINE (breakout guard)', () => {
+  // Regression: the real sdk/pocket.js has a comment containing literal
+  // `</script>` which prematurely closed the inlined <script> tag and
+  // left the rest of the SDK as visible DOM text. The scaffolder must
+  // transform `</script>` to `<\/script>` before substitution.
+  const sources = fakeSources({
+    sdkJS: '// comment with </script> inside\nvar x = 1;',
+  });
+  const html = scaffold.composeIndexHTML(sources, SAMPLE_OPTS);
+
+  // The raw closing tag must not appear inside the SDK script block
+  const sdkBlockMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(sdkBlockMatch);
+  // Our injected comment-with-breakout becomes part of the first <script>
+  // block (which contains SDK_INLINE). The literal </script> inside it
+  // must have been escaped, otherwise the block would have ended early
+  // and the match above would be a tiny prefix.
+  assert.match(sdkBlockMatch[1], /<\\\/script>/);
+  assert.ok(!/\/\/ comment with <\/script> inside/.test(html));
+});
+
+test('composeIndexHTML escapes </script> inside APP_SCRIPT (breakout guard)', () => {
+  const sources = fakeSources({
+    appScriptJS: "console.log('</script>'); var y = 2;",
+  });
+  const html = scaffold.composeIndexHTML(sources, SAMPLE_OPTS);
+  assert.match(html, /<\\\/script>/);
+  assert.ok(!/console\.log\('<\/script>'\)/.test(html));
+});
+
+test('composeIndexHTML escapes </style> inside STYLE_INLINE (breakout guard)', () => {
+  const sources = fakeSources({
+    styleCSS: 'body { content: "</style>" }',
+  });
+  const html = scaffold.composeIndexHTML(sources, SAMPLE_OPTS);
+  const styleBlockMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+  assert.ok(styleBlockMatch);
+  assert.match(styleBlockMatch[1], /<\\\/style>/);
+});
+
 test('composeIndexHTML escapes U+2028 / U+2029 inside APP_CONFIG', () => {
   const opts = { ...SAMPLE_OPTS, appName: 'A\u2028B\u2029C' };
   const html = scaffold.composeIndexHTML(fakeSources(), opts);
@@ -282,6 +347,23 @@ test('scaffold() produces a complete app from the real templates', async () => {
     // sw.js: contains the per-app cache name
     const sw = await fs.readFile(path.join(outDir, 'sw.js'), 'utf8');
     assert.match(sw, /pocket-spell-bee-v1/);
+
+    // Script-breakout guard against the real SDK: the SDK source has a
+    // comment with a literal `</script>` inside backticks. Before the
+    // escape pass, that closing tag prematurely terminated the inlined
+    // <script> element and the rest of the SDK became visible DOM text.
+    // Assert the leaked-text marker does NOT appear in raw form, and that
+    // the escape form IS present (proving the escape pass fired on real
+    // content, not just on unit-test fakes).
+    assert.ok(
+      !/value containing `<\/script>`/.test(html),
+      'raw `</script>` must not appear inside SDK comment in output'
+    );
+    assert.match(
+      html,
+      /value containing `<\\\/script>`/,
+      'escaped `<\\/script>` should appear inside SDK comment in output'
+    );
   });
 });
 
