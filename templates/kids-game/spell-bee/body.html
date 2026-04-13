@@ -1,10 +1,308 @@
-<!-- Spell Bee template body — placeholder.
-     The real game loop (fetching_word → awaiting_attempt → judging →
-     showing_feedback) lands with scaffolding PR 4. This stub only proves
-     the CLI can scaffold an end-to-end, loadable HTML page. -->
-<section class="spell-bee" aria-live="polite">
-  <h1>Spell Bee</h1>
-  <p id="status">Waiting for Ollama…</p>
-  <button id="ping" type="button" aria-label="Ping Ollama">Ping Ollama</button>
-  <pre id="output"></pre>
+<!-- templates/kids-game/spell-bee/body.html
+     Spell Bee v1 — 5-state game loop for kids aged 4-12.
+     States: idle → fetching_word → awaiting_attempt → judging → showing_feedback → idle
+     The template-specific CSS lives in an inline <style> block because PR 4 does
+     not add a per-template stylesheet marker to the scaffolder. If a future
+     template grows past ~150 lines of CSS, promote to APP_STYLE_INLINE. -->
+
+<style>
+  .spell-bee {
+    display: block;
+  }
+
+  .spell-bee__topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pocket-space-3);
+    margin-bottom: var(--pocket-space-5);
+  }
+
+  .spell-bee__topline h1 {
+    margin: 0;
+  }
+
+  .spell-bee__score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--pocket-space-2);
+    padding: var(--pocket-space-2) var(--pocket-space-4);
+    background: var(--pocket-bg-raised);
+    border: 1px solid var(--pocket-border-color);
+    border-radius: var(--pocket-radius-md);
+  }
+
+  .spell-bee__score-label {
+    font-size: var(--pocket-font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--pocket-fg-muted);
+  }
+
+  .spell-bee__score-value {
+    font-size: var(--pocket-font-size-xl);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--pocket-fg);
+  }
+
+  .spell-bee__stage {
+    position: relative;
+    min-height: 14rem;
+  }
+
+  .spell-bee__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-4);
+    animation: pocket-fade-in 200ms ease;
+  }
+
+  .spell-bee__panel[hidden] {
+    display: none;
+  }
+
+  .spell-bee__lead {
+    font-size: var(--pocket-font-size-lg);
+    color: var(--pocket-fg-muted);
+    margin: 0;
+  }
+
+  .spell-bee__spinner {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-3);
+    padding: var(--pocket-space-5) 0;
+    color: var(--pocket-fg-muted);
+    font-size: var(--pocket-font-size-base);
+  }
+
+  .spell-bee__spinner::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--pocket-border-color);
+    border-top-color: var(--pocket-accent);
+    animation: pocket-spin 800ms linear infinite;
+  }
+
+  .spell-bee__difficulty {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--pocket-radius-pill);
+    font-size: var(--pocket-font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--pocket-fg);
+  }
+
+  .spell-bee__difficulty[data-level="easy"] {
+    background: color-mix(in srgb, var(--pocket-success) 18%, transparent);
+    color: var(--pocket-success);
+  }
+
+  .spell-bee__difficulty[data-level="medium"] {
+    background: color-mix(in srgb, var(--pocket-warning) 18%, transparent);
+    color: var(--pocket-warning);
+  }
+
+  .spell-bee__difficulty[data-level="hard"] {
+    background: color-mix(in srgb, var(--pocket-error) 18%, transparent);
+    color: var(--pocket-error);
+  }
+
+  .spell-bee__hint {
+    margin: 0;
+    padding: var(--pocket-space-4) var(--pocket-space-5);
+    background: var(--pocket-bg-raised);
+    border: 1px solid var(--pocket-border-color);
+    border-left: 4px solid var(--pocket-accent);
+    border-radius: var(--pocket-radius-md);
+    font-size: var(--pocket-font-size-lg);
+    line-height: 1.5;
+    color: var(--pocket-fg);
+  }
+
+  .spell-bee__attempt-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-3);
+  }
+
+  .spell-bee__attempt-row input {
+    font-size: var(--pocket-font-size-lg);
+    letter-spacing: 0.02em;
+  }
+
+  .spell-bee__feedback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--pocket-space-3);
+    padding: var(--pocket-space-5) var(--pocket-space-4);
+    text-align: center;
+    background: var(--pocket-bg-raised);
+    border: 1px solid var(--pocket-border-color);
+    border-radius: var(--pocket-radius-lg);
+  }
+
+  .spell-bee__feedback[data-result="correct"] {
+    border-color: color-mix(in srgb, var(--pocket-success) 50%, transparent);
+    background: color-mix(in srgb, var(--pocket-success) 8%, var(--pocket-bg-raised));
+  }
+
+  .spell-bee__feedback[data-result="wrong"] {
+    border-color: color-mix(in srgb, var(--pocket-warning) 50%, transparent);
+    background: color-mix(in srgb, var(--pocket-warning) 6%, var(--pocket-bg-raised));
+  }
+
+  .spell-bee__feedback-emoji {
+    font-size: 3.5rem;
+    line-height: 1;
+  }
+
+  .spell-bee__feedback-text {
+    margin: 0;
+    font-size: var(--pocket-font-size-lg);
+    font-weight: 600;
+    color: var(--pocket-fg);
+  }
+
+  .spell-bee__feedback-word {
+    margin: 0;
+    font-size: var(--pocket-font-size-base);
+    color: var(--pocket-fg-muted);
+  }
+
+  .spell-bee__feedback-word b {
+    color: var(--pocket-fg);
+    font-family: var(--pocket-font-mono);
+    letter-spacing: 0.03em;
+  }
+
+  .spell-bee__button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pocket-space-3);
+  }
+
+  .spell-bee__button-row button {
+    flex: 1 1 auto;
+  }
+
+  @keyframes pocket-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes pocket-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spell-bee__panel {
+      animation: none;
+    }
+    .spell-bee__spinner::before {
+      animation: none;
+    }
+  }
+</style>
+
+<section class="spell-bee" aria-labelledby="spell-bee-title">
+  <div class="spell-bee__topline">
+    <h1 id="spell-bee-title">Spell Bee</h1>
+    <div class="spell-bee__score" aria-label="Score">
+      <span class="spell-bee__score-label">Score</span>
+      <span class="spell-bee__score-value" id="score-value">0</span>
+    </div>
+  </div>
+
+  <div class="pocket-banner" data-tone="warn" id="model-warning" hidden>
+    <span id="model-warning-text"></span>
+  </div>
+
+  <div class="spell-bee__stage" aria-live="polite" aria-atomic="false">
+    <!-- idle: first load, or after a round is shown -->
+    <section class="spell-bee__panel" data-state="idle">
+      <p class="spell-bee__lead" id="idle-lead">Ready to play? Tap Start to get your first word.</p>
+      <div class="spell-bee__button-row">
+        <button id="btn-start" type="button" aria-label="Start a new round">Start</button>
+        <button id="btn-reset" type="button" data-variant="ghost" hidden aria-label="Reset score">Reset score</button>
+      </div>
+    </section>
+
+    <!-- fetching_word: awaiting model response -->
+    <section class="spell-bee__panel" data-state="fetching_word" hidden>
+      <div class="spell-bee__spinner">Thinking of a good word…</div>
+    </section>
+
+    <!-- awaiting_attempt: child types -->
+    <section class="spell-bee__panel" data-state="awaiting_attempt" hidden>
+      <span class="spell-bee__difficulty" id="difficulty-badge" data-level="medium">medium</span>
+      <p class="spell-bee__hint" id="hint-text"></p>
+      <div class="spell-bee__attempt-row">
+        <label for="attempt-input" class="pocket-sr-only">Your spelling attempt</label>
+        <input
+          type="text"
+          id="attempt-input"
+          autocomplete="off"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          placeholder="Type the word"
+          aria-label="Your spelling attempt"
+        />
+        <button id="btn-submit" type="button" aria-label="Submit your spelling">Submit</button>
+      </div>
+    </section>
+
+    <!-- judging: awaiting model judgment -->
+    <section class="spell-bee__panel" data-state="judging" hidden>
+      <div class="spell-bee__spinner">Checking your answer…</div>
+    </section>
+
+    <!-- showing_feedback: result card -->
+    <section class="spell-bee__panel" data-state="showing_feedback" hidden>
+      <div class="spell-bee__feedback" id="feedback-card" data-result="correct">
+        <div class="spell-bee__feedback-emoji" id="feedback-emoji" aria-hidden="true">🎉</div>
+        <p class="spell-bee__feedback-text" id="feedback-text">Nice work!</p>
+        <p class="spell-bee__feedback-word" id="feedback-word-line"></p>
+      </div>
+      <div class="spell-bee__button-row">
+        <button id="btn-next" type="button" aria-label="Get the next word">Next word</button>
+      </div>
+    </section>
+
+    <!-- word_error: both structuredChat attempts failed during word fetch -->
+    <section class="spell-bee__panel" data-state="word_error" hidden>
+      <div class="pocket-banner" data-tone="err">
+        <span>Having trouble getting a word from the model.</span>
+      </div>
+      <div class="spell-bee__button-row">
+        <button id="btn-retry-word" type="button" aria-label="Retry word fetch">Retry</button>
+      </div>
+    </section>
+
+    <!-- offline: ping failed on boot or retry -->
+    <section class="spell-bee__panel" data-state="offline" hidden>
+      <div class="pocket-banner" data-tone="err">
+        <span>
+          Can't reach Ollama at <code id="offline-host">localhost:11434</code>.
+          Make sure it's running on this device.
+        </span>
+      </div>
+      <div class="spell-bee__button-row">
+        <button id="btn-retry-ping" type="button" data-variant="secondary" aria-label="Retry connection">
+          Retry connection
+        </button>
+      </div>
+    </section>
+  </div>
 </section>
