@@ -16,3 +16,22 @@ jobs:
         with:
           scandir: ./scripts
           severity: error
+
+  sdk-tests:
+    name: SDK tests (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The plan targets Node 18+ as the minimum (matches what
+        # install-ollama.sh provisions via Termux). We matrix against 18 AND
+        # 20 so any accidental use of a Node-20-only API catches the 18 job
+        # at review time, not after release.
+        node-version: ['18', '20']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Run SDK unit tests
+        run: node --test sdk/test/*.test.js
