@@ -348,6 +348,14 @@ test('scaffold() produces a complete app from the real templates', async () => {
     const sw = await fs.readFile(path.join(outDir, 'sw.js'), 'utf8');
     assert.match(sw, /pocket-spell-bee-v1/);
 
+    // _base layout pin: the real templates/_base/style.css defines design
+    // tokens as CSS variables with a `--pocket-` prefix. If someone
+    // replaces the base with a placeholder again, this assertion will fail.
+    assert.match(html, /--pocket-bg/, 'scaffolded output should include the real _base tokens');
+    assert.match(html, /--pocket-tap-min/);
+    assert.match(html, /prefers-color-scheme: light/);
+    assert.match(html, /prefers-reduced-motion: reduce/);
+
     // Script-breakout guard against the real SDK: the SDK source has a
     // comment with a literal `</script>` inside backticks. Before the
     // escape pass, that closing tag prematurely terminated the inlined
