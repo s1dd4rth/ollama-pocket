@@ -24,5 +24,12 @@ node_modules/
 apps/*
 !apps/.gitkeep
 
+# examples/<slug>/fonts/ is copied verbatim from pwa/fonts/ at scaffold
+# time. Keeping the copied bytes out of git means the scaffold-drift
+# check only polices the files the scaffolder actually generates
+# (index.html, manifest.json, icon.svg, sw.js) — font drift is already
+# covered by pwa/fonts/ being committed.
+examples/*/fonts/
+
 # Logs
 *.log

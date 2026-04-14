@@ -1,0 +1,2662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <title>Spell Bee</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>/* =============================================================================
+ * templates/_base/style.css — ollama-pocket shared base layout
+ *
+ * Design language: Teenage Engineering, mirroring pwa/chat.html.
+ *   - Black background (#000000), white text, seven-step gray ramp.
+ *   - Single accent: #ff5c00 (TE orange).
+ *   - Space Mono for UI chrome (labels, tags, status indicators).
+ *   - DM Sans for body text (hints, feedback sentences).
+ *   - Square corners. 1–2px borders. No drop shadows, no gradients.
+ *   - Uppercase labels with heavy letter-spacing (1–3px) at 9–11px.
+ *   - Square status dots, not round. Invert-on-active buttons.
+ *
+ * Design constraints (from requirements/plans/scaffolding-system.md):
+ *   - Mobile-first. Every scaffolded app must be usable on a phone in one hand.
+ *   - Respect prefers-reduced-motion.
+ *   - 48px minimum tap target where the user actually needs to tap (WCAG 2.5.5).
+ *   - Keyboard focus must always be visible.
+ *   - Safe-area insets for notches, gesture bars, rounded corners.
+ *   - Tokens as CSS variables so per-template overrides stay scoped.
+ *   - Dark only. The TE aesthetic is dark — no prefers-color-scheme flip.
+ *
+ * Fonts: Space Mono + DM Sans. Scaffolder copies pwa/fonts/ into each app
+ * so these @font-face URLs resolve; if they 404 (test env), font-display:
+ * swap falls through to the system monospace / system-ui stacks.
+ *
+ * What lives here vs in a per-template stylesheet:
+ *   - Tokens (colour, space, radius, type scale)
+ *   - Element defaults (button, input, h1-h4, p, pre, code, a)
+ *   - The shared header (.pocket-header) + info bar + main
+ *   - Utility primitives: .pocket-banner, .pocket-stack, .pocket-info-tag
+ * Per-template CSS goes inline in body.html; don't bloat _base with
+ * game-specific layout.
+ * ========================================================================== */
+
+/* -----------------------------------------------------------------------------
+ * Fonts — woff2 shipped from pwa/fonts/, copied per-app by cli/scaffold.js
+ * -------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Space Mono';
+  src: url('./fonts/space-mono-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  src: url('./fonts/space-mono-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/dm-sans-variable.woff2') format('woff2-variations'),
+       url('./fonts/dm-sans-variable.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* -----------------------------------------------------------------------------
+ * Tokens
+ * -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+
+  /* Greyscale ramp — matches pwa/chat.html so the whole project reads as
+   * one design system. */
+  --pocket-black: #000000;
+  --pocket-white: #ffffff;
+  --pocket-gray-1: #111111;
+  --pocket-gray-2: #1a1a1a;
+  --pocket-gray-3: #222222;
+  --pocket-gray-4: #333333;
+  --pocket-gray-5: #666666;
+  --pocket-gray-6: #999999;
+  --pocket-gray-7: #cccccc;
+  --pocket-orange: #ff5c00;
+
+  /* Semantic aliases — keeps `--pocket-bg` etc. consistent with earlier
+   * scaffolding work without flipping every template ref when the palette
+   * changes. */
+  --pocket-bg: var(--pocket-black);
+  --pocket-bg-raised: var(--pocket-gray-1);
+  --pocket-bg-hover: var(--pocket-gray-2);
+  --pocket-fg: var(--pocket-white);
+  --pocket-fg-muted: var(--pocket-gray-6);
+  --pocket-fg-subtle: var(--pocket-gray-5);
+  --pocket-border-color: var(--pocket-gray-3);
+  --pocket-border-strong: var(--pocket-gray-4);
+  --pocket-accent: var(--pocket-orange);
+  --pocket-accent-hover: #ff7722;
+  --pocket-accent-fg: var(--pocket-black);
+  --pocket-success: var(--pocket-white);  /* TE palette encodes state via typography, not colour */
+  --pocket-warning: var(--pocket-orange);
+  --pocket-error: var(--pocket-gray-5);
+  --pocket-focus-ring: var(--pocket-orange);
+
+  /* Spacing scale — base 4px, tight on mobile. */
+  --pocket-space-1: 0.25rem;
+  --pocket-space-2: 0.5rem;
+  --pocket-space-3: 0.75rem;
+  --pocket-space-4: 1rem;
+  --pocket-space-5: 1.5rem;
+  --pocket-space-6: 2rem;
+  --pocket-space-7: 3rem;
+
+  /* Type scale — small by default; chrome is intentionally tiny (9–11px)
+   * with heavy tracking, body text reads at 13–14px. */
+  --pocket-font-size-2xs: 0.5625rem;  /* 9px  — chrome labels */
+  --pocket-font-size-xs: 0.6875rem;   /* 11px — tags, captions */
+  --pocket-font-size-sm: 0.8125rem;   /* 13px — body */
+  --pocket-font-size-base: 0.875rem;  /* 14px — controls */
+  --pocket-font-size-md: 1rem;        /* 16px — prompts */
+  --pocket-font-size-lg: 1.125rem;    /* 18px — hints */
+  --pocket-font-size-xl: 1.5rem;      /* 24px — emphasis */
+  --pocket-font-size-2xl: 2rem;       /* 32px — hero */
+
+  --pocket-line-height-tight: 1.15;
+  --pocket-line-height-body: 1.6;
+
+  /* Layout */
+  --pocket-max-width: 40rem;
+  --pocket-header-height: 48px;
+
+  /* Accessibility */
+  --pocket-tap-min: 48px;
+  --pocket-focus-ring-width: 2px;
+  --pocket-focus-ring-offset: 2px;
+
+  /* Motion */
+  --pocket-transition-fast: 120ms ease;
+  --pocket-transition-slow: 240ms ease;
+
+  /* Fonts — Space Mono fallbacks to Courier, DM Sans fallbacks to system-ui. */
+  --pocket-mono: 'Space Mono', 'SF Mono', 'Courier New', Menlo, Consolas, monospace;
+  --pocket-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --pocket-safe-top: env(safe-area-inset-top, 0px);
+  --pocket-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --pocket-safe-left: env(safe-area-inset-left, 0px);
+  --pocket-safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* -----------------------------------------------------------------------------
+ * Reset + base
+ * -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background: var(--pocket-bg);
+  color: var(--pocket-fg);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-base);
+  line-height: var(--pocket-line-height-body);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The `hidden` attribute must always win. The UA sheet sets
+ * `[hidden] { display: none }`, but author rules like `button { display:
+ * inline-flex }` out-cascade it and leave `<button hidden>` visible. */
+[hidden] {
+  display: none !important;
+}
+
+/* Typography defaults */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--pocket-mono);
+  font-weight: 700;
+  line-height: var(--pocket-line-height-tight);
+}
+
+h1 {
+  font-size: var(--pocket-font-size-2xl);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: var(--pocket-font-size-xl);
+  letter-spacing: -0.005em;
+}
+
+h3 {
+  font-size: var(--pocket-font-size-lg);
+}
+
+p {
+  font-family: var(--pocket-sans);
+  margin: 0 0 var(--pocket-space-3);
+  color: var(--pocket-gray-7);
+  line-height: 1.7;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--pocket-orange);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+code,
+kbd,
+samp {
+  font-family: var(--pocket-mono);
+  font-size: 0.95em;
+  padding: 1px 6px;
+  background: var(--pocket-gray-2);
+  border: 1px solid var(--pocket-gray-3);
+  color: var(--pocket-orange);
+}
+
+pre {
+  margin: 0 0 var(--pocket-space-3);
+  padding: var(--pocket-space-3) var(--pocket-space-4);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-3);
+  overflow-x: auto;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  color: var(--pocket-gray-7);
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--pocket-gray-3);
+  margin: var(--pocket-space-5) 0;
+}
+
+/* Keyboard focus — always visible, orange outline. */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--pocket-focus-ring-width) solid var(--pocket-focus-ring);
+  outline-offset: var(--pocket-focus-ring-offset);
+}
+
+/* -----------------------------------------------------------------------------
+ * Layout — header, info bar, main
+ * -------------------------------------------------------------------------- */
+
+.pocket-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pocket-space-3);
+  min-height: var(--pocket-header-height);
+  padding: calc(10px + var(--pocket-safe-top)) var(--pocket-space-4) 10px;
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  background: var(--pocket-black);
+  border-bottom: 1px solid var(--pocket-gray-3);
+  font-family: var(--pocket-mono);
+}
+
+.pocket-header__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pocket-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+/* TE-style logo square with 2-letter app mark. Templates set textContent
+ * via JS (or leave the default markup). */
+.pocket-logo {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pocket-black);
+  border: 2px solid var(--pocket-white);
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--pocket-white);
+  flex: 0 0 auto;
+}
+
+#app-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pocket-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status indicator — a square dot (not round) + uppercase label. */
+#connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-6);
+  font-weight: 400;
+}
+
+#connection-status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--pocket-gray-5);
+  border-radius: 0; /* square */
+  transition: background var(--pocket-transition-fast);
+}
+
+#connection-status:empty {
+  display: none;
+}
+
+#connection-status[data-state="ok"]::before {
+  background: var(--pocket-white);
+}
+
+#connection-status[data-state="warn"]::before {
+  background: var(--pocket-orange);
+  animation: pocket-blink 0.8s step-end infinite;
+}
+
+#connection-status[data-state="err"]::before {
+  background: var(--pocket-gray-5);
+}
+
+@keyframes pocket-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
+
+/* Info bar — renders model / ageGroup / score tags in a thin strip below
+ * the header. Optional; templates that don't want it simply omit the
+ * .pocket-info-bar block. */
+.pocket-info-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--pocket-space-3);
+  padding: 6px var(--pocket-space-4);
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  border-bottom: 1px solid var(--pocket-gray-3);
+  background: var(--pocket-gray-1);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-5);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pocket-info-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.pocket-info-bar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.pocket-info-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--pocket-gray-4);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1px;
+  color: var(--pocket-gray-6);
+  text-transform: none;
+  white-space: nowrap;
+}
+
+main#app-root {
+  width: 100%;
+  max-width: var(--pocket-max-width);
+  margin: 0 auto;
+  padding: var(--pocket-space-5) var(--pocket-space-4);
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  padding-bottom: calc(var(--pocket-space-6) + var(--pocket-safe-bottom));
+  flex: 1 1 auto;
+}
+
+/* -----------------------------------------------------------------------------
+ * Controls — square buttons, invert on active
+ * -------------------------------------------------------------------------- */
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pocket-space-2);
+  min-height: var(--pocket-tap-min);
+  min-width: var(--pocket-tap-min);
+  padding: 0 var(--pocket-space-5);
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border: 2px solid var(--pocket-white);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background var(--pocket-transition-fast),
+    color var(--pocket-transition-fast),
+    border-color var(--pocket-transition-fast);
+  user-select: none;
+}
+
+button:hover:not(:disabled) {
+  background: var(--pocket-gray-7);
+  border-color: var(--pocket-gray-7);
+}
+
+button:active:not(:disabled) {
+  background: var(--pocket-black);
+  color: var(--pocket-white);
+  border-color: var(--pocket-white);
+}
+
+button:disabled {
+  background: transparent;
+  color: var(--pocket-gray-4);
+  border-color: var(--pocket-gray-4);
+  cursor: not-allowed;
+}
+
+button[data-variant="accent"] {
+  background: var(--pocket-orange);
+  color: var(--pocket-black);
+  border-color: var(--pocket-orange);
+}
+
+button[data-variant="accent"]:hover:not(:disabled) {
+  background: var(--pocket-accent-hover);
+  border-color: var(--pocket-accent-hover);
+}
+
+button[data-variant="accent"]:active:not(:disabled) {
+  background: var(--pocket-black);
+  color: var(--pocket-orange);
+  border-color: var(--pocket-orange);
+}
+
+button[data-variant="secondary"] {
+  background: transparent;
+  color: var(--pocket-white);
+  border-color: var(--pocket-gray-4);
+}
+
+button[data-variant="secondary"]:hover:not(:disabled) {
+  background: var(--pocket-gray-2);
+  border-color: var(--pocket-gray-5);
+}
+
+button[data-variant="secondary"]:active:not(:disabled) {
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border-color: var(--pocket-white);
+}
+
+button[data-variant="ghost"] {
+  background: transparent;
+  color: var(--pocket-gray-6);
+  border-color: transparent;
+}
+
+button[data-variant="ghost"]:hover:not(:disabled) {
+  color: var(--pocket-white);
+  border-color: var(--pocket-gray-4);
+}
+
+button[data-variant="ghost"]:active:not(:disabled) {
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border-color: var(--pocket-white);
+}
+
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+  font-family: var(--pocket-sans);
+  font-size: var(--pocket-font-size-md);
+  display: block;
+  width: 100%;
+  min-height: var(--pocket-tap-min);
+  padding: var(--pocket-space-3) 0;
+  background: transparent;
+  color: var(--pocket-white);
+  border: none;
+  border-bottom: 1px solid var(--pocket-gray-4);
+  border-radius: 0;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--pocket-transition-fast);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-bottom-color: var(--pocket-white);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--pocket-gray-5);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+label {
+  display: block;
+  margin-bottom: var(--pocket-space-2);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-5);
+}
+
+/* -----------------------------------------------------------------------------
+ * Utility primitives
+ * -------------------------------------------------------------------------- */
+
+.pocket-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pocket-space-4);
+}
+
+.pocket-stack--tight {
+  gap: var(--pocket-space-2);
+}
+
+.pocket-stack--loose {
+  gap: var(--pocket-space-6);
+}
+
+/* Double-border card — TE-style section container. */
+.pocket-card {
+  position: relative;
+  padding: var(--pocket-space-4) var(--pocket-space-5);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-3);
+}
+
+.pocket-card--double::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1px solid var(--pocket-gray-3);
+  pointer-events: none;
+}
+
+/* Banner: inline notifications. Border-only, uppercase mono label. */
+.pocket-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--pocket-space-3);
+  padding: var(--pocket-space-3) var(--pocket-space-4);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-4);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  letter-spacing: 0.5px;
+  color: var(--pocket-gray-7);
+}
+
+.pocket-banner::before {
+  content: "!";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: var(--pocket-gray-4);
+  color: var(--pocket-white);
+  font-weight: 700;
+  border-radius: 0;
+}
+
+.pocket-banner[data-tone="warn"] {
+  border-color: var(--pocket-orange);
+  color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="warn"]::before {
+  background: var(--pocket-orange);
+  color: var(--pocket-black);
+}
+
+.pocket-banner[data-tone="err"] {
+  border-color: var(--pocket-gray-5);
+  color: var(--pocket-gray-6);
+}
+
+.pocket-banner[data-tone="err"]::before {
+  content: "X";
+  background: var(--pocket-gray-5);
+  color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="ok"] {
+  border-color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="ok"]::before {
+  content: "✓";
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+}
+
+/* Visually hidden, still readable by screen readers. */
+.pocket-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -----------------------------------------------------------------------------
+ * Responsive tweaks — mobile-first, one breakpoint at tablet/desktop
+ * -------------------------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  :root {
+    --pocket-header-height: 56px;
+  }
+
+  .pocket-header {
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+
+  .pocket-info-bar {
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+
+  main#app-root {
+    padding: var(--pocket-space-6) var(--pocket-space-5);
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+}
+
+/* -----------------------------------------------------------------------------
+ * Motion preferences
+ * -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+  <script type="application/json" id="app-config">{"appName":"Spell Bee","appSlug":"spell-bee","category":"kids-game","template":"kids-game/spell-bee","ageGroup":"6-8","defaultModel":"qwen2.5:1.5b","host":"http://localhost:11434","sdkVersion":"0.3.0-dev","scaffoldedAt":"2026-01-01T00:00:00.000Z"}</script>
+  <script>// =============================================================================
+// sdk/pocket.js — ollama-pocket shared SDK
+//
+// UMD-lite module that runs identically in three contexts with ZERO source
+// transformation:
+//
+//   1. Inlined into a scaffolded <script> block (non-module, plain script)
+//   2. <script src="pocket.js"> loaded from disk
+//   3. require('./pocket.js') in Node.js for unit tests and the CLI
+//
+// The wrapper at the bottom either assigns to `window.Pocket` (browser) or
+// to `module.exports` (Node). The inline-script path uses the `window.Pocket`
+// branch, so every scaffolded app accesses the SDK as `Pocket.OllamaClient`,
+// `Pocket.SessionManager`, etc. — no ES-module scoping trap.
+//
+// Why not ES modules: an inline <script type="module"> has its own module
+// scope, so `export class OllamaClient` would be unreachable from the
+// template's app-script in the same document. The scaffolding-system plan
+// dug into this at length — see requirements/plans/scaffolding-system.md.
+//
+// Target: bash 3.2-equivalent portability for JS — works on Node 18+ and
+// any modern browser (Chrome 90+ per REQUIREMENTS.md).
+// =============================================================================
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
+  } else {
+    root.Pocket = api;
+  }
+})(
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof window !== 'undefined'
+      ? window
+      : typeof self !== 'undefined'
+        ? self
+        : this,
+  function () {
+    'use strict';
+
+    // -------------------------------------------------------------------------
+    // Version + constants
+    // -------------------------------------------------------------------------
+
+    var SDK_VERSION = '0.3.0-dev';
+    var MIN_OLLAMA_VERSION = '0.5.0';
+
+    // Models verified to produce reliable JSON via Ollama's `format` parameter.
+    // `gemma3:1b` and `smollm2:360m` are DELIBERATELY excluded from `structured`
+    // because they hallucinate JSON under grammar constraints at that size.
+    // See requirements/plans/scaffolding-system.md for the reasoning.
+    var MODEL_PREFERENCES = {
+      structured: [
+        /^qwen2\.5:(1\.5b|3b|7b|14b|32b|72b)(-.*)?$/,
+        /^qwen2\.5-coder:/,
+        /^llama3\.[123]:(1b|3b|8b)(-.*)?$/,
+        /^phi3(\.5)?:/,
+        /^gemma2:2b(-.*)?$/,
+      ],
+      // Free-form chat accepts anything. No filter.
+      chat: [/./],
+    };
+
+    // -------------------------------------------------------------------------
+    // Errors
+    // -------------------------------------------------------------------------
+
+    function StructuredChatError(message, details) {
+      var err = new Error(message);
+      err.name = 'StructuredChatError';
+      err.details = details || {};
+      return err;
+    }
+    StructuredChatError.prototype = Object.create(Error.prototype);
+
+    // -------------------------------------------------------------------------
+    // Utility: pickModel — first matching regex in the preference list
+    // -------------------------------------------------------------------------
+
+    function pickModel(availableModels, capability) {
+      if (!availableModels || availableModels.length === 0) return null;
+      var key = capability || 'chat';
+      var patterns = MODEL_PREFERENCES[key] || MODEL_PREFERENCES.chat;
+      for (var i = 0; i < patterns.length; i++) {
+        for (var j = 0; j < availableModels.length; j++) {
+          if (patterns[i].test(availableModels[j])) {
+            return availableModels[j];
+          }
+        }
+      }
+      return null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: safeJSONForHTMLScript
+    //
+    // JSON.stringify does NOT escape `<`, `>`, or `&`, so a user-controlled
+    // value containing `<\/script>` can break out of a
+    // <script type="application/json"> block. This wrapper escapes those plus
+    // U+2028/U+2029 (which are literal newlines in JavaScript but not in JSON,
+    // and can break inline scripts in some browsers).
+    // -------------------------------------------------------------------------
+
+    function safeJSONForHTMLScript(value) {
+      return JSON.stringify(value)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: compareSemver — returns -1, 0, +1 for a < b, a === b, a > b
+    // Handles the "0.5.0" / "0.20.5" / "1.2.3-rc1" shape Ollama uses.
+    // -------------------------------------------------------------------------
+
+    function compareSemver(a, b) {
+      var aParts = String(a).replace(/[^0-9.].*$/, '').split('.').map(Number);
+      var bParts = String(b).replace(/[^0-9.].*$/, '').split('.').map(Number);
+      var n = Math.max(aParts.length, bParts.length);
+      for (var i = 0; i < n; i++) {
+        var av = aParts[i] || 0;
+        var bv = bParts[i] || 0;
+        if (av < bv) return -1;
+        if (av > bv) return 1;
+      }
+      return 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // OllamaClient — HTTP client for the Ollama API
+    // -------------------------------------------------------------------------
+
+    function OllamaClient(options) {
+      options = options || {};
+      this.host = options.host || this._detectHost();
+      this.defaultModel = options.model || null;
+      // Injectable for tests. Falls back to the runtime's global fetch,
+      // but wraps it in a closure so the call site isn't `this._fetch(...)`
+      // — WebIDL-backed browser implementations throw
+      // "Illegal invocation" when fetch is invoked with a receiver other
+      // than the global (Chrome, Safari). Node's global fetch doesn't care,
+      // but the browser path is the one that actually ships to users.
+      if (options.fetch) {
+        var userFetch = options.fetch;
+        this._fetch = function (url, init) { return userFetch(url, init); };
+      } else if (typeof fetch !== 'undefined') {
+        this._fetch = function (url, init) { return fetch(url, init); };
+      } else {
+        this._fetch = null;
+      }
+      // Memoised version check (populated on first structuredChat)
+      this._versionCache = null;
+      this._versionWarned = false;
+    }
+
+    OllamaClient.prototype._detectHost = function () {
+      if (typeof window !== 'undefined' && window.OLLAMA_HOST) {
+        return window.OLLAMA_HOST;
+      }
+      if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+        return window.location.protocol + '//' + window.location.hostname + ':11434';
+      }
+      return 'http://localhost:11434';
+    };
+
+    OllamaClient.prototype._request = function (path, init) {
+      if (!this._fetch) {
+        return Promise.reject(new Error('no fetch available — pass { fetch: ... } to OllamaClient'));
+      }
+      return this._fetch(this.host + path, init || {});
+    };
+
+    OllamaClient.prototype._post = function (path, body) {
+      return this._request(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    };
+
+    OllamaClient.prototype.ping = function () {
+      var self = this;
+      return this._request('/api/tags').then(
+        function (res) {
+          if (!res.ok) return { ok: false, models: [], error: 'HTTP ' + res.status };
+          return res.json().then(function (data) {
+            var models = (data.models || []).map(function (m) {
+              return m.name;
+            });
+            return { ok: true, models: models };
+          });
+        },
+        function (err) {
+          return { ok: false, models: [], error: err.message || String(err) };
+        }
+      );
+    };
+
+    OllamaClient.prototype.version = function () {
+      if (this._versionCache) return Promise.resolve(this._versionCache);
+      var self = this;
+      return this._request('/api/version').then(function (res) {
+        if (!res.ok) {
+          self._versionCache = { version: 'unknown', compatible: false, minimum: MIN_OLLAMA_VERSION };
+          return self._versionCache;
+        }
+        return res.json().then(function (data) {
+          var v = data.version || 'unknown';
+          var compatible = v !== 'unknown' && compareSemver(v, MIN_OLLAMA_VERSION) >= 0;
+          self._versionCache = { version: v, compatible: compatible, minimum: MIN_OLLAMA_VERSION };
+          return self._versionCache;
+        });
+      });
+    };
+
+    OllamaClient.prototype.models = function () {
+      return this.ping().then(function (result) {
+        if (!result.ok) throw new Error(result.error || 'ping failed');
+        return result.models;
+      });
+    };
+
+    OllamaClient.prototype.chat = function (messages, options) {
+      options = options || {};
+      var body = {
+        model: options.model || this.defaultModel,
+        messages: messages,
+        stream: false,
+      };
+      if (options.options) body.options = options.options;
+      return this._post('/api/chat', body).then(function (res) {
+        if (!res.ok) throw new Error('chat failed: HTTP ' + res.status);
+        return res.json().then(function (data) {
+          return (data.message && data.message.content) || '';
+        });
+      });
+    };
+
+    // streamChat — parses Ollama's NDJSON chat stream, calls onChunk(text, full)
+    // for each incremental response. onChunk can return `false` to abort early.
+    // Returns the full concatenated content when the stream ends (or is aborted).
+    OllamaClient.prototype.streamChat = function (messages, options, onChunk) {
+      options = options || {};
+      var body = {
+        model: options.model || this.defaultModel,
+        messages: messages,
+        stream: true,
+      };
+      if (options.options) body.options = options.options;
+
+      return this._post('/api/chat', body).then(function (res) {
+        if (!res.ok) throw new Error('streamChat failed: HTTP ' + res.status);
+        if (!res.body || !res.body.getReader) {
+          // Fallback for environments without streaming (tests, old Node).
+          return res.text().then(function (text) {
+            return parseNDJSONBuffer(text, onChunk);
+          });
+        }
+        var reader = res.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        var full = '';
+        var aborted = false;
+
+        function pump() {
+          return reader.read().then(function (chunk) {
+            if (aborted) return full;
+            if (chunk.done) {
+              // Drain the last line.
+              if (buffer.trim()) {
+                var parsed = safeParseLine(buffer);
+                if (parsed && parsed.message && parsed.message.content) {
+                  full += parsed.message.content;
+                  if (onChunk) onChunk(parsed.message.content, parsed);
+                }
+              }
+              return full;
+            }
+            buffer += decoder.decode(chunk.value, { stream: true });
+            var lines = buffer.split('\n');
+            buffer = lines.pop(); // keep partial last line
+            for (var i = 0; i < lines.length; i++) {
+              var line = lines[i].trim();
+              if (!line) continue;
+              var j = safeParseLine(line);
+              if (!j) continue;
+              if (j.message && typeof j.message.content === 'string') {
+                full += j.message.content;
+                if (onChunk) {
+                  var result = onChunk(j.message.content, j);
+                  if (result === false) {
+                    aborted = true;
+                    reader.cancel();
+                    return full;
+                  }
+                }
+              }
+              if (j.done) {
+                return full;
+              }
+            }
+            return pump();
+          });
+        }
+        return pump();
+      });
+    };
+
+    // Helper shared between stream path and fallback path.
+    function safeParseLine(line) {
+      try {
+        return JSON.parse(line);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Fallback NDJSON parser for environments without ReadableStream.
+    function parseNDJSONBuffer(text, onChunk) {
+      var full = '';
+      var lines = text.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        var j = safeParseLine(line);
+        if (!j) continue;
+        if (j.message && typeof j.message.content === 'string') {
+          full += j.message.content;
+          if (onChunk) {
+            var result = onChunk(j.message.content, j);
+            if (result === false) return full;
+          }
+        }
+      }
+      return full;
+    }
+
+    // structuredChat — Ollama's `format` parameter forces JSON output matching
+    // the provided schema. First attempt goes through cleanly. If parsing fails
+    // (malformed JSON, missing required key), retry once with an explicit
+    // system message reminding the model to return valid JSON. Second failure
+    // throws StructuredChatError with the raw response attached.
+    OllamaClient.prototype.structuredChat = function (messages, schema, options) {
+      options = options || {};
+      var self = this;
+
+      // Check version lazily — warn once, don't block.
+      var versionCheck = this.version().then(function (info) {
+        if (!info.compatible && !self._versionWarned) {
+          self._versionWarned = true;
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn(
+              '[Pocket] Ollama version ' + info.version +
+              ' is older than the ' + MIN_OLLAMA_VERSION +
+              ' minimum recommended for structured output. ' +
+              'structuredChat() may return prose instead of JSON.'
+            );
+          }
+        }
+      });
+
+      function tryOnce(extraMessages) {
+        var body = {
+          model: options.model || self.defaultModel,
+          messages: (extraMessages || []).concat(messages),
+          stream: false,
+          format: schema,
+        };
+        if (options.options) body.options = options.options;
+        return self._post('/api/chat', body).then(function (res) {
+          if (!res.ok) {
+            throw StructuredChatError('HTTP ' + res.status, { status: res.status });
+          }
+          return res.json().then(function (data) {
+            var raw = (data.message && data.message.content) || '';
+            if (!raw) {
+              throw StructuredChatError('empty response from model', { raw: '', data: data });
+            }
+            var parsed;
+            try {
+              parsed = JSON.parse(raw);
+            } catch (e) {
+              throw StructuredChatError('JSON.parse failed: ' + e.message, { raw: raw });
+            }
+            // Shallow check: all schema.required keys must be present on the
+            // parsed object. We do NOT check types — Ollama's grammar-constrained
+            // output handles that, and deep validation would pull in ajv or
+            // similar. Keep the SDK zero-dep.
+            if (schema && schema.required && Array.isArray(schema.required)) {
+              for (var k = 0; k < schema.required.length; k++) {
+                var key = schema.required[k];
+                if (!Object.prototype.hasOwnProperty.call(parsed, key)) {
+                  throw StructuredChatError(
+                    'missing required key "' + key + '"',
+                    { raw: raw, parsed: parsed }
+                  );
+                }
+              }
+            }
+            return parsed;
+          });
+        });
+      }
+
+      return versionCheck.then(function () {
+        return tryOnce().catch(function (err) {
+          if (!err || err.name !== 'StructuredChatError') throw err;
+          // One retry with explicit nudge.
+          var nudge = [
+            {
+              role: 'system',
+              content:
+                'Your previous response could not be parsed as valid JSON. ' +
+                'Return ONLY valid JSON matching the requested schema. ' +
+                'No prose. No markdown code fences. No commentary.',
+            },
+          ];
+          return tryOnce(nudge);
+        });
+      });
+    };
+
+    // -------------------------------------------------------------------------
+    // SessionManager — localStorage-backed history + arbitrary state
+    // -------------------------------------------------------------------------
+
+    function SessionManager(options) {
+      options = options || {};
+      this.key = options.key || 'default';
+      this.maxTurns = options.maxTurns || 50;
+      // Injectable for tests. Falls back to window.localStorage.
+      this._storage = options.storage || (
+        typeof localStorage !== 'undefined' ? localStorage : null
+      );
+      // In-memory fallback so SessionManager is still usable (just not persisted)
+      // when localStorage is unavailable (incognito, Node, tests without stub).
+      this._memory = {};
+    }
+
+    SessionManager.prototype._keyFor = function (suffix) {
+      return 'pocket:' + this.key + ':' + suffix;
+    };
+
+    SessionManager.prototype._read = function (suffix) {
+      var k = this._keyFor(suffix);
+      // Storage is authoritative when it works. If it throws or returns null
+      // (nothing ever saved there), fall through to the in-memory backup.
+      if (this._storage) {
+        try {
+          var raw = this._storage.getItem(k);
+          if (raw !== null) return JSON.parse(raw);
+        } catch (e) {
+          // Read threw — fall through to memory
+        }
+      }
+      return this._memory[k] !== undefined ? this._memory[k] : null;
+    };
+
+    SessionManager.prototype._write = function (suffix, value) {
+      var k = this._keyFor(suffix);
+      // Always write to memory as a backup. This makes the SDK robust to
+      // storage that partially works — e.g. Safari private mode where
+      // setItem throws QuotaExceededError, or a pathological storage where
+      // getItem throws but setItem returns normally. The test suite exercises
+      // both.
+      this._memory[k] = value;
+      if (this._storage) {
+        try {
+          this._storage.setItem(k, JSON.stringify(value));
+        } catch (e) {
+          // Already mirrored to memory; swallow.
+        }
+      }
+    };
+
+    SessionManager.prototype._delete = function (suffix) {
+      var k = this._keyFor(suffix);
+      if (this._storage) {
+        try {
+          this._storage.removeItem(k);
+        } catch (e) {
+          // ignore
+        }
+      }
+      delete this._memory[k];
+    };
+
+    SessionManager.prototype.add = function (role, content) {
+      var history = this._read('history') || [];
+      history.push({ role: role, content: content });
+      // Trim to maxTurns, dropping oldest first.
+      if (history.length > this.maxTurns) {
+        history = history.slice(history.length - this.maxTurns);
+      }
+      this._write('history', history);
+    };
+
+    SessionManager.prototype.get = function () {
+      return this._read('history') || [];
+    };
+
+    SessionManager.prototype.clear = function () {
+      this._delete('history');
+      this._delete('state');
+    };
+
+    SessionManager.prototype.save = function (extraData) {
+      this._write('state', extraData);
+    };
+
+    SessionManager.prototype.load = function () {
+      return this._read('state');
+    };
+
+    // -------------------------------------------------------------------------
+    // EventBus — tiny pub/sub, no deps
+    // -------------------------------------------------------------------------
+
+    function EventBus() {
+      this._handlers = {};
+    }
+
+    EventBus.prototype.on = function (event, handler) {
+      if (!this._handlers[event]) this._handlers[event] = [];
+      this._handlers[event].push(handler);
+    };
+
+    EventBus.prototype.off = function (event, handler) {
+      if (!this._handlers[event]) return;
+      this._handlers[event] = this._handlers[event].filter(function (h) {
+        return h !== handler;
+      });
+    };
+
+    EventBus.prototype.once = function (event, handler) {
+      var self = this;
+      function wrapped(payload) {
+        self.off(event, wrapped);
+        handler(payload);
+      }
+      this.on(event, wrapped);
+    };
+
+    EventBus.prototype.emit = function (event, payload) {
+      if (!this._handlers[event]) return;
+      // Snapshot the handler list so once() unsubscribes don't affect the
+      // current emit iteration.
+      var handlers = this._handlers[event].slice();
+      for (var i = 0; i < handlers.length; i++) {
+        handlers[i](payload);
+      }
+    };
+
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
+
+    return {
+      VERSION: SDK_VERSION,
+      MIN_OLLAMA_VERSION: MIN_OLLAMA_VERSION,
+      MODEL_PREFERENCES: MODEL_PREFERENCES,
+      OllamaClient: OllamaClient,
+      SessionManager: SessionManager,
+      EventBus: EventBus,
+      StructuredChatError: StructuredChatError,
+      pickModel: pickModel,
+      safeJSONForHTMLScript: safeJSONForHTMLScript,
+      compareSemver: compareSemver,
+    };
+  }
+);
+</script>
+</head>
+<body>
+  <header class="pocket-header" role="banner">
+    <div class="pocket-header__left">
+      <div class="pocket-logo" id="app-logo" aria-hidden="true">::</div>
+      <span id="app-title">Spell Bee</span>
+    </div>
+    <div class="pocket-header__right">
+      <span id="connection-status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <div class="pocket-info-bar" id="info-bar" role="region" aria-label="Session info">
+    <span class="pocket-info-bar__group">
+      <span>Model</span>
+      <span class="pocket-info-tag" id="model-badge">—</span>
+    </span>
+    <span class="pocket-info-bar__group">
+      <span>Host</span>
+      <span class="pocket-info-tag" id="host-badge">local</span>
+    </span>
+  </div>
+
+  <main id="app-root"><!-- templates/kids-game/spell-bee/body.html
+     Spell Bee v1 — Teenage Engineering aesthetic.
+     5-state FSM: idle → fetching_word → awaiting_attempt → judging → showing_feedback → idle.
+     Template-specific CSS lives in an inline <style> block because PR 4
+     does not add a per-template stylesheet marker to the scaffolder. -->
+
+<style>
+  .spell-bee {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-5);
+  }
+
+  /* Section label — TE-style "01 / READY" uppercase tag. */
+  .sb-label {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-2);
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sb-label__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: var(--pocket-white);
+    color: var(--pocket-black);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .sb-label__line {
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--pocket-gray-3);
+  }
+
+  /* Top strip: title + subtitle + score */
+  .sb-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--pocket-space-4);
+    padding-bottom: var(--pocket-space-4);
+    border-bottom: 1px solid var(--pocket-gray-3);
+  }
+
+  .sb-top__title {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xl);
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--pocket-white);
+    margin: 0;
+    line-height: 1;
+  }
+
+  .sb-top__subtitle {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+    margin-top: 4px;
+  }
+
+  .sb-score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex: 0 0 auto;
+  }
+
+  .sb-score__label {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sb-score__value {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xl);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--pocket-white);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Individual FSM state panel */
+  .sb-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-4);
+    animation: sb-fade-in 200ms ease;
+  }
+
+  /* Lead text (idle intro) */
+  .sb-lead {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.6;
+    color: var(--pocket-gray-7);
+    margin: 0;
+    max-width: 38ch;
+  }
+
+  /* Spinner row with blinking orange cursor */
+  .sb-spinner {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-3);
+    padding: var(--pocket-space-5) 0;
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-6);
+  }
+
+  .sb-spinner__cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--pocket-orange);
+    animation: sb-cursor 0.8s step-end infinite;
+  }
+
+  /* Hint card — double-border TE card with big sans body */
+  .sb-hint-card {
+    position: relative;
+    padding: var(--pocket-space-5);
+    background: var(--pocket-gray-1);
+    border: 1px solid var(--pocket-gray-3);
+  }
+
+  .sb-hint-card::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: -4px;
+    bottom: -4px;
+    border: 1px solid var(--pocket-gray-3);
+    pointer-events: none;
+  }
+
+  .sb-hint-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pocket-space-3);
+    margin-bottom: var(--pocket-space-3);
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sb-difficulty {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border: 1px solid var(--pocket-gray-4);
+    font-family: var(--pocket-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-6);
+  }
+
+  .sb-difficulty[data-level="easy"] {
+    border-color: var(--pocket-white);
+    color: var(--pocket-white);
+  }
+
+  .sb-difficulty[data-level="medium"] {
+    border-color: var(--pocket-orange);
+    color: var(--pocket-orange);
+  }
+
+  .sb-difficulty[data-level="hard"] {
+    border-color: var(--pocket-orange);
+    background: var(--pocket-orange);
+    color: var(--pocket-black);
+  }
+
+  .sb-hint-card__body {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-lg);
+    line-height: 1.55;
+    color: var(--pocket-white);
+    margin: 0;
+  }
+
+  /* Attempt input */
+  .sb-attempt-label {
+    display: block;
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+    margin-bottom: var(--pocket-space-2);
+  }
+
+  #attempt-input {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-xl);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--pocket-white);
+    border-bottom-color: var(--pocket-gray-4);
+  }
+
+  #attempt-input:focus {
+    border-bottom-color: var(--pocket-orange);
+  }
+
+  /* Feedback card */
+  .sb-feedback {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-3);
+    padding: var(--pocket-space-5);
+    background: var(--pocket-gray-1);
+    border: 1px solid var(--pocket-gray-4);
+  }
+
+  .sb-feedback::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: -4px;
+    bottom: -4px;
+    border: 1px solid var(--pocket-gray-3);
+    pointer-events: none;
+  }
+
+  .sb-feedback[data-result="correct"] {
+    border-color: var(--pocket-white);
+  }
+
+  .sb-feedback[data-result="wrong"] {
+    border-color: var(--pocket-orange);
+  }
+
+  .sb-feedback__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pocket-space-3);
+  }
+
+  .sb-feedback__status {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .sb-feedback[data-result="correct"] .sb-feedback__status {
+    color: var(--pocket-white);
+  }
+
+  .sb-feedback[data-result="wrong"] .sb-feedback__status {
+    color: var(--pocket-orange);
+  }
+
+  .sb-feedback__delta {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-xs);
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--pocket-gray-6);
+  }
+
+  .sb-feedback__body {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.55;
+    color: var(--pocket-gray-7);
+    margin: 0;
+  }
+
+  /* Compare block — YOU vs WORD */
+  .sb-feedback__compare {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--pocket-space-4);
+    row-gap: var(--pocket-space-2);
+    align-items: baseline;
+    padding: var(--pocket-space-3) 0 0;
+    margin-top: var(--pocket-space-2);
+    border-top: 1px solid var(--pocket-gray-3);
+  }
+
+  .sb-feedback__compare-label {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sb-feedback__compare-value {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-md);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--pocket-gray-6);
+    text-transform: uppercase;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Per-character spans used for diff highlighting. A matching char is
+   * rendered normally; a mismatching char gets a tinted underline so the
+   * eye can zoom to the exact letter(s) that differ between attempt and
+   * target. */
+  .sb-char {
+    display: inline-block;
+  }
+
+  .sb-char--wrong {
+    position: relative;
+    padding: 0 1px;
+    color: var(--pocket-black);
+    background: var(--pocket-orange);
+  }
+
+  .sb-char--missing {
+    position: relative;
+    padding: 0 1px;
+    color: var(--pocket-black);
+    background: var(--pocket-white);
+  }
+
+  /* Placeholder glyph for an insertion point where the attempt is missing
+   * a character. Small dim square so it reads as "something is absent". */
+  .sb-char--ghost {
+    display: inline-block;
+    width: 0.55em;
+    color: var(--pocket-gray-4);
+  }
+
+  /* On correct: both rows read white. On wrong: attempt is orange, target
+   * is white, so the eye can read them as "you/word". */
+  .sb-feedback[data-result="correct"] .sb-feedback__compare-value {
+    color: var(--pocket-white);
+  }
+
+  .sb-feedback[data-result="wrong"] #feedback-attempt-value {
+    color: var(--pocket-orange);
+  }
+
+  .sb-feedback[data-result="wrong"] #feedback-word-value {
+    color: var(--pocket-white);
+  }
+
+  /* Button row */
+  .sb-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pocket-space-3);
+  }
+
+  .sb-actions button {
+    flex: 1 1 auto;
+  }
+
+  /* Session-complete summary card */
+  .sb-summary {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--pocket-space-4);
+    padding: var(--pocket-space-5);
+    background: var(--pocket-gray-1);
+    border: 1px solid var(--pocket-white);
+  }
+
+  .sb-summary::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: -4px;
+    bottom: -4px;
+    border: 1px solid var(--pocket-gray-3);
+    pointer-events: none;
+  }
+
+  .sb-summary__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sb-summary__stat--full {
+    grid-column: 1 / -1;
+  }
+
+  .sb-summary__label {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sb-summary__value {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xl);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--pocket-white);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-summary__value--accent {
+    color: var(--pocket-orange);
+  }
+
+  .sb-summary__note {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-sm);
+    color: var(--pocket-gray-6);
+    margin: 0;
+    grid-column: 1 / -1;
+  }
+
+  /* Animations */
+  @keyframes sb-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes sb-cursor {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sb-panel,
+    .sb-spinner__cursor {
+      animation: none;
+    }
+  }
+</style>
+
+<section class="spell-bee" aria-labelledby="spell-bee-title">
+  <div class="sb-top">
+    <div>
+      <h1 class="sb-top__title" id="spell-bee-title">SPELL_BEE</h1>
+      <div class="sb-top__subtitle" id="age-subtitle">AGE —</div>
+    </div>
+    <div class="sb-score" aria-label="Session progress">
+      <span class="sb-score__label" id="round-label">Round 0 / 5</span>
+      <span class="sb-score__value" id="score-value">0</span>
+    </div>
+  </div>
+
+  <div class="pocket-banner" data-tone="warn" id="model-warning" hidden>
+    <span id="model-warning-text"></span>
+  </div>
+
+  <div class="spell-bee__stage" aria-live="polite" aria-atomic="false">
+    <!-- idle -->
+    <section class="sb-panel spell-bee__panel" data-state="idle">
+      <div class="sb-label">
+        <span class="sb-label__num">01</span>
+        <span id="idle-label">New session</span>
+        <span class="sb-label__line"></span>
+      </div>
+      <p class="sb-lead" id="idle-lead">5 rounds per session. Each round: a word, a hint, your attempt. Everything runs locally on this device — nothing leaves the phone.</p>
+      <div class="sb-actions">
+        <button id="btn-start" type="button" data-variant="accent" aria-label="Start new session">Start Session</button>
+      </div>
+    </section>
+
+    <!-- fetching_word -->
+    <section class="sb-panel spell-bee__panel" data-state="fetching_word" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">02</span>
+        <span>Fetching word</span>
+        <span class="sb-label__line"></span>
+      </div>
+      <div class="sb-spinner">
+        <span>Thinking</span>
+        <span class="sb-spinner__cursor" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <!-- awaiting_attempt -->
+    <section class="sb-panel spell-bee__panel" data-state="awaiting_attempt" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">03</span>
+        <span>Your attempt</span>
+        <span class="sb-label__line"></span>
+      </div>
+
+      <div class="sb-hint-card">
+        <div class="sb-hint-card__meta">
+          <span>Hint</span>
+          <span class="sb-difficulty" id="difficulty-badge" data-level="medium">medium</span>
+        </div>
+        <p class="sb-hint-card__body" id="hint-text"></p>
+      </div>
+
+      <div>
+        <label class="sb-attempt-label" for="attempt-input">Type the word</label>
+        <input
+          type="text"
+          id="attempt-input"
+          autocomplete="off"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          placeholder="a b c"
+          aria-label="Your spelling attempt"
+        />
+      </div>
+
+      <div class="sb-actions">
+        <button id="btn-submit" type="button" data-variant="accent" aria-label="Submit your spelling">Submit</button>
+      </div>
+    </section>
+
+    <!-- judging -->
+    <section class="sb-panel spell-bee__panel" data-state="judging" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">04</span>
+        <span>Checking</span>
+        <span class="sb-label__line"></span>
+      </div>
+      <div class="sb-spinner">
+        <span>Judging</span>
+        <span class="sb-spinner__cursor" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <!-- showing_feedback -->
+    <section class="sb-panel spell-bee__panel" data-state="showing_feedback" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">05</span>
+        <span>Result</span>
+        <span class="sb-label__line"></span>
+      </div>
+
+      <div class="sb-feedback" id="feedback-card" data-result="correct">
+        <div class="sb-feedback__head">
+          <span class="sb-feedback__status" id="feedback-status">Correct</span>
+          <span class="sb-feedback__delta" id="feedback-delta">+1</span>
+        </div>
+        <p class="sb-feedback__body" id="feedback-text">Nice work.</p>
+        <div class="sb-feedback__compare" aria-label="Comparison">
+          <span class="sb-feedback__compare-label">You</span>
+          <span class="sb-feedback__compare-value" id="feedback-attempt-value">—</span>
+          <span class="sb-feedback__compare-label">Word</span>
+          <span class="sb-feedback__compare-value" id="feedback-word-value">—</span>
+        </div>
+      </div>
+
+      <div class="sb-actions">
+        <button id="btn-next" type="button" data-variant="accent" aria-label="Next round">Next</button>
+      </div>
+    </section>
+
+    <!-- session_complete — shown after the last round's feedback is dismissed -->
+    <section class="sb-panel spell-bee__panel" data-state="session_complete" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">06</span>
+        <span>Session complete</span>
+        <span class="sb-label__line"></span>
+      </div>
+
+      <div class="sb-summary" role="group" aria-label="Session summary">
+        <div class="sb-summary__stat">
+          <span class="sb-summary__label">Score</span>
+          <span class="sb-summary__value sb-summary__value--accent" id="summary-score">0 / 5</span>
+        </div>
+        <div class="sb-summary__stat">
+          <span class="sb-summary__label">Accuracy</span>
+          <span class="sb-summary__value" id="summary-accuracy">0%</span>
+        </div>
+        <div class="sb-summary__stat sb-summary__stat--full">
+          <span class="sb-summary__label">Best ever</span>
+          <span class="sb-summary__value" id="summary-best">0 / 5</span>
+        </div>
+        <p class="sb-summary__note" id="summary-note">Tap New session to play again.</p>
+      </div>
+
+      <div class="sb-actions">
+        <button id="btn-new-session" type="button" data-variant="accent" aria-label="Start a new session">New Session</button>
+      </div>
+    </section>
+
+    <!-- word_error -->
+    <section class="sb-panel spell-bee__panel" data-state="word_error" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">!!</span>
+        <span>Word fetch failed</span>
+        <span class="sb-label__line"></span>
+      </div>
+      <div class="pocket-banner" data-tone="warn">
+        <span>The model could not produce a valid word. Tap retry.</span>
+      </div>
+      <div class="sb-actions">
+        <button id="btn-retry-word" type="button" aria-label="Retry word fetch">Retry</button>
+      </div>
+    </section>
+
+    <!-- offline -->
+    <section class="sb-panel spell-bee__panel" data-state="offline" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">!!</span>
+        <span>Offline</span>
+        <span class="sb-label__line"></span>
+      </div>
+      <div class="pocket-banner" data-tone="err">
+        <span>
+          Can't reach Ollama at <code id="offline-host">localhost:11434</code>.
+          Make sure it's running on this device.
+        </span>
+      </div>
+      <div class="sb-actions">
+        <button id="btn-retry-ping" type="button" data-variant="secondary" aria-label="Retry connection">
+          Retry connection
+        </button>
+      </div>
+    </section>
+  </div>
+</section>
+</main>
+
+  <script>// templates/kids-game/spell-bee/app.js
+// Spell Bee v1 — the real game controller (scaffolding PR 4).
+//
+// Wires the 5-state FSM to window.Pocket.OllamaClient + SessionManager.
+// Two structuredChat calls per round:
+//   1. fetch a word (schema: { word, hint, difficulty })
+//   2. judge the child's attempt (schema: { correct, feedback, score_delta })
+//
+// Failure handling mirrors the plan:
+//   - Word fetch throws → switch to word_error panel + retry button.
+//     3 consecutive word-fetch failures → surface the "try qwen2.5:1.5b" hint
+//     via the .pocket-banner in the header area.
+//   - Judgment throws → fall back to local string compare (lowercased exact
+//     match), so the round never hard-stalls on a bad JSON response.
+//   - Ping on boot fails → offline panel with retry button.
+//
+// Persistence: SessionManager stores score, round count, and recent-word
+// history (last 50) under key "spell-bee-<slug>". localStorage unavailable
+// (incognito) transparently no-ops via the SDK's in-memory fallback.
+
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Config + SDK lookup
+  // ---------------------------------------------------------------------------
+
+  var config = {};
+  try {
+    var configEl = document.getElementById('app-config');
+    if (configEl) config = JSON.parse(configEl.textContent || '{}');
+  } catch (err) {
+    console.error('[spell-bee] app-config JSON parse failed:', err);
+  }
+
+  // Populate the shared header + info-bar from config. Done early so even
+  // if the SDK fails to load, the chrome still renders correctly.
+  var titleEl = document.getElementById('app-title');
+  if (titleEl && config.appName) titleEl.textContent = formatTitleMono(config.appName);
+  var logoEl = document.getElementById('app-logo');
+  if (logoEl && config.appName) logoEl.textContent = buildLogoGlyph(config.appName);
+  var modelBadgeEl = document.getElementById('model-badge');
+  if (modelBadgeEl && config.defaultModel) modelBadgeEl.textContent = config.defaultModel;
+  var hostBadgeEl = document.getElementById('host-badge');
+  if (hostBadgeEl) hostBadgeEl.textContent = formatHostLabel(config.host);
+  var ageSubtitleEl = document.getElementById('age-subtitle');
+  if (ageSubtitleEl) ageSubtitleEl.textContent = 'AGE ' + (config.ageGroup || '—');
+  var connectionStatusEl = document.getElementById('connection-status');
+
+  function buildLogoGlyph(name) {
+    // Two-letter app mark. "Spell Bee" → "SB", "spell-bee" → "SB".
+    var cleaned = (name || '').replace(/[^a-zA-Z0-9 ]/g, ' ').trim();
+    var parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return '::';
+  }
+
+  function formatHostLabel(host) {
+    if (!host) return 'local';
+    return host.replace(/^https?:\/\//, '').replace(/:11434$/, '') || 'local';
+  }
+
+  function formatTitleMono(name) {
+    // TE chrome convention: uppercase with underscores for spaces.
+    return (name || '').toUpperCase().replace(/\s+/g, '_');
+  }
+
+  if (!window.Pocket || !window.Pocket.OllamaClient) {
+    console.error('[spell-bee] window.Pocket is not loaded — is sdk/pocket.js inlined correctly?');
+    var stage = document.querySelector('.spell-bee__stage');
+    if (stage) {
+      stage.innerHTML =
+        '<div class="pocket-banner" data-tone="err">' +
+        'SDK failed to load. Refresh the page.' +
+        '</div>';
+    }
+    return;
+  }
+
+  var Pocket = window.Pocket;
+
+  // ---------------------------------------------------------------------------
+  // SDK instances
+  // ---------------------------------------------------------------------------
+
+  var client = new Pocket.OllamaClient({
+    host: config.host,
+    model: config.defaultModel,
+  });
+
+  var session = new Pocket.SessionManager({
+    key: 'spell-bee-' + (config.appSlug || 'default'),
+    maxTurns: 100,
+  });
+
+  // ---------------------------------------------------------------------------
+  // JSON Schemas (Ollama grammar-constrained format)
+  // ---------------------------------------------------------------------------
+
+  var WORD_SCHEMA = {
+    type: 'object',
+    properties: {
+      word: { type: 'string' },
+      hint: { type: 'string' },
+      difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+    },
+    required: ['word', 'hint', 'difficulty'],
+  };
+
+  var JUDGMENT_SCHEMA = {
+    type: 'object',
+    properties: {
+      correct: { type: 'boolean' },
+      feedback: { type: 'string' },
+      score_delta: { type: 'integer' },
+    },
+    required: ['correct', 'feedback', 'score_delta'],
+  };
+
+  // ---------------------------------------------------------------------------
+  // System prompt — age-group aware, bakes in the "audio-independent hint"
+  // constraint from the plan.
+  // ---------------------------------------------------------------------------
+
+  function buildSystemPrompt(ageGroup) {
+    return [
+      'You are SpellBot, a friendly spelling teacher for children aged ' + ageGroup + '.',
+      'Choose spelling words appropriate for this age group.',
+      'Always respond with valid JSON only. No prose, no markdown, no code fences.',
+      'Be encouraging. Never use discouraging language.',
+      'Keep hints descriptive: a child who cannot hear the word must be able to guess',
+      'it from your description alone. Describe what the word means, what it looks like,',
+      'or where it is found — never say which letter it starts with or how many letters it has.',
+      'Example good hint for "elephant": "a very large grey animal with a long trunk that lives in Africa and India".',
+      'Example bad hint: "it starts with E and has 8 letters".',
+    ].join('\n');
+  }
+
+  var systemPrompt = buildSystemPrompt(config.ageGroup || '6-8');
+
+  // ---------------------------------------------------------------------------
+  // Game state
+  //
+  // A "session" is a bounded series of rounds (default 5). Score resets at
+  // the start of every session so each session has a meaningful
+  // score/accuracy summary. `bestSession` and the running `recentWords`
+  // list are the only cross-session state we persist.
+  // ---------------------------------------------------------------------------
+
+  var ROUNDS_PER_SESSION =
+    Number.isInteger(config.roundsPerSession) && config.roundsPerSession > 0
+      ? config.roundsPerSession
+      : 5;
+
+  var state = 'idle';
+  var sessionScore = 0;      // score inside the current session
+  var sessionRound = 0;      // 0 before the first round, 1..N during play
+  var bestSession = 0;       // persisted highest session score ever
+  var recentWords = [];      // persisted last-50 words to bias away from repeats
+  var currentWord = '';
+  var currentHint = '';
+  var currentDifficulty = 'medium';
+  var consecutiveWordFailures = 0;
+
+  // Restore cross-session state only (bestSession + recentWords). The
+  // session score/round intentionally DOES NOT persist — a page reload
+  // mid-session drops the current session and puts the user back at idle.
+  var saved = session.load();
+  if (saved && typeof saved === 'object') {
+    if (typeof saved.bestSession === 'number') bestSession = saved.bestSession;
+    if (Array.isArray(saved.recentWords)) recentWords = saved.recentWords.slice(-50);
+  }
+
+  function persist() {
+    try {
+      session.save({
+        bestSession: bestSession,
+        recentWords: recentWords.slice(-50),
+      });
+    } catch (err) {
+      console.warn('[spell-bee] session.save failed (non-fatal):', err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Element refs
+  // ---------------------------------------------------------------------------
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  var panels = document.querySelectorAll('.spell-bee__panel');
+  var scoreValueEl = $('score-value');
+  var roundLabelEl = $('round-label');
+  var difficultyBadge = $('difficulty-badge');
+  var hintTextEl = $('hint-text');
+  var attemptInputEl = $('attempt-input');
+  var feedbackCardEl = $('feedback-card');
+  var feedbackStatusEl = $('feedback-status');
+  var feedbackDeltaEl = $('feedback-delta');
+  var feedbackTextEl = $('feedback-text');
+  var feedbackAttemptValueEl = $('feedback-attempt-value');
+  var feedbackWordValueEl = $('feedback-word-value');
+  var modelWarningEl = $('model-warning');
+  var modelWarningTextEl = $('model-warning-text');
+  var offlineHostEl = $('offline-host');
+  var summaryScoreEl = $('summary-score');
+  var summaryAccuracyEl = $('summary-accuracy');
+  var summaryBestEl = $('summary-best');
+  var summaryNoteEl = $('summary-note');
+
+  // ---------------------------------------------------------------------------
+  // UI helpers
+  // ---------------------------------------------------------------------------
+
+  function setState(next) {
+    state = next;
+    for (var i = 0; i < panels.length; i++) {
+      panels[i].hidden = panels[i].dataset.state !== next;
+    }
+    // Move keyboard focus to the primary control in the new panel so mobile
+    // users don't have to tap twice. Done in a microtask so the hidden toggle
+    // has settled first.
+    Promise.resolve().then(function () {
+      if (next === 'awaiting_attempt' && attemptInputEl) {
+        attemptInputEl.focus();
+        attemptInputEl.select();
+      } else if (next === 'showing_feedback') {
+        var nextBtn = $('btn-next');
+        if (nextBtn) nextBtn.focus();
+      } else if (next === 'idle') {
+        var startBtn = $('btn-start');
+        if (startBtn) startBtn.focus();
+      } else if (next === 'session_complete') {
+        var newSessionBtn = $('btn-new-session');
+        if (newSessionBtn) newSessionBtn.focus();
+      }
+    });
+  }
+
+  function updateScore() {
+    if (scoreValueEl) scoreValueEl.textContent = String(sessionScore);
+    if (roundLabelEl) {
+      // "Round 0 / 5" before any play, "Round 3 / 5" mid-session,
+      // "Round 5 / 5" at the final feedback.
+      roundLabelEl.textContent = 'Round ' + sessionRound + ' / ' + ROUNDS_PER_SESSION;
+    }
+  }
+
+  function setConnectionIndicator(kind, label) {
+    if (!connectionStatusEl) return;
+    if (kind) {
+      connectionStatusEl.dataset.state = kind;
+    } else {
+      delete connectionStatusEl.dataset.state;
+    }
+    connectionStatusEl.textContent = label || '';
+  }
+
+  function showModelWarning(text) {
+    if (!modelWarningEl) return;
+    if (modelWarningTextEl) modelWarningTextEl.textContent = text;
+    modelWarningEl.hidden = false;
+  }
+
+  function hideModelWarning() {
+    if (modelWarningEl) modelWarningEl.hidden = true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Game logic
+  // ---------------------------------------------------------------------------
+
+  function checkConnection() {
+    setConnectionIndicator('warn', 'Connecting…');
+    setState('fetching_word'); // visually: a spinner while we ping
+    client.ping().then(function (result) {
+      if (!result || !result.ok) {
+        setConnectionIndicator('err', 'Offline');
+        if (offlineHostEl) offlineHostEl.textContent = config.host || 'localhost:11434';
+        setState('offline');
+        return;
+      }
+
+      // Decide whether any installed model is reliable for structured output.
+      // We don't block the game — a yellow warning banner is enough.
+      var structured = Pocket.pickModel(result.models || [], 'structured');
+      if (!structured) {
+        setConnectionIndicator('warn', 'Model');
+        showModelWarning(
+          'Your installed models may not produce reliable JSON. ' +
+            'For smoother Spell Bee rounds run: ollama pull qwen2.5:1.5b'
+        );
+      } else {
+        setConnectionIndicator('ok', 'Connected');
+        hideModelWarning();
+      }
+
+      setState('idle');
+    }).catch(function (err) {
+      console.error('[spell-bee] ping threw:', err);
+      setConnectionIndicator('err', 'Offline');
+      setState('offline');
+    });
+  }
+
+  // Kick off a brand-new session: reset score + round counter, then fetch
+  // the first word. Called by the Start and New Session buttons.
+  function startSession() {
+    sessionScore = 0;
+    sessionRound = 0;
+    updateScore();
+    startRound();
+  }
+
+  // Fetch and display a word, advancing sessionRound. If a word fetch fails
+  // the consecutiveWordFailures counter does NOT bump the session round
+  // forward — the user hasn't actually played a round yet.
+  function startRound() {
+    setState('fetching_word');
+    hideModelWarning(); // dismiss stale warnings from the previous round
+
+    var avoidList = recentWords.slice(-10).join(', ');
+    var userMessage =
+      'Give me the next word for the child to spell. Return valid JSON matching the schema.' +
+      (avoidList
+        ? ' Avoid repeating any of these recent words if reasonable: ' + avoidList + '.'
+        : '');
+
+    var messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ];
+
+    client.structuredChat(messages, WORD_SCHEMA).then(
+      function (response) {
+        if (!response || typeof response.word !== 'string' || !response.word.trim()) {
+          throw new Error('empty word in response');
+        }
+        currentWord = response.word.trim();
+        currentHint = (response.hint || '').toString().trim();
+        currentDifficulty = normaliseDifficulty(response.difficulty);
+
+        recentWords.push(currentWord);
+        if (recentWords.length > 50) recentWords = recentWords.slice(-50);
+        consecutiveWordFailures = 0;
+
+        // Advance the session round only once we actually have a word to
+        // show — a failed fetch shouldn't consume a round slot.
+        sessionRound += 1;
+        updateScore();
+
+        if (hintTextEl) hintTextEl.textContent = currentHint || 'Spell this word.';
+        if (difficultyBadge) {
+          difficultyBadge.textContent = currentDifficulty;
+          difficultyBadge.dataset.level = currentDifficulty;
+        }
+        if (attemptInputEl) attemptInputEl.value = '';
+
+        setState('awaiting_attempt');
+      },
+      function (err) {
+        console.warn('[spell-bee] word fetch failed:', err);
+        consecutiveWordFailures += 1;
+        if (consecutiveWordFailures >= 3) {
+          showModelWarning(
+            'This model is struggling with Spell Bee. For a smoother experience run: ollama pull qwen2.5:1.5b'
+          );
+        }
+        setState('word_error');
+      }
+    );
+  }
+
+  // Called by the Next button after feedback: either kick off the next
+  // round or finish the session if we've hit ROUNDS_PER_SESSION.
+  function advanceAfterFeedback() {
+    if (sessionRound >= ROUNDS_PER_SESSION) {
+      finishSession();
+    } else {
+      startRound();
+    }
+  }
+
+  function finishSession() {
+    // Update the persisted best-ever-session score.
+    if (sessionScore > bestSession) bestSession = sessionScore;
+    persist();
+
+    if (summaryScoreEl) summaryScoreEl.textContent = sessionScore + ' / ' + ROUNDS_PER_SESSION;
+    if (summaryAccuracyEl) {
+      var pct = ROUNDS_PER_SESSION > 0
+        ? Math.round((sessionScore / ROUNDS_PER_SESSION) * 100)
+        : 0;
+      summaryAccuracyEl.textContent = pct + '%';
+    }
+    if (summaryBestEl) summaryBestEl.textContent = bestSession + ' / ' + ROUNDS_PER_SESSION;
+    if (summaryNoteEl) {
+      if (sessionScore === ROUNDS_PER_SESSION) {
+        summaryNoteEl.textContent = 'Perfect session. Tap New session for another round.';
+      } else if (sessionScore >= Math.ceil(ROUNDS_PER_SESSION * 0.6)) {
+        summaryNoteEl.textContent = 'Nicely done. Tap New session to try for a better score.';
+      } else {
+        summaryNoteEl.textContent = 'Every session is practice. Tap New session to keep going.';
+      }
+    }
+    setState('session_complete');
+  }
+
+  function submitAttempt() {
+    var attempt = attemptInputEl ? (attemptInputEl.value || '').trim() : '';
+    if (!attempt) {
+      if (attemptInputEl) attemptInputEl.focus();
+      return;
+    }
+
+    setState('judging');
+
+    var userMessage =
+      'Target word: "' + currentWord + '".\n' +
+      'Hint you gave: "' + currentHint + '".\n' +
+      'The child typed: "' + attempt + '".\n' +
+      'Judge the attempt fairly and kindly. Return JSON matching the schema:\n' +
+      '- correct: true only if the letters match the target word exactly, ignoring case.\n' +
+      '- feedback: one short encouraging sentence. If wrong, be kind and brief.\n' +
+      '- score_delta: 1 if correct, 0 if not.';
+
+    var messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ];
+
+    client.structuredChat(messages, JUDGMENT_SCHEMA).then(
+      function (judgment) {
+        applyJudgment(judgment, attempt);
+      },
+      function (err) {
+        console.warn('[spell-bee] judgment failed, falling back to local compare:', err);
+        var correct = attempt.toLowerCase() === currentWord.toLowerCase();
+        applyJudgment({
+          correct: correct,
+          feedback: correct
+            ? 'Nice work! That is how you spell it.'
+            : 'Good try! Keep practising.',
+          score_delta: correct ? 1 : 0,
+        }, attempt);
+      }
+    );
+  }
+
+  function applyJudgment(result, attempt) {
+    // Local authoritative check. A 1.5B-class model will sometimes
+    // mislabel a letter-perfect answer — it's not the model's job to
+    // decide spelling equality, it's ours. If the child typed exactly the
+    // target word (case-insensitive), count it correct regardless of
+    // what the model thinks. The model's `feedback` prose is still shown,
+    // because it's usually kind even when the correct boolean is wrong.
+    var localMatch = false;
+    if (typeof attempt === 'string' && attempt.length > 0) {
+      localMatch = attempt.trim().toLowerCase() === currentWord.trim().toLowerCase();
+    }
+    var correct = localMatch || !!result.correct;
+    // Defensive: clamp delta to {0, 1} regardless of what score_delta the
+    // model returned. The session score stays in lockstep with the on-
+    // screen status text.
+    var delta = correct ? 1 : 0;
+
+    sessionScore += delta;
+    updateScore();
+    persist();
+
+    if (feedbackCardEl) feedbackCardEl.dataset.result = correct ? 'correct' : 'wrong';
+    if (feedbackStatusEl) feedbackStatusEl.textContent = correct ? 'Correct' : 'Not quite';
+    if (feedbackDeltaEl) {
+      var sign = delta > 0 ? '+' : '';
+      feedbackDeltaEl.textContent = sign + delta + ' PTS';
+    }
+    if (feedbackTextEl) {
+      feedbackTextEl.textContent =
+        result.feedback || (correct ? 'Nice work.' : 'Good try — keep going.');
+    }
+    // Character-level diff so kids can see exactly which letters were
+    // wrong or missing. On correct rounds diffWord returns all `same`
+    // tokens and renderDiffRow falls through to plain text — no visual
+    // highlighting at all, just clean uppercase mono.
+    var diff = diffWord(attempt || '', currentWord);
+    renderDiffRow(feedbackAttemptValueEl, diff.attempt, attempt || '—');
+    renderDiffRow(feedbackWordValueEl, diff.target, currentWord);
+
+    setState('showing_feedback');
+  }
+
+  function normaliseDifficulty(value) {
+    var v = (value || '').toString().toLowerCase();
+    if (v === 'easy' || v === 'medium' || v === 'hard') return v;
+    return 'medium';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Character-level diff between attempt and target, aligned via LCS.
+  //
+  // Returns two parallel arrays of tokens:
+  //   { kind: 'same', char }    — letter present in both
+  //   { kind: 'wrong', char }   — letter present in attempt but not in target
+  //                                at this position (extra/substituted char)
+  //   { kind: 'missing', char } — letter present in target but not in attempt
+  //                                (child forgot this letter)
+  //   { kind: 'ghost' }         — placeholder rendered on the OTHER side so
+  //                                the two rows stay visually aligned when
+  //                                one row has a wrong/missing gap
+  //
+  // The comparison is case-insensitive but the token `char` keeps the
+  // original case so the rendered output still reads as typed. A
+  // word-on-word compare is O(|a| * |b|) — fine for Spell Bee words that
+  // top out at ~15 letters.
+  // ---------------------------------------------------------------------------
+  function diffWord(attempt, target) {
+    var a = attempt || '';
+    var b = target || '';
+    var m = a.length;
+    var n = b.length;
+
+    // LCS dynamic programming table (lowercased comparison).
+    var dp = [];
+    for (var i = 0; i <= m; i++) {
+      dp.push(new Array(n + 1).fill(0));
+    }
+    for (var i2 = 1; i2 <= m; i2++) {
+      for (var j2 = 1; j2 <= n; j2++) {
+        if (a.charAt(i2 - 1).toLowerCase() === b.charAt(j2 - 1).toLowerCase()) {
+          dp[i2][j2] = dp[i2 - 1][j2 - 1] + 1;
+        } else {
+          dp[i2][j2] = Math.max(dp[i2 - 1][j2], dp[i2][j2 - 1]);
+        }
+      }
+    }
+
+    // Backtrack to produce aligned token arrays. Each step either
+    // matches, deletes from a (wrong letter in attempt), or deletes
+    // from b (missing letter from target). We push aligned ghost tokens
+    // so the two output rows stay character-aligned.
+    var aOut = [];
+    var bOut = [];
+    var i3 = m;
+    var j3 = n;
+    while (i3 > 0 && j3 > 0) {
+      if (a.charAt(i3 - 1).toLowerCase() === b.charAt(j3 - 1).toLowerCase()) {
+        aOut.unshift({ kind: 'same', char: a.charAt(i3 - 1) });
+        bOut.unshift({ kind: 'same', char: b.charAt(j3 - 1) });
+        i3--;
+        j3--;
+      } else if (dp[i3 - 1][j3] >= dp[i3][j3 - 1]) {
+        // Letter in attempt has no partner in target — wrong letter.
+        aOut.unshift({ kind: 'wrong', char: a.charAt(i3 - 1) });
+        bOut.unshift({ kind: 'ghost' });
+        i3--;
+      } else {
+        // Letter in target has no partner in attempt — missing letter.
+        aOut.unshift({ kind: 'ghost' });
+        bOut.unshift({ kind: 'missing', char: b.charAt(j3 - 1) });
+        j3--;
+      }
+    }
+    while (i3 > 0) {
+      aOut.unshift({ kind: 'wrong', char: a.charAt(i3 - 1) });
+      bOut.unshift({ kind: 'ghost' });
+      i3--;
+    }
+    while (j3 > 0) {
+      aOut.unshift({ kind: 'ghost' });
+      bOut.unshift({ kind: 'missing', char: b.charAt(j3 - 1) });
+      j3--;
+    }
+
+    return { attempt: aOut, target: bOut };
+  }
+
+  // Render a diff token row into a container element using individual
+  // spans so each letter gets its own styling box. Plaintext fallback on
+  // exact match keeps the DOM tiny for the overwhelming majority of rounds.
+  function renderDiffRow(containerEl, tokens, fallbackPlain) {
+    if (!containerEl) return;
+    containerEl.innerHTML = '';
+    if (fallbackPlain != null && tokens.every(function (t) { return t.kind === 'same'; })) {
+      containerEl.textContent = fallbackPlain;
+      return;
+    }
+    for (var i = 0; i < tokens.length; i++) {
+      var tok = tokens[i];
+      var span = document.createElement('span');
+      if (tok.kind === 'same') {
+        span.className = 'sb-char';
+        span.textContent = tok.char;
+      } else if (tok.kind === 'wrong') {
+        span.className = 'sb-char sb-char--wrong';
+        span.textContent = tok.char;
+      } else if (tok.kind === 'missing') {
+        span.className = 'sb-char sb-char--missing';
+        span.textContent = tok.char;
+      } else if (tok.kind === 'ghost') {
+        span.className = 'sb-char sb-char--ghost';
+        span.textContent = '·';
+      }
+      containerEl.appendChild(span);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wire up buttons + keyboard
+  // ---------------------------------------------------------------------------
+
+  function on(id, event, handler) {
+    var el = $(id);
+    if (el) el.addEventListener(event, handler);
+  }
+
+  on('btn-start', 'click', startSession);
+  on('btn-submit', 'click', submitAttempt);
+  on('btn-next', 'click', advanceAfterFeedback);
+  on('btn-new-session', 'click', startSession);
+  on('btn-retry-word', 'click', startRound);
+  on('btn-retry-ping', 'click', checkConnection);
+
+  if (attemptInputEl) {
+    attemptInputEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitAttempt();
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Boot
+  // ---------------------------------------------------------------------------
+
+  updateScore();
+  checkConnection();
+})();
+</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    }
+  </script>
+</body>
+</html>
