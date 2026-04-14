@@ -201,7 +201,8 @@
   var feedbackStatusEl = $('feedback-status');
   var feedbackDeltaEl = $('feedback-delta');
   var feedbackTextEl = $('feedback-text');
-  var feedbackWordLineEl = $('feedback-word-line');
+  var feedbackAttemptValueEl = $('feedback-attempt-value');
+  var feedbackWordValueEl = $('feedback-word-value');
   var modelWarningEl = $('model-warning');
   var modelWarningTextEl = $('model-warning-text');
   var offlineHostEl = $('offline-host');
@@ -480,12 +481,11 @@
       feedbackTextEl.textContent =
         result.feedback || (correct ? 'Nice work.' : 'Good try — keep going.');
     }
-    if (feedbackWordLineEl) {
-      feedbackWordLineEl.innerHTML = correct
-        ? 'Word&nbsp;&nbsp;<b></b>'
-        : 'Word was&nbsp;&nbsp;<b></b>';
-      var bold = feedbackWordLineEl.querySelector('b');
-      if (bold) bold.textContent = currentWord;
+    if (feedbackAttemptValueEl) {
+      feedbackAttemptValueEl.textContent = attempt || '—';
+    }
+    if (feedbackWordValueEl) {
+      feedbackWordValueEl.textContent = currentWord;
     }
 
     setState('showing_feedback');
