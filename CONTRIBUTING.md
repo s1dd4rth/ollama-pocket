@@ -32,6 +32,9 @@ This keeps history readable and lets us automate `CHANGELOG.md` later.
 ## Testing
 
 - **Shell scripts**: run `shellcheck scripts/*.sh` before pushing. CI will fail on errors.
+- **SDK**: `node --test sdk/test/*.test.js` — zero deps, runs on Node 18+.
+- **CLI**: `node --test cli/test/*.test.js` — same.
+- **Scaffold drift**: if you touched `sdk/pocket.js`, `templates/`, or `cli/scaffold.js`, run the one-liner below to regenerate `examples/spell-bee/` and commit the result (see [Scaffold drift check](#scaffold-drift-check)).
 - **PWA**: open `pwa/chat.html` in a browser and verify it still loads and can talk to an Ollama instance.
 - **Docs**: if you have Jekyll installed, run `bundle exec jekyll serve` from the repo root and check `docs/`.
 
@@ -99,6 +102,101 @@ version:
 
 Quality bar: don't include packages you haven't actually removed on a real
 device without something breaking. The `# Verified on:` header is required.
+
+## Adding a template
+
+A template is a pair of files under `templates/<category>/<name>/`:
+
+```
+templates/
+├── _base/
+│   ├── index.html    # shared shell: head, header, main, script/footer
+│   └── style.css     # shared design tokens + layout (TE palette)
+└── kids-game/
+    └── spell-bee/
+        ├── body.html # per-template HTML, inlined inside <main id="app-root">
+        └── app.js    # per-template controller, inlined inside <script>
+```
+
+The scaffolder (`cli/scaffold.js`) reads `_base/index.html` and substitutes
+HTML-comment markers with values from the template + the inlined SDK + the
+per-app config:
+
+| Marker | Source | Notes |
+|--------|--------|-------|
+| `<!-- APP_NAME -->` | prompt answer / `--app-name` | HTML-escaped at substitution time |
+| `<!-- STYLE_INLINE -->` | `templates/_base/style.css` | `</style>` sequences escaped to `<\/style>` |
+| `<!-- SDK_INLINE -->` | `sdk/pocket.js` | `</script>` sequences escaped to `<\/script>` |
+| `<!-- APP_CONFIG -->` | generated JSON blob | `<`, `>`, `&`, U+2028, U+2029 escaped via `safeJSONForHTMLScript` |
+| `<!-- APP_BODY -->` | `templates/<cat>/<name>/body.html` | Trusted verbatim |
+| `<!-- APP_SCRIPT -->` | `templates/<cat>/<name>/app.js` | `</script>` sequences escaped |
+
+**What your template inherits for free** from `_base/style.css`:
+
+- TE design tokens: `--pocket-black`, `--pocket-white`, `--pocket-gray-1..7`, `--pocket-orange`, spacing + type scale, `--pocket-tap-min: 48px`.
+- Element defaults: `button` (invert-on-active, `data-variant="accent|secondary|ghost|danger"`), form inputs with bottom-border focus, `:focus-visible` orange outline.
+- Shared layout: sticky `.pocket-header` with `#app-logo`, `#app-title`, `#connection-status[data-state="ok|warn|err"]`, the `.pocket-info-bar` strip, and `main#app-root` with max-width + safe-area padding.
+- Utilities: `.pocket-stack` (`--tight` / `--loose`), `.pocket-card` / `.pocket-card--double`, `.pocket-banner[data-tone="warn|err|ok"]`, `.pocket-sr-only`.
+- `[hidden] { display: none !important; }` so the `hidden` attribute always wins over `display: inline-flex` / `display: flex`.
+- `prefers-reduced-motion` neutralises transitions and animations.
+
+**Rules for `body.html` + `app.js`:**
+
+1. Everything your template needs lives on `window.Pocket` — `OllamaClient`, `SessionManager`, `EventBus`, `pickModel`, `MODEL_PREFERENCES`, `StructuredChatError`. Don't import. The SDK is inlined as a plain script, not a module.
+2. Read your per-app config via `JSON.parse(document.getElementById('app-config').textContent)` — the `APP_CONFIG` marker writes it as `<script type="application/json" id="app-config">`.
+3. Populate `#app-title`, `#app-logo`, `#model-badge`, `#host-badge`, and `#connection-status` yourself. Spell Bee's `app.js` is the reference.
+4. Per-template CSS goes inside an inline `<style>` block at the top of `body.html`. Keep it under ~200 lines — if it grows beyond that, promote to a dedicated marker in a follow-up PR.
+5. Do not write literal `</script>` or `</style>` anywhere in the template or the SDK source. The scaffolder's `escapeInlineScript()` handles the common cases but the safest move is to avoid the sequence entirely.
+
+**Testing your template locally:**
+
+```bash
+# 1. Rescaffold into a throwaway directory under apps/
+node cli/new.js --non-interactive \
+  --slug my-template-test \
+  --template <category>/<name> \
+  --age-group 6-8 \
+  --model qwen2.5:1.5b \
+  --host http://localhost:11434 \
+  --output apps/my-template-test \
+  --skip-detection
+
+# 2. Serve and open in Chrome
+python3 -m http.server 8000 --directory apps/my-template-test
+```
+
+CI runs `node --test sdk/test/*.test.js cli/test/*.test.js` and the
+scaffold-drift job on every PR. If your template changes drift the reference
+output, the drift check will fail — see the next section for the fix.
+
+## Scaffold drift check
+
+[`examples/spell-bee/`](examples/spell-bee/) is the committed, byte-identical
+scaffolded output of `templates/kids-game/spell-bee/`. On every PR, CI
+rescaffolds it from scratch and runs `git diff --exit-code -- examples/`. If
+you edit `sdk/pocket.js`, `cli/scaffold.js`, `templates/_base/`, or
+`templates/kids-game/spell-bee/` and don't update `examples/spell-bee/`, the
+job fails loudly with a pointer to the regenerate command.
+
+**Regenerate locally:**
+
+```bash
+rm -rf examples/spell-bee
+node cli/new.js --non-interactive \
+  --slug spell-bee \
+  --template kids-game/spell-bee \
+  --age-group 6-8 \
+  --model qwen2.5:1.5b \
+  --host http://localhost:11434 \
+  --output examples/spell-bee \
+  --skip-detection \
+  --scaffolded-at 2026-01-01T00:00:00.000Z
+git add examples/spell-bee
+```
+
+**Why the pinned `--scaffolded-at` matters:** without it, `APP_CONFIG.scaffoldedAt` defaults to `new Date().toISOString()` and every rescaffold produces a byte-different `index.html`, breaking `git diff --exit-code` as a drift detector. The pinned `2026-01-01T00:00:00.000Z` is the one the CI job uses, so your local regeneration must use the same value.
+
+**Why `examples/*/fonts/` is gitignored:** the scaffolder copies `pwa/fonts/*.woff2` verbatim into each scaffolded app. Those bytes are already policed by `pwa/fonts/` being committed directly — there's no reason to duplicate-track them under `examples/`.
 
 ## Changelog
 

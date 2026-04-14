@@ -145,6 +145,55 @@ your phone and submit the result — see
 
 > **Rule of thumb:** You need ~2x the model download size in available RAM. A 6GB phone with 2.8GB free can run anything up to ~1.5B parameters comfortably.
 
+## Building Apps
+
+Starting with v0.2.0, the repo ships a small scaffolding system that turns the
+shared SDK (`sdk/pocket.js`) plus a set of HTML-comment-marker templates into a
+self-contained, installable AI app. The scaffolded app is a single
+`index.html` (plus `manifest.json`, `icon.svg`, `sw.js`, and copies of the
+`pwa/fonts/` files) — no build step, no npm install, no framework.
+
+v0.2.0 ships **one reference template — Spell Bee**, a local spelling game for
+kids aged 4–12. It uses Ollama's grammar-constrained JSON output to generate
+words, hints, and judgments entirely on-device. It exists to prove the
+scaffolding works end-to-end; more templates will follow in later releases.
+
+**Run it on your phone:**
+
+```bash
+# 1. Make sure Ollama is running and `qwen2.5:1.5b` is installed
+ollama pull qwen2.5:1.5b
+bash scripts/start-ollama.sh
+
+# 2. Scaffold an app. Node 18+ built-ins only, zero npm install.
+node cli/new.js
+# …or non-interactive, for scripts and CI:
+node cli/new.js --non-interactive \
+  --slug spell-bee-demo \
+  --template kids-game/spell-bee \
+  --age-group 6-8 \
+  --model qwen2.5:1.5b \
+  --host http://localhost:11434 \
+  --output apps/spell-bee-demo
+
+# 3. Serve it locally and open in Chrome
+python3 -m http.server 8000 --directory apps/spell-bee-demo
+# Open http://localhost:8000/
+```
+
+**Reference output:** [`examples/spell-bee/`](examples/spell-bee/) is the
+byte-deterministic scaffold output, regenerated and diff-checked in CI on
+every PR so edits to `sdk/pocket.js`, the base template, or the Spell Bee
+template never silently break the scaffolder.
+
+**Escape hatch for the inlined SDK:** scaffolded apps have the entire
+`sdk/pocket.js` inlined into `<script>` at scaffold time. When the SDK gets
+a bug fix, run `node cli/update.js apps/<slug>` to re-inline the new version
+into an existing app without losing the embedded `app-config`.
+
+Writing a new template is documented in
+[`CONTRIBUTING.md`](CONTRIBUTING.md#adding-a-template).
+
 ## Requirements
 
 - Android phone (arm64, 4GB+ RAM recommended)
