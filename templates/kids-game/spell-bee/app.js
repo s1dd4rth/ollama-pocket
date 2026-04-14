@@ -433,7 +433,7 @@
 
     client.structuredChat(messages, JUDGMENT_SCHEMA).then(
       function (judgment) {
-        applyJudgment(judgment);
+        applyJudgment(judgment, attempt);
       },
       function (err) {
         console.warn('[spell-bee] judgment failed, falling back to local compare:', err);
@@ -444,17 +444,26 @@
             ? 'Nice work! That is how you spell it.'
             : 'Good try! Keep practising.',
           score_delta: correct ? 1 : 0,
-        });
+        }, attempt);
       }
     );
   }
 
-  function applyJudgment(result) {
-    var correct = !!result.correct;
-    // Defensive: coerce to integer, clamp to {0, 1} range. Spell Bee only
-    // awards 1 point for correct, 0 for wrong — anything else from the
-    // model is ignored so a misbehaving LLM can't inflate the session
-    // score beyond what's visible on screen.
+  function applyJudgment(result, attempt) {
+    // Local authoritative check. A 1.5B-class model will sometimes
+    // mislabel a letter-perfect answer — it's not the model's job to
+    // decide spelling equality, it's ours. If the child typed exactly the
+    // target word (case-insensitive), count it correct regardless of
+    // what the model thinks. The model's `feedback` prose is still shown,
+    // because it's usually kind even when the correct boolean is wrong.
+    var localMatch = false;
+    if (typeof attempt === 'string' && attempt.length > 0) {
+      localMatch = attempt.trim().toLowerCase() === currentWord.trim().toLowerCase();
+    }
+    var correct = localMatch || !!result.correct;
+    // Defensive: clamp delta to {0, 1} regardless of what score_delta the
+    // model returned. The session score stays in lockstep with the on-
+    // screen status text.
     var delta = correct ? 1 : 0;
 
     sessionScore += delta;
