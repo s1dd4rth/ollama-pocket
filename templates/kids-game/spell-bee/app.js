@@ -141,30 +141,41 @@
 
   // ---------------------------------------------------------------------------
   // Game state
+  //
+  // A "session" is a bounded series of rounds (default 5). Score resets at
+  // the start of every session so each session has a meaningful
+  // score/accuracy summary. `bestSession` and the running `recentWords`
+  // list are the only cross-session state we persist.
   // ---------------------------------------------------------------------------
 
+  var ROUNDS_PER_SESSION =
+    Number.isInteger(config.roundsPerSession) && config.roundsPerSession > 0
+      ? config.roundsPerSession
+      : 5;
+
   var state = 'idle';
-  var score = 0;
-  var round = 0;
-  var recentWords = [];
+  var sessionScore = 0;      // score inside the current session
+  var sessionRound = 0;      // 0 before the first round, 1..N during play
+  var bestSession = 0;       // persisted highest session score ever
+  var recentWords = [];      // persisted last-50 words to bias away from repeats
   var currentWord = '';
   var currentHint = '';
   var currentDifficulty = 'medium';
   var consecutiveWordFailures = 0;
 
-  // Restore persisted state
+  // Restore cross-session state only (bestSession + recentWords). The
+  // session score/round intentionally DOES NOT persist — a page reload
+  // mid-session drops the current session and puts the user back at idle.
   var saved = session.load();
   if (saved && typeof saved === 'object') {
-    if (typeof saved.score === 'number') score = saved.score;
-    if (typeof saved.round === 'number') round = saved.round;
+    if (typeof saved.bestSession === 'number') bestSession = saved.bestSession;
     if (Array.isArray(saved.recentWords)) recentWords = saved.recentWords.slice(-50);
   }
 
   function persist() {
     try {
       session.save({
-        score: score,
-        round: round,
+        bestSession: bestSession,
         recentWords: recentWords.slice(-50),
       });
     } catch (err) {
@@ -182,7 +193,7 @@
 
   var panels = document.querySelectorAll('.spell-bee__panel');
   var scoreValueEl = $('score-value');
-  var resetBtn = $('btn-reset');
+  var roundLabelEl = $('round-label');
   var difficultyBadge = $('difficulty-badge');
   var hintTextEl = $('hint-text');
   var attemptInputEl = $('attempt-input');
@@ -194,6 +205,10 @@
   var modelWarningEl = $('model-warning');
   var modelWarningTextEl = $('model-warning-text');
   var offlineHostEl = $('offline-host');
+  var summaryScoreEl = $('summary-score');
+  var summaryAccuracyEl = $('summary-accuracy');
+  var summaryBestEl = $('summary-best');
+  var summaryNoteEl = $('summary-note');
 
   // ---------------------------------------------------------------------------
   // UI helpers
@@ -217,13 +232,20 @@
       } else if (next === 'idle') {
         var startBtn = $('btn-start');
         if (startBtn) startBtn.focus();
+      } else if (next === 'session_complete') {
+        var newSessionBtn = $('btn-new-session');
+        if (newSessionBtn) newSessionBtn.focus();
       }
     });
   }
 
   function updateScore() {
-    if (scoreValueEl) scoreValueEl.textContent = String(score);
-    if (resetBtn) resetBtn.hidden = score <= 0;
+    if (scoreValueEl) scoreValueEl.textContent = String(sessionScore);
+    if (roundLabelEl) {
+      // "Round 0 / 5" before any play, "Round 3 / 5" mid-session,
+      // "Round 5 / 5" at the final feedback.
+      roundLabelEl.textContent = 'Round ' + sessionRound + ' / ' + ROUNDS_PER_SESSION;
+    }
   }
 
   function setConnectionIndicator(kind, label) {
@@ -283,6 +305,18 @@
     });
   }
 
+  // Kick off a brand-new session: reset score + round counter, then fetch
+  // the first word. Called by the Start and New Session buttons.
+  function startSession() {
+    sessionScore = 0;
+    sessionRound = 0;
+    updateScore();
+    startRound();
+  }
+
+  // Fetch and display a word, advancing sessionRound. If a word fetch fails
+  // the consecutiveWordFailures counter does NOT bump the session round
+  // forward — the user hasn't actually played a round yet.
   function startRound() {
     setState('fetching_word');
     hideModelWarning(); // dismiss stale warnings from the previous round
@@ -312,6 +346,11 @@
         if (recentWords.length > 50) recentWords = recentWords.slice(-50);
         consecutiveWordFailures = 0;
 
+        // Advance the session round only once we actually have a word to
+        // show — a failed fetch shouldn't consume a round slot.
+        sessionRound += 1;
+        updateScore();
+
         if (hintTextEl) hintTextEl.textContent = currentHint || 'Spell this word.';
         if (difficultyBadge) {
           difficultyBadge.textContent = currentDifficulty;
@@ -332,6 +371,41 @@
         setState('word_error');
       }
     );
+  }
+
+  // Called by the Next button after feedback: either kick off the next
+  // round or finish the session if we've hit ROUNDS_PER_SESSION.
+  function advanceAfterFeedback() {
+    if (sessionRound >= ROUNDS_PER_SESSION) {
+      finishSession();
+    } else {
+      startRound();
+    }
+  }
+
+  function finishSession() {
+    // Update the persisted best-ever-session score.
+    if (sessionScore > bestSession) bestSession = sessionScore;
+    persist();
+
+    if (summaryScoreEl) summaryScoreEl.textContent = sessionScore + ' / ' + ROUNDS_PER_SESSION;
+    if (summaryAccuracyEl) {
+      var pct = ROUNDS_PER_SESSION > 0
+        ? Math.round((sessionScore / ROUNDS_PER_SESSION) * 100)
+        : 0;
+      summaryAccuracyEl.textContent = pct + '%';
+    }
+    if (summaryBestEl) summaryBestEl.textContent = bestSession + ' / ' + ROUNDS_PER_SESSION;
+    if (summaryNoteEl) {
+      if (sessionScore === ROUNDS_PER_SESSION) {
+        summaryNoteEl.textContent = 'Perfect session. Tap New session for another round.';
+      } else if (sessionScore >= Math.ceil(ROUNDS_PER_SESSION * 0.6)) {
+        summaryNoteEl.textContent = 'Nicely done. Tap New session to try for a better score.';
+      } else {
+        summaryNoteEl.textContent = 'Every session is practice. Tap New session to keep going.';
+      }
+    }
+    setState('session_complete');
   }
 
   function submitAttempt() {
@@ -377,16 +451,13 @@
 
   function applyJudgment(result) {
     var correct = !!result.correct;
-    // Defensive: coerce to integer, clamp to {-1, 0, 1, 2} range so a
-    // misbehaving model can't inflate the score arbitrarily.
-    var delta = parseInt(result.score_delta, 10);
-    if (!isFinite(delta)) delta = correct ? 1 : 0;
-    if (delta < -1) delta = -1;
-    if (delta > 2) delta = 2;
+    // Defensive: coerce to integer, clamp to {0, 1} range. Spell Bee only
+    // awards 1 point for correct, 0 for wrong — anything else from the
+    // model is ignored so a misbehaving LLM can't inflate the session
+    // score beyond what's visible on screen.
+    var delta = correct ? 1 : 0;
 
-    score += delta;
-    if (score < 0) score = 0;
-    round += 1;
+    sessionScore += delta;
     updateScore();
     persist();
 
@@ -411,18 +482,6 @@
     setState('showing_feedback');
   }
 
-  function resetScore() {
-    score = 0;
-    round = 0;
-    recentWords = [];
-    try {
-      session.clear();
-    } catch (err) {
-      console.warn('[spell-bee] session.clear failed (non-fatal):', err);
-    }
-    updateScore();
-  }
-
   function normaliseDifficulty(value) {
     var v = (value || '').toString().toLowerCase();
     if (v === 'easy' || v === 'medium' || v === 'hard') return v;
@@ -438,12 +497,12 @@
     if (el) el.addEventListener(event, handler);
   }
 
-  on('btn-start', 'click', startRound);
+  on('btn-start', 'click', startSession);
   on('btn-submit', 'click', submitAttempt);
-  on('btn-next', 'click', startRound);
+  on('btn-next', 'click', advanceAfterFeedback);
+  on('btn-new-session', 'click', startSession);
   on('btn-retry-word', 'click', startRound);
   on('btn-retry-ping', 'click', checkConnection);
-  on('btn-reset', 'click', resetScore);
 
   if (attemptInputEl) {
     attemptInputEl.addEventListener('keydown', function (e) {

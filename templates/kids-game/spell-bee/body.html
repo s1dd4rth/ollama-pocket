@@ -326,6 +326,68 @@
     flex: 1 1 auto;
   }
 
+  /* Session-complete summary card */
+  .sb-summary {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--pocket-space-4);
+    padding: var(--pocket-space-5);
+    background: var(--pocket-gray-1);
+    border: 1px solid var(--pocket-white);
+  }
+
+  .sb-summary::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: -4px;
+    bottom: -4px;
+    border: 1px solid var(--pocket-gray-3);
+    pointer-events: none;
+  }
+
+  .sb-summary__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sb-summary__stat--full {
+    grid-column: 1 / -1;
+  }
+
+  .sb-summary__label {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sb-summary__value {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xl);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--pocket-white);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-summary__value--accent {
+    color: var(--pocket-orange);
+  }
+
+  .sb-summary__note {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-sm);
+    color: var(--pocket-gray-6);
+    margin: 0;
+    grid-column: 1 / -1;
+  }
+
   /* Animations */
   @keyframes sb-fade-in {
     from { opacity: 0; transform: translateY(4px); }
@@ -351,8 +413,8 @@
       <h1 class="sb-top__title" id="spell-bee-title">SPELL_BEE</h1>
       <div class="sb-top__subtitle" id="age-subtitle">AGE —</div>
     </div>
-    <div class="sb-score" aria-label="Score">
-      <span class="sb-score__label">Score</span>
+    <div class="sb-score" aria-label="Session progress">
+      <span class="sb-score__label" id="round-label">Round 0 / 5</span>
       <span class="sb-score__value" id="score-value">0</span>
     </div>
   </div>
@@ -366,13 +428,12 @@
     <section class="sb-panel spell-bee__panel" data-state="idle">
       <div class="sb-label">
         <span class="sb-label__num">01</span>
-        <span>Ready</span>
+        <span id="idle-label">New session</span>
         <span class="sb-label__line"></span>
       </div>
-      <p class="sb-lead" id="idle-lead">Tap START to begin. A word and hint are generated locally on this device — nothing leaves the phone.</p>
+      <p class="sb-lead" id="idle-lead">5 rounds per session. Each round: a word, a hint, your attempt. Everything runs locally on this device — nothing leaves the phone.</p>
       <div class="sb-actions">
-        <button id="btn-start" type="button" data-variant="accent" aria-label="Start a new round">Start</button>
-        <button id="btn-reset" type="button" data-variant="ghost" hidden aria-label="Reset score">Reset</button>
+        <button id="btn-start" type="button" data-variant="accent" aria-label="Start new session">Start Session</button>
       </div>
     </section>
 
@@ -456,7 +517,36 @@
       </div>
 
       <div class="sb-actions">
-        <button id="btn-next" type="button" data-variant="accent" aria-label="Get the next word">Next word</button>
+        <button id="btn-next" type="button" data-variant="accent" aria-label="Next round">Next</button>
+      </div>
+    </section>
+
+    <!-- session_complete — shown after the last round's feedback is dismissed -->
+    <section class="sb-panel spell-bee__panel" data-state="session_complete" hidden>
+      <div class="sb-label">
+        <span class="sb-label__num">06</span>
+        <span>Session complete</span>
+        <span class="sb-label__line"></span>
+      </div>
+
+      <div class="sb-summary" role="group" aria-label="Session summary">
+        <div class="sb-summary__stat">
+          <span class="sb-summary__label">Score</span>
+          <span class="sb-summary__value sb-summary__value--accent" id="summary-score">0 / 5</span>
+        </div>
+        <div class="sb-summary__stat">
+          <span class="sb-summary__label">Accuracy</span>
+          <span class="sb-summary__value" id="summary-accuracy">0%</span>
+        </div>
+        <div class="sb-summary__stat sb-summary__stat--full">
+          <span class="sb-summary__label">Best ever</span>
+          <span class="sb-summary__value" id="summary-best">0 / 5</span>
+        </div>
+        <p class="sb-summary__note" id="summary-note">Tap New session to play again.</p>
+      </div>
+
+      <div class="sb-actions">
+        <button id="btn-new-session" type="button" data-variant="accent" aria-label="Start a new session">New Session</button>
       </div>
     </section>
 
