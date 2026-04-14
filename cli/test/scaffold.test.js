@@ -146,9 +146,17 @@ test('buildIconSVG derives different hues for different slugs', () => {
 
 test('buildServiceWorker references the per-app cache name', () => {
   const sw = scaffold.buildServiceWorker(SAMPLE_OPTS);
-  assert.match(sw, /pocket-spell-bee-v1/);
+  assert.match(sw, /pocket-spell-bee-v2/, 'per-slug cache name must include a version');
   assert.match(sw, /install/);
   assert.match(sw, /fetch/);
+  // Network-first: the fetch handler must hit fetch() before caches.match().
+  assert.match(
+    sw,
+    /fetch\(e\.request\)[\s\S]*catch\(\(\) => caches\.match/,
+    'SW must be network-first so a regenerated app is not shadowed by stale cache'
+  );
+  // Stale-cache cleanup: activate event deletes non-current cache entries.
+  assert.match(sw, /caches\.keys\(\)[\s\S]*caches\.delete/);
 });
 
 test('hashHue is deterministic and mod 360', () => {
@@ -358,7 +366,7 @@ test('scaffold() produces a complete app from the real templates', async () => {
 
     // sw.js: contains the per-app cache name
     const sw = await fs.readFile(path.join(outDir, 'sw.js'), 'utf8');
-    assert.match(sw, /pocket-spell-bee-v1/);
+    assert.match(sw, /pocket-spell-bee-v2/);
 
     // _base layout pin: TE-flavoured tokens and fonts. If someone replaces
     // the base with a placeholder again, or drops the TE palette, these
