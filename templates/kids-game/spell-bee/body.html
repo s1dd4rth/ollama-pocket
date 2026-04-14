@@ -333,6 +333,36 @@
     word-break: break-word;
   }
 
+  /* Per-character spans used for diff highlighting. A matching char is
+   * rendered normally; a mismatching char gets a tinted underline so the
+   * eye can zoom to the exact letter(s) that differ between attempt and
+   * target. */
+  .sb-char {
+    display: inline-block;
+  }
+
+  .sb-char--wrong {
+    position: relative;
+    padding: 0 1px;
+    color: var(--pocket-black);
+    background: var(--pocket-orange);
+  }
+
+  .sb-char--missing {
+    position: relative;
+    padding: 0 1px;
+    color: var(--pocket-black);
+    background: var(--pocket-white);
+  }
+
+  /* Placeholder glyph for an insertion point where the attempt is missing
+   * a character. Small dim square so it reads as "something is absent". */
+  .sb-char--ghost {
+    display: inline-block;
+    width: 0.55em;
+    color: var(--pocket-gray-4);
+  }
+
   /* On correct: both rows read white. On wrong: attempt is orange, target
    * is white, so the eye can read them as "you/word". */
   .sb-feedback[data-result="correct"] .sb-feedback__compare-value {

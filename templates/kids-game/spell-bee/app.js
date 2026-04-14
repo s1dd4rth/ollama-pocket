@@ -481,12 +481,13 @@
       feedbackTextEl.textContent =
         result.feedback || (correct ? 'Nice work.' : 'Good try — keep going.');
     }
-    if (feedbackAttemptValueEl) {
-      feedbackAttemptValueEl.textContent = attempt || '—';
-    }
-    if (feedbackWordValueEl) {
-      feedbackWordValueEl.textContent = currentWord;
-    }
+    // Character-level diff so kids can see exactly which letters were
+    // wrong or missing. On correct rounds diffWord returns all `same`
+    // tokens and renderDiffRow falls through to plain text — no visual
+    // highlighting at all, just clean uppercase mono.
+    var diff = diffWord(attempt || '', currentWord);
+    renderDiffRow(feedbackAttemptValueEl, diff.attempt, attempt || '—');
+    renderDiffRow(feedbackWordValueEl, diff.target, currentWord);
 
     setState('showing_feedback');
   }
@@ -495,6 +496,115 @@
     var v = (value || '').toString().toLowerCase();
     if (v === 'easy' || v === 'medium' || v === 'hard') return v;
     return 'medium';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Character-level diff between attempt and target, aligned via LCS.
+  //
+  // Returns two parallel arrays of tokens:
+  //   { kind: 'same', char }    — letter present in both
+  //   { kind: 'wrong', char }   — letter present in attempt but not in target
+  //                                at this position (extra/substituted char)
+  //   { kind: 'missing', char } — letter present in target but not in attempt
+  //                                (child forgot this letter)
+  //   { kind: 'ghost' }         — placeholder rendered on the OTHER side so
+  //                                the two rows stay visually aligned when
+  //                                one row has a wrong/missing gap
+  //
+  // The comparison is case-insensitive but the token `char` keeps the
+  // original case so the rendered output still reads as typed. A
+  // word-on-word compare is O(|a| * |b|) — fine for Spell Bee words that
+  // top out at ~15 letters.
+  // ---------------------------------------------------------------------------
+  function diffWord(attempt, target) {
+    var a = attempt || '';
+    var b = target || '';
+    var m = a.length;
+    var n = b.length;
+
+    // LCS dynamic programming table (lowercased comparison).
+    var dp = [];
+    for (var i = 0; i <= m; i++) {
+      dp.push(new Array(n + 1).fill(0));
+    }
+    for (var i2 = 1; i2 <= m; i2++) {
+      for (var j2 = 1; j2 <= n; j2++) {
+        if (a.charAt(i2 - 1).toLowerCase() === b.charAt(j2 - 1).toLowerCase()) {
+          dp[i2][j2] = dp[i2 - 1][j2 - 1] + 1;
+        } else {
+          dp[i2][j2] = Math.max(dp[i2 - 1][j2], dp[i2][j2 - 1]);
+        }
+      }
+    }
+
+    // Backtrack to produce aligned token arrays. Each step either
+    // matches, deletes from a (wrong letter in attempt), or deletes
+    // from b (missing letter from target). We push aligned ghost tokens
+    // so the two output rows stay character-aligned.
+    var aOut = [];
+    var bOut = [];
+    var i3 = m;
+    var j3 = n;
+    while (i3 > 0 && j3 > 0) {
+      if (a.charAt(i3 - 1).toLowerCase() === b.charAt(j3 - 1).toLowerCase()) {
+        aOut.unshift({ kind: 'same', char: a.charAt(i3 - 1) });
+        bOut.unshift({ kind: 'same', char: b.charAt(j3 - 1) });
+        i3--;
+        j3--;
+      } else if (dp[i3 - 1][j3] >= dp[i3][j3 - 1]) {
+        // Letter in attempt has no partner in target — wrong letter.
+        aOut.unshift({ kind: 'wrong', char: a.charAt(i3 - 1) });
+        bOut.unshift({ kind: 'ghost' });
+        i3--;
+      } else {
+        // Letter in target has no partner in attempt — missing letter.
+        aOut.unshift({ kind: 'ghost' });
+        bOut.unshift({ kind: 'missing', char: b.charAt(j3 - 1) });
+        j3--;
+      }
+    }
+    while (i3 > 0) {
+      aOut.unshift({ kind: 'wrong', char: a.charAt(i3 - 1) });
+      bOut.unshift({ kind: 'ghost' });
+      i3--;
+    }
+    while (j3 > 0) {
+      aOut.unshift({ kind: 'ghost' });
+      bOut.unshift({ kind: 'missing', char: b.charAt(j3 - 1) });
+      j3--;
+    }
+
+    return { attempt: aOut, target: bOut };
+  }
+
+  // Render a diff token row into a container element using individual
+  // spans so each letter gets its own styling box. Plaintext fallback on
+  // exact match keeps the DOM tiny for the overwhelming majority of rounds.
+  function renderDiffRow(containerEl, tokens, fallbackPlain) {
+    if (!containerEl) return;
+    containerEl.innerHTML = '';
+    if (fallbackPlain != null && tokens.every(function (t) { return t.kind === 'same'; })) {
+      containerEl.textContent = fallbackPlain;
+      return;
+    }
+    for (var i = 0; i < tokens.length; i++) {
+      var tok = tokens[i];
+      var span = document.createElement('span');
+      if (tok.kind === 'same') {
+        span.className = 'sb-char';
+        span.textContent = tok.char;
+      } else if (tok.kind === 'wrong') {
+        span.className = 'sb-char sb-char--wrong';
+        span.textContent = tok.char;
+      } else if (tok.kind === 'missing') {
+        span.className = 'sb-char sb-char--missing';
+        span.textContent = tok.char;
+      } else if (tok.kind === 'ghost') {
+        span.className = 'sb-char sb-char--ghost';
+        span.textContent = '·';
+      }
+      containerEl.appendChild(span);
+    }
   }
 
   // ---------------------------------------------------------------------------
