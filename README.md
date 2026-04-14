@@ -2,9 +2,18 @@
 
 [![CI](https://github.com/s1dd4rth/ollama-pocket/actions/workflows/ci.yml/badge.svg)](https://github.com/s1dd4rth/ollama-pocket/actions/workflows/ci.yml)
 
-Run a free, private AI on your old Android phone — no root required.
+**The AI app framework that fits in one phone — offline, private, yours.**
 
-Turn any old Android phone into a local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev), and a lightweight PWA chat interface. Everything runs on-device. No cloud, no API keys, no subscriptions.
+ollama-pocket is a framework for building personalised AI mini-apps that run
+entirely on a phone you already own. Scaffold an app in one command, inline a
+tiny SDK, talk to a local LLM via structured JSON. No cloud, no account, no
+data leaving the device. Your phone becomes a private AI runtime that you
+program.
+
+It also ships a one-line installer that turns any old Android phone into a
+local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev),
+and a built-in PWA chat UI — the original v0.1.0 use case is unchanged and
+still one command away.
 
 [**Read the full guide →**](https://s1dd4rth.github.io/ollama-pocket)
 
@@ -78,6 +87,25 @@ one PR, one file). Opt-in category bundles for social apps, preloaded games,
 and Google first-party apps load by default; toggle with `--category`,
 `--no-categories`, or `--skip-categories google-apps`.
 
+### Two paths, same install
+
+The Quick Start above installs **both** the chat UI and the app scaffolder in
+one go. What you do next depends on what you want:
+
+1. **Use your phone as a local AI server** — `bash scripts/start-ollama.sh --wifi --chat`
+   opens the built-in chat UI and makes the Ollama API reachable from any
+   device on your LAN. This is the v0.1.0 use case and it is unchanged. Skip
+   straight to [How It Works](#how-it-works).
+2. **Scaffold your own AI mini-app** — `node cli/new.js` walks you through
+   creating a self-contained, installable, offline-first AI app under
+   `apps/<slug>/`. Everything is inlined (SDK, fonts, styles) so the app is
+   one HTML file you can serve with any static HTTP server. Jump to
+   [Building Apps](#building-apps) for the full flow and the
+   [Spell Bee reference template](examples/spell-bee/).
+
+Both paths run entirely on the phone. Nothing leaves the device unless you
+explicitly expose the Ollama port over WiFi.
+
 ## How It Works
 
 ```
@@ -147,16 +175,41 @@ your phone and submit the result — see
 
 ## Building Apps
 
-Starting with v0.2.0, the repo ships a small scaffolding system that turns the
-shared SDK (`sdk/pocket.js`) plus a set of HTML-comment-marker templates into a
-self-contained, installable AI app. The scaffolded app is a single
-`index.html` (plus `manifest.json`, `icon.svg`, `sw.js`, and copies of the
-`pwa/fonts/` files) — no build step, no npm install, no framework.
+The idea: **personal, agentic AI mini-apps that you write and own**. Not a
+chatbot. Not a SaaS. Not another "powered by" integration. You write a small
+HTML file, inline a ~20 KB SDK, talk to a local LLM via structured JSON
+schemas, and serve it from the phone. The app is a single file. The model
+runs on the phone. Your data never leaves the device. You can edit the
+template, rescaffold, and the new version is live in seconds.
 
-v0.2.0 ships **one reference template — Spell Bee**, a local spelling game for
-kids aged 4–12. It uses Ollama's grammar-constrained JSON output to generate
-words, hints, and judgments entirely on-device. It exists to prove the
-scaffolding works end-to-end; more templates will follow in later releases.
+Every scaffolded app is:
+
+- **A single HTML file** — `index.html` with the SDK inlined as a plain
+  `<script>`, per-template CSS inlined as `<style>`, and the per-app config
+  inlined as `<script type="application/json" id="app-config">`. Plus
+  `manifest.json`, `icon.svg`, `sw.js`, and copies of `pwa/fonts/`. No build
+  step. No framework. No npm install.
+- **Offline-first** — a network-first service worker caches the app shell
+  on first load so the page opens without internet. The LLM itself runs
+  locally too, so the whole app works in airplane mode.
+- **Installable** — the scaffolded manifest.json + sw.js satisfies the "Add
+  to Home Screen" requirements, so you get a real PWA icon in the app
+  drawer that opens straight into your app.
+- **Agentic** — the SDK's `structuredChat()` uses Ollama's
+  grammar-constrained JSON output. Your app talks to the model with a
+  schema ("give me `{word, hint, difficulty}`"), not freeform chat. The
+  model is a reasoning engine, not a chatbot.
+- **Byte-deterministic** — every template has a reference output under
+  [`examples/`](examples/) that CI regenerates on every PR. If your edit
+  to `sdk/pocket.js` or a template breaks the scaffolder, CI fails loudly
+  with a diff.
+
+v0.2.1 ships **one reference template — Spell Bee**, a local spelling game
+for kids aged 4–12. It exists to prove the scaffolding works end-to-end on
+the structurally hardest template (5-state FSM, two structured-chat calls
+per round, bounded sessions, character-level diff highlighting). More
+templates land in later releases; [writing your own](CONTRIBUTING.md#adding-a-template)
+is ~200 lines.
 
 **Run it on your phone:**
 
