@@ -1,5 +1,5 @@
 title: "ollama-pocket"
-description: "Run a free, private AI on your old Android phone — no root required"
+description: "The AI app framework that fits in one phone — offline, private, yours. Scaffold personalised AI mini-apps that run entirely on an Android phone you already own. No cloud, no account, no data leaving the device."
 theme: minima
 baseurl: "/ollama-pocket"
 url: ""
