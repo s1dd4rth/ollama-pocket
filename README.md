@@ -106,33 +106,41 @@ one go. What you do next depends on what you want:
 Both paths run entirely on the phone. Nothing leaves the device unless you
 explicitly expose the Ollama port over WiFi.
 
+## Demo
+
+The scaffolded Spell Bee template running on an LG G8 ThinQ — `qwen2.5:1.5b`,
+Ollama 0.20.5, offline, installed from the home screen as a real WebAPK. Every
+frame below was captured live from a single session on the phone:
+
+| `01` Start | `02` Fetching | `03` Your turn | `04` Judging | `05` Result |
+|---|---|---|---|---|
+| ![idle — NEW SESSION panel with START SESSION button](demo-assets/storyboard-01-idle.png) | ![fetching — THINKING indicator with orange pulse](demo-assets/storyboard-02-thinking.png) | ![your turn — hint text, input field, keyboard, SUBMIT](demo-assets/storyboard-03-your-turn.png) | ![judging — CHECKING indicator with orange pulse](demo-assets/storyboard-04-judging.png) | ![result — CORRECT +1 PTS panel with YOU / WORD / NEXT](demo-assets/storyboard-05-correct.png) |
+
+The 5-state FSM (`idle → fetching_word → awaiting_attempt → judging →
+showing_feedback → idle`) is driven by two `structuredChat()` calls per round
+— one to pick a word+hint, one to grade the attempt — both talking to Ollama
+over `localhost:11434` with JSON schemas inlined in the scaffolded app.
+
 ## How It Works
 
+```mermaid
+flowchart TB
+    subgraph PHONE ["Android phone — offline, private"]
+        direction TB
+        subgraph TERMUX ["Termux"]
+            subgraph DEBIAN ["proot-distro · Debian (glibc)"]
+                OLLAMA["Ollama API<br/>localhost:11434<br/>qwen2.5:1.5b · gemma3:1b · smollm2:360m"]
+            end
+        end
+        CHAT["pwa/chat.html<br/>v0.1.0 chat UI"]
+        APP["Scaffolded mini-app<br/>apps/&lt;slug&gt;/index.html<br/>SDK inlined · structured JSON"]
+    end
+    CHAT -->|fetch| OLLAMA
+    APP  -->|"structuredChat(schema)"| OLLAMA
+    LAN(("Any device on LAN")) -. "--wifi flag" .-> OLLAMA
 ```
-┌─────────────────────────────────────────────────┐
-│  Android Phone                                  │
-│                                                 │
-│  ┌───────────────────────────────────────────┐  │
-│  │  Termux (terminal emulator)               │  │
-│  │                                           │  │
-│  │  ┌───────────────────────────────────┐    │  │
-│  │  │  proot-distro (Debian)            │    │  │
-│  │  │                                   │    │  │
-│  │  │  ┌───────────────────────────┐    │    │  │
-│  │  │  │  Ollama                   │    │    │  │
-│  │  │  │  ├─ qwen2.5:1.5b         │    │    │  │
-│  │  │  │  └─ API on :11434        │    │    │  │
-│  │  │  └───────────────────────────┘    │    │  │
-│  │  └───────────────────────────────────┘    │  │
-│  └───────────────────────────────────────────┘  │
-│                                                 │
-│  PWA Chat UI ←──── localhost:11434              │
-│  (Chrome)                                       │
-└─────────────────────────────────────────────────┘
-         ↕ WiFi
-  Any device on your network can
-  hit http://<phone-ip>:11434
-```
+
+Two consumers of the same local Ollama API: the v0.1.0 chat UI and any mini-app scaffolded by `node cli/new.js`. Both are inert HTML files served by Python's `http.server` — nothing proprietary, nothing phoning home.
 
 **Why Debian inside Termux?** Ollama is compiled against glibc. Android (and Alpine Linux) use different C libraries. Debian provides glibc, so Ollama runs natively. No root needed — `proot-distro` fakes root access in userspace.
 

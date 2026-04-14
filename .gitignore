@@ -17,6 +17,14 @@ _site/
 .jekyll-metadata
 Gemfile.lock
 
+# Draft blog posts — not part of the project docs
+docs/medium.md
+
+# Demo assets: only commit the storyboard stills referenced in README.
+# Everything else (raw mp4 source, earlier takes, scratch frames) stays local.
+demo-assets/*
+!demo-assets/storyboard-*.png
+
 # Node
 node_modules/
 
