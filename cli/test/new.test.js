@@ -159,6 +159,57 @@ test('optsFromFlags respects explicit --app-name', () => {
   assert.equal(opts.appName, 'SpellBot 9000');
 });
 
+// -----------------------------------------------------------------------------
+// --scaffolded-at flag (CI drift check)
+// -----------------------------------------------------------------------------
+
+test('validateScaffoldedAt accepts canonical ISO 8601', () => {
+  assert.equal(newCli.validateScaffoldedAt('2026-01-01T00:00:00.000Z'), null);
+  assert.equal(newCli.validateScaffoldedAt('2026-01-01T00:00:00Z'), null);
+  assert.equal(newCli.validateScaffoldedAt('2026-01-01'), null);
+});
+
+test('validateScaffoldedAt rejects garbage', () => {
+  assert.match(newCli.validateScaffoldedAt('not-a-date'), /ISO 8601/);
+  assert.match(newCli.validateScaffoldedAt(''), /non-empty/);
+  assert.match(newCli.validateScaffoldedAt(), /non-empty/);
+});
+
+test('validateFlags rejects a malformed --scaffolded-at', () => {
+  assert.throws(
+    () =>
+      newCli.validateFlags({
+        slug: 'ok',
+        template: 'kids-game/spell-bee',
+        'age-group': '6-8',
+        model: 'qwen2.5:1.5b',
+        'scaffolded-at': 'yesterday',
+      }),
+    /ISO 8601/
+  );
+});
+
+test('optsFromFlags normalises --scaffolded-at to canonical ISO', () => {
+  const opts = newCli.optsFromFlags({
+    slug: 'spell-bee',
+    template: 'kids-game/spell-bee',
+    'age-group': '6-8',
+    model: 'qwen2.5:1.5b',
+    'scaffolded-at': '2026-01-01',
+  });
+  assert.equal(opts.scaffoldedAt, '2026-01-01T00:00:00.000Z');
+});
+
+test('optsFromFlags leaves scaffoldedAt undefined when no flag is passed', () => {
+  const opts = newCli.optsFromFlags({
+    slug: 'spell-bee',
+    template: 'kids-game/spell-bee',
+    'age-group': '6-8',
+    model: 'qwen2.5:1.5b',
+  });
+  assert.equal(opts.scaffoldedAt, undefined);
+});
+
 test('titleCase handles empty segments', () => {
   assert.equal(newCli.titleCase('a--b'), 'A  B');
   assert.equal(newCli.titleCase('x'), 'X');

@@ -403,6 +403,32 @@ test('scaffold() produces a complete app from the real templates', async () => {
   });
 });
 
+test('scaffold() is byte-deterministic when scaffoldedAt is pinned', async () => {
+  // Load-bearing for the scaffold-drift CI job in examples/spell-bee/.
+  // Two back-to-back scaffolds with the exact same opts (including a
+  // fixed scaffoldedAt) must produce byte-identical index.html / sw.js /
+  // manifest.json / icon.svg. If this ever regresses, CI will drift on
+  // every PR and the examples/ drift check becomes useless.
+  await withTempDir(async (tmp) => {
+    const optsFixed = { ...SAMPLE_OPTS, scaffoldedAt: '2026-01-01T00:00:00.000Z' };
+
+    const outA = path.join(tmp, 'a');
+    const outB = path.join(tmp, 'b');
+
+    await scaffold.scaffold({ repoRoot: REPO_ROOT, outputDir: outA, opts: optsFixed });
+    await scaffold.scaffold({ repoRoot: REPO_ROOT, outputDir: outB, opts: optsFixed });
+
+    for (const name of ['index.html', 'manifest.json', 'icon.svg', 'sw.js']) {
+      const a = await fs.readFile(path.join(outA, name));
+      const b = await fs.readFile(path.join(outB, name));
+      assert.ok(
+        a.equals(b),
+        name + ' should be byte-identical across two scaffolds with the same pinned scaffoldedAt'
+      );
+    }
+  });
+});
+
 test('scaffold() refuses to overwrite without --force', async () => {
   await withTempDir(async (tmp) => {
     const outDir = path.join(tmp, 'spell-bee');

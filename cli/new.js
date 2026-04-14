@@ -80,6 +80,7 @@ function printUsage() {
     '  --output <dir>         output directory (default: apps/<slug>)',
     '  --skip-detection       skip the /api/tags pre-flight',
     '  --force                overwrite output directory without prompting',
+    '  --scaffolded-at <iso>  pin APP_CONFIG.scaffoldedAt (CI drift check)',
     '  --help, -h             print this message',
     '',
   ].join('\n');
@@ -170,6 +171,24 @@ function validateFlags(flags) {
     const nameErr = prompts.validateAppName(flags['app-name']);
     if (nameErr) throw new Error(nameErr);
   }
+  if (flags['scaffolded-at']) {
+    const atErr = validateScaffoldedAt(flags['scaffolded-at']);
+    if (atErr) throw new Error(atErr);
+  }
+  return null;
+}
+
+function validateScaffoldedAt(value) {
+  // Accept any ISO 8601 date/datetime that Date() can parse. We check via
+  // Date.parse because that's the same parser buildAppConfig's `new Date()
+  // .toISOString()` runs on the default path — same input space.
+  if (typeof value !== 'string' || !value) {
+    return '--scaffolded-at must be a non-empty ISO 8601 timestamp';
+  }
+  const ts = Date.parse(value);
+  if (!Number.isFinite(ts)) {
+    return '--scaffolded-at could not be parsed as an ISO 8601 timestamp: ' + value;
+  }
   return null;
 }
 
@@ -177,7 +196,7 @@ function optsFromFlags(flags) {
   const slug = flags.slug;
   const appName = flags['app-name'] || titleCase(slug);
   const [category] = flags.template.split('/');
-  return {
+  const opts = {
     appName: appName,
     slug: slug,
     category: category,
@@ -186,6 +205,15 @@ function optsFromFlags(flags) {
     model: flags.model,
     host: flags.host || DEFAULT_HOST,
   };
+  // Pin the timestamp if caller provided one. Used by the scaffold-drift
+  // CI job so regenerated output is byte-identical to the committed
+  // examples/spell-bee/ copy. Normalised through `new Date(...)
+  // .toISOString()` so "2026-01-01" and "2026-01-01T00:00:00Z" produce
+  // the same canonical form on disk.
+  if (flags['scaffolded-at']) {
+    opts.scaffoldedAt = new Date(flags['scaffolded-at']).toISOString();
+  }
+  return opts;
 }
 
 async function runNonInteractive(flags) {
@@ -387,6 +415,7 @@ module.exports = {
   main: main,
   parseFlags: parseFlags,
   validateFlags: validateFlags,
+  validateScaffoldedAt: validateScaffoldedAt,
   optsFromFlags: optsFromFlags,
   titleCase: titleCase,
   defaultOutputDir: defaultOutputDir,

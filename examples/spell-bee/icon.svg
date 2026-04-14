@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#0f0f0f"/>
+  <rect x="16" y="16" width="160" height="160" rx="24" fill="hsl(198, 72%, 56%)" fill-opacity="0.18"/>
+  <text x="96" y="120" font-family="system-ui, -apple-system, sans-serif" font-size="96" font-weight="700" text-anchor="middle" fill="hsl(198, 72%, 56%)">SP</text>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "Spell Bee (spell-bee)",
+  "short_name": "Spell Bee",
+  "description": "Spell Bee — a local AI app scaffolded by ollama-pocket",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
