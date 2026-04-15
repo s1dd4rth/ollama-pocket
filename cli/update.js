@@ -24,6 +24,7 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const scaffold = require('./scaffold.js');
+const appsManifest = require('./apps-manifest.js');
 
 const APP_CONFIG_RE = /<script\s+type="application\/json"\s+id="app-config">([\s\S]*?)<\/script>/;
 
@@ -123,6 +124,13 @@ async function runUpdate(argv) {
     },
     force: true,
   });
+
+  // Refresh the launcher manifest entry so any metadata changes (appName,
+  // category, etc) that came in via a template edit propagate through
+  // without the user having to hand-edit pwa/apps.json. Apps sitting
+  // outside pwa/apps/ stay untouched — registerScaffoldedApp returns null
+  // for those.
+  await appsManifest.registerScaffoldedApp(repoRoot, appDir, opts);
 
   process.stdout.write('update: wrote ' + result.files.length + ' files, index.html ' + result.sizeBytes + ' bytes\n');
   return 0;

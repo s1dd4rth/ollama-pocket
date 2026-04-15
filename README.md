@@ -36,7 +36,8 @@ Then:
 # Pull a model (pick one that fits your RAM — see table below)
 proot-distro login debian -- ollama pull qwen2.5:1.5b
 
-# Start the server + chat UI (opens Chrome at http://localhost:8000/chat.html)
+# Start the server + PWA launcher (opens Chrome at http://localhost:8000/)
+# The launcher lists the chat UI and every mini-app you've scaffolded.
 bash ~/ollama-pocket/scripts/start-ollama.sh --wifi --chat
 ```
 

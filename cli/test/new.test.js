@@ -305,8 +305,10 @@ test('titleCase handles empty segments', () => {
   assert.equal(newCli.titleCase('x'), 'X');
 });
 
-test('defaultOutputDir is apps/<slug>', () => {
-  assert.equal(newCli.defaultOutputDir('foo'), path.join('apps', 'foo'));
+test('defaultOutputDir is pwa/apps/<slug> (v0.3+, launcher-ready)', () => {
+  // v0.3 moved the scaffold default under pwa/apps/ so the launcher at
+  // pwa/index.html can reach scaffolded mini-apps via relative hrefs.
+  assert.equal(newCli.defaultOutputDir('foo'), path.join('pwa', 'apps', 'foo'));
 });
 
 // -----------------------------------------------------------------------------

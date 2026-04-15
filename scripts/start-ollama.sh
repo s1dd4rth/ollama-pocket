@@ -1,17 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ============================================================================
-# start-ollama.sh — One-command startup for Ollama server + chat UI
+# start-ollama.sh — One-command startup for Ollama server + PWA launcher
 #
 # Starts the Ollama server inside Debian proot. With --wifi, Ollama listens on
-# all interfaces so any device on your LAN can hit the API. With --chat, a
-# local Python HTTP server serves the PWA at http://localhost:8000 and Chrome
-# is launched to open it — this is required for service workers to register
-# (service workers do not run on file:// origins).
+# all interfaces so any device on your LAN can hit the API. With --launcher
+# (default when any PWA flag is set), a local Python HTTP server serves
+# pwa/ at http://localhost:8000 and Chrome opens the launcher — which lists
+# the v0.1.0 chat UI plus every scaffolded mini-app under pwa/apps/. Service
+# workers require an http(s) origin so file:// is not an option.
+#
+# Backwards compat: --chat is still accepted and still opens the PWA, but
+# now routes Chrome to the launcher index by default. Pass --chat-direct to
+# land straight on chat.html (v0.1.0 behaviour) while skipping the launcher.
 #
 # Usage:
-#   bash start-ollama.sh                    # Start server (localhost only)
-#   bash start-ollama.sh --wifi             # Start server on all interfaces
-#   bash start-ollama.sh --wifi --chat      # Start server + open chat UI
+#   bash start-ollama.sh                           # Start server (localhost only)
+#   bash start-ollama.sh --wifi                    # Start server on all interfaces
+#   bash start-ollama.sh --wifi --launcher         # Server + launcher in Chrome
+#   bash start-ollama.sh --wifi --chat             # Alias for --launcher
+#   bash start-ollama.sh --wifi --chat-direct      # Skip launcher, open chat.html
 # ============================================================================
 
 set -euo pipefail
@@ -26,16 +33,30 @@ DIM='\033[2m'
 NC='\033[0m'
 
 WIFI=false
-OPEN_CHAT=false
+OPEN_PWA=false
+OPEN_TARGET="index.html"  # launcher by default; --chat-direct switches to chat.html
 
 for arg in "$@"; do
   case "$arg" in
     --wifi) WIFI=true ;;
-    --chat) OPEN_CHAT=true ;;
+    --launcher)
+      OPEN_PWA=true
+      OPEN_TARGET="index.html"
+      ;;
+    --chat)
+      OPEN_PWA=true
+      OPEN_TARGET="index.html"
+      ;;
+    --chat-direct)
+      OPEN_PWA=true
+      OPEN_TARGET="chat.html"
+      ;;
     -h|--help)
-      echo "Usage: $0 [--wifi] [--chat]"
-      echo "  --wifi   Listen on all interfaces (WiFi access)"
-      echo "  --chat   Serve the PWA on :8000 and open Chrome"
+      echo "Usage: $0 [--wifi] [--launcher | --chat | --chat-direct]"
+      echo "  --wifi          Listen on all interfaces (WiFi access)"
+      echo "  --launcher      Serve pwa/ on :8000 and open the launcher in Chrome"
+      echo "  --chat          Alias for --launcher (kept for v0.1.0 compat)"
+      echo "  --chat-direct   Skip the launcher and open chat.html directly"
       exit 0
       ;;
   esac
@@ -131,22 +152,26 @@ else
 fi
 
 # -- Start PWA server and open Chrome, if requested --
-if $OPEN_CHAT; then
+if $OPEN_PWA; then
   if start_pwa_server; then
-    echo -e "  ${GREEN}PWA:${NC}   http://${LOCAL_IP}:${PWA_PORT}/chat.html"
+    echo -e "  ${GREEN}PWA:${NC}   http://${LOCAL_IP}:${PWA_PORT}/${OPEN_TARGET}"
     # Force Chrome specifically via -p com.android.chrome. The user's default
     # browser might be Samsung Internet or Firefox, which either do not support
     # service workers on localhost or throw up a chooser sheet that blocks the
     # launch. If Chrome is not installed, am start returns non-zero and we
     # fall through to printing the URL for manual copy.
     if am start -a android.intent.action.VIEW \
-         -d "http://localhost:${PWA_PORT}/chat.html" \
+         -d "http://localhost:${PWA_PORT}/${OPEN_TARGET}" \
          -p com.android.chrome >/dev/null 2>&1; then
-      echo -e "  ${CYAN}Opening chat UI in Chrome...${NC}"
+      if [ "$OPEN_TARGET" = "chat.html" ]; then
+        echo -e "  ${CYAN}Opening chat UI in Chrome...${NC}"
+      else
+        echo -e "  ${CYAN}Opening launcher in Chrome...${NC}"
+      fi
     else
       echo -e "  ${YELLOW}Could not launch Chrome automatically.${NC}"
       echo -e "  ${DIM}Open this URL in Chrome manually:${NC}"
-      echo -e "  ${CYAN}http://localhost:${PWA_PORT}/chat.html${NC}"
+      echo -e "  ${CYAN}http://localhost:${PWA_PORT}/${OPEN_TARGET}${NC}"
     fi
   fi
 fi
