@@ -31,7 +31,7 @@
 //   --age-group <grp>     4-6 | 6-8 | 8-12
 //   --model <name>        default model for the runtime
 //   --host <url>          Ollama host URL
-//   --output <dir>        output directory (default: apps/<slug>)
+//   --output <dir>        output directory (default: pwa/apps/<slug>)
 //   --skip-detection      skip the /api/tags pre-flight
 //   --force               overwrite output dir without prompting
 //   --help, -h            print usage and exit
@@ -45,6 +45,7 @@ const prompts = require('./prompts.js');
 const scaffold = require('./scaffold.js');
 const models = require('./models.js');
 const update = require('./update.js');
+const appsManifest = require('./apps-manifest.js');
 
 const REPO_ROOT = update.findRepoRoot(__dirname);
 
@@ -93,7 +94,7 @@ function printUsage() {
     '  --age-group <grp>      4-6 | 6-8 | 8-12  (required for kids-game only)',
     '  --model <name>         default model for the scaffolded runtime',
     '  --host <url>           Ollama host URL (default: ' + DEFAULT_HOST + ')',
-    '  --output <dir>         output directory (default: apps/<slug>)',
+    '  --output <dir>         output directory (default: pwa/apps/<slug>)',
     '  --skip-detection       skip the /api/tags pre-flight',
     '  --force                overwrite output directory without prompting',
     '  --scaffolded-at <iso>  pin APP_CONFIG.scaffoldedAt (CI drift check)',
@@ -162,7 +163,12 @@ function titleCase(slug) {
 }
 
 function defaultOutputDir(slug) {
-  return path.join('apps', slug);
+  // Scaffolded apps now land under `pwa/apps/<slug>/` so the launcher at
+  // `pwa/index.html` (served by `scripts/start-ollama.sh`) can reach them
+  // via a relative `./apps/<slug>/` href. Before v0.3 the default was
+  // `apps/<slug>/` — the new path is the one the launcher registers in
+  // `pwa/apps.json`.
+  return path.join('pwa', 'apps', slug);
 }
 
 // -----------------------------------------------------------------------------
@@ -265,6 +271,18 @@ async function runNonInteractive(flags) {
       process.stdout.write('  ' + msg + '\n');
     },
   });
+
+  // Register in pwa/apps.json so the launcher tile appears. `registerScaffoldedApp`
+  // returns null when the output directory sits outside pwa/apps/ (examples/,
+  // /tmp, anywhere a drift-check or test is scaffolding). The --scaffolded-at
+  // flag, when present, also pins the manifest's updatedAt for byte-deterministic
+  // CI behaviour — same rationale as APP_CONFIG.scaffoldedAt.
+  const registered = await appsManifest.registerScaffoldedApp(REPO_ROOT, outputDir, opts, {
+    updatedAt: flags['scaffolded-at'] ? new Date(flags['scaffolded-at']).toISOString() : null,
+  });
+  if (registered) {
+    process.stdout.write('registered in pwa/apps.json (' + registered.apps.length + ' apps)\n');
+  }
 
   process.stdout.write('done. wrote ' + result.files.length + ' files, index.html ' + result.sizeBytes + ' bytes\n');
   return 0;
@@ -402,11 +420,28 @@ async function runInteractive(flags) {
       },
     });
 
+    // Register the app in pwa/apps.json so the launcher tile appears.
+    // Returns null when the output directory sits outside pwa/apps/.
+    const registered = await appsManifest.registerScaffoldedApp(REPO_ROOT, resolved, opts);
+    if (registered) {
+      process.stdout.write('  registered in pwa/apps.json\n');
+    }
+
     process.stdout.write('\ndone.\n');
     process.stdout.write('  wrote ' + result.files.length + ' files, index.html ' + result.sizeBytes + ' bytes\n');
-    process.stdout.write('  serve locally:\n');
-    process.stdout.write('    python3 -m http.server 8000 --directory ' + resolved + '\n');
-    process.stdout.write('  open: http://localhost:8000/\n');
+    // If the app landed under pwa/apps/, the user can just start the
+    // normal server — the launcher will include it. Otherwise fall back
+    // to the single-app serve recipe.
+    const inPwaApps = !!registered;
+    if (inPwaApps) {
+      process.stdout.write('  start the server + launcher:\n');
+      process.stdout.write('    bash scripts/start-ollama.sh --chat\n');
+      process.stdout.write('  open: http://localhost:8000/\n');
+    } else {
+      process.stdout.write('  serve locally:\n');
+      process.stdout.write('    python3 -m http.server 8000 --directory ' + resolved + '\n');
+      process.stdout.write('  open: http://localhost:8000/\n');
+    }
     return 0;
   } finally {
     rl.close();

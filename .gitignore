@@ -32,6 +32,12 @@ node_modules/
 apps/*
 !apps/.gitkeep
 
+# Scaffolded apps under pwa/ — generated output, not source. The launcher
+# reads pwa/apps.json to decide which tiles to show, and pwa/apps.json IS
+# committed so a fresh clone boots with just the chat tile. The actual
+# scaffolded directories (pwa/apps/<slug>/) are per-user state.
+pwa/apps/
+
 # examples/<slug>/fonts/ is copied verbatim from pwa/fonts/ at scaffold
 # time. Keeping the copied bytes out of git means the scaffold-drift
 # check only polices the files the scaffolder actually generates
