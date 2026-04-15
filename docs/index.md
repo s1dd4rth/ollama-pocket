@@ -1,29 +1,67 @@
 ---
 layout: default
-title: "Run a Free, Private AI on Your Old Android Phone — No Root Required"
-description: "Step-by-step guide to running Ollama on Android with Termux, proot-distro Debian, and a lightweight PWA chat interface."
+title: "olladroid — the AI app framework that fits in one phone"
+description: "Scaffold personalised AI mini-apps that run entirely on an Android phone you already own. No cloud, no account, no data leaving the device. Step-by-step install guide for Termux + proot-distro Debian + Ollama + a PWA launcher."
 ---
 
-# Run a Free, Private AI on Your Old Android Phone — No Root Required
+<p align="center">
+  <img src="../pwa/logo.svg" alt="olladroid — llama in a pill-shaped wordmark" width="320" />
+</p>
 
-*A step-by-step guide to turning an old phone into a local AI server with Ollama.*
+# olladroid
+
+**The AI app framework that fits in one phone — offline, private, yours.**
+
+olladroid is a framework for building personalised AI mini-apps that run entirely on a phone you already own. Scaffold an app in one command, inline a tiny SDK, talk to a local LLM via structured JSON. No cloud, no account, no data leaving the device. Your phone becomes a private AI runtime that you program.
+
+It also ships a one-line installer that turns any old Android phone into a local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev), and a built-in PWA launcher — the original v0.1.0 use case is unchanged and still one command away.
+
+---
+
+## Quick install (one command)
+
+Run this **in Termux on your phone** (install Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/) first — **not** the Play Store, that version is outdated):
+
+```bash
+curl -fsSL https://s1dd4rth.github.io/olladroid/install.sh | bash
+```
+
+That's it. The installer pins a known-good Termux mirror, clones the repo to `~/olladroid`, installs Debian inside `proot-distro`, installs Ollama, copies the PWA to `/sdcard/olladroid/pwa/`, and adds the `olladroid` CLI wrapper to your PATH. When it finishes, it prints the exact commands to start the server and the launcher.
+
+Then:
+
+```bash
+# Pull a model (pick one that fits your RAM — see the table below)
+proot-distro login debian -- ollama pull qwen2.5:1.5b
+
+# Start the server + PWA launcher. Chrome opens at http://localhost:8000/
+bash ~/olladroid/scripts/start-ollama.sh --wifi --chat
+```
+
+The launcher tile grid lists the v0.1.0 chat UI plus every mini-app you've scaffolded. Tap a tile and you're in the app.
+
+Want to build your own app? `olladroid new` walks you through it — see [Step 8](#step-8-build-your-own-ai-mini-apps-v03) below.
+
+The rest of this page is the long-form **step-by-step tutorial** for anyone who wants to understand what the one-liner is actually doing, or who's hit a snag somewhere in the chain and needs to run the steps manually. If the one-liner worked, you can skip straight to Step 6 (the PWA launcher) or Step 8 (scaffolding your own app).
 
 ---
 
 ## Why?
 
-You probably have an old phone in a drawer. It has a multi-core ARM processor, 4-6GB of RAM, WiFi, a battery that acts as a built-in UPS, and it's doing nothing.
+You probably have an old phone in a drawer. It has a multi-core ARM processor, 4-6 GB of RAM, WiFi, a battery that acts as a built-in UPS, and it's doing nothing.
 
 Meanwhile, every AI service wants your data, a subscription, or both.
 
-What if you could run a real language model — privately, offline, for free — on that phone? No cloud. No API keys. No accounts. Your prompts never leave the device.
+What if you could run a real language model — privately, offline, for free — on that phone? No cloud. No API keys. No accounts. Your prompts never leave the device. And what if, on top of that, you could **scaffold personalised AI mini-apps** that do exactly what you want — a local spelling game for your kid, a summariser for meeting notes, anything — without shipping your data to someone else's cloud?
 
-That's what this guide does. I did it on a **Snapdragon 855 phone from ~2019** (6GB RAM) and it works surprisingly well. Any similar-era Android phone should work too.
+That's what this guide does. I did it on an **LG G8 ThinQ (Snapdragon 855, 5.5 GB RAM)** and it works surprisingly well. Any similar-era Android phone should work too.
 
 **What you'll end up with:**
-- A local AI chat running entirely on your phone
-- A clean PWA interface you can "install" to your home screen
-- An API server any device on your WiFi can talk to
+- A **local AI chat** running entirely on your phone (the v0.1.0 story)
+- A **PWA launcher** at `http://localhost:8000/` with a tile grid of your apps
+- Two **reference templates** — Spell Bee (kids-game) and Summariser (productivity) — ready to install
+- An **API server** any device on your WiFi can talk to (`--wifi` flag)
+- A **scaffolder CLI** (`olladroid new`) that turns a template + a slug into a self-contained PWA mini-app with the SDK inlined and registers it in the launcher
 - All of this without rooting your phone
 
 ---
@@ -278,39 +316,43 @@ Type a message and hit enter. If you get a response, everything works. Press `Ct
 
 ---
 
-## Step 6: The PWA Chat Interface
+## Step 6: The PWA Launcher
 
-Chatting in the terminal works, but it's not great on a phone touchscreen. We built a lightweight PWA (Progressive Web App) chat interface that:
+Chatting in the terminal works, but it's not great on a phone touchscreen. olladroid ships a **PWA launcher** that:
 
-- Connects to your local Ollama server
-- Streams responses in real-time
-- Auto-detects which model is loaded
-- Can be "installed" to your home screen as a standalone app
-- Uses zero extra RAM (it's just an HTML file)
+- Lists every app on a tile grid — the v0.1.0 chat UI plus every mini-app you scaffold via `olladroid new`
+- Runs in Chrome on `http://localhost:8000/` so service workers register correctly (that's why `file://` can't work — service workers don't run on file origins)
+- Auto-pings your Ollama server and shows `N MODELS` or `OFFLINE` in the header
+- Uses the olladroid llama wordmark and TE-style design language
+- Can be "installed" to your home screen as a standalone WebAPK
 
-<!-- screenshot placeholder: ![Chat UI screenshot](assets/images/chat-ui.png) -->
+The installer copies `pwa/` to `/sdcard/olladroid/pwa/` and `scripts/start-ollama.sh --chat` serves it on port 8000 via a tiny Python `http.server` that Termux runs. No manual `adb push` needed — the one-liner handles it.
 
-### Copy the PWA to your phone
+### Start the server + launcher
 
 ```bash
-# On your PC
-adb shell mkdir -p //sdcard/olladroid/pwa
-adb push pwa/chat.html //sdcard/olladroid/pwa/
-adb push pwa/manifest.json //sdcard/olladroid/pwa/
-adb push pwa/sw.js //sdcard/olladroid/pwa/
-adb push pwa/icon.svg //sdcard/olladroid/pwa/
+# In Termux
+bash ~/olladroid/scripts/start-ollama.sh --wifi --chat
 ```
 
-### Open it
+Chrome opens at `http://localhost:8000/` and you see the launcher:
 
-1. Make sure the Ollama server is running (next step)
-2. Open Chrome on your phone
-3. Navigate to `file:///sdcard/olladroid/pwa/chat.html`
-4. Start chatting
+- **OLLADROID** header on the left with the llama wordmark
+- **N MODELS** / `OFFLINE` connection badge on the right
+- **YOUR APPS** section with one tile per installed app
+- **Chat** tile for the v0.1.0 chat UI
+- One tile per scaffolded mini-app (Spell Bee, Summariser, or whatever you've built)
 
-### Add to home screen
+Tap any tile. The page navigates to the app and you're in. Back button returns to the launcher.
 
-In Chrome, tap the **three dots menu → Add to Home Screen**. The chat app will appear on your home screen and open in standalone mode (no browser chrome), looking and feeling like a native app.
+### Two flags worth knowing
+
+- `--chat-direct` — skip the launcher, open `chat.html` straight up (the v0.1.0 experience)
+- `--wifi` — bind Ollama + the PWA server on all interfaces so any device on your LAN can reach them
+
+### Add to home screen (real WebAPK install)
+
+In Chrome, tap the **three dots menu → Add to home screen** while looking at the launcher. Chrome installs it as a real WebAPK — the launcher gets its own icon in the app drawer, runs in a standalone Android task (no browser chrome), and survives phone restarts. Same trick works for any scaffolded mini-app, so a Spell Bee install lands straight on your kid's home screen.
 
 ---
 
@@ -322,7 +364,7 @@ Every time you want to use your AI, you just need to start the Ollama server. We
 
 ```bash
 # In Termux
-bash /sdcard/start-ollama.sh
+bash ~/olladroid/scripts/start-ollama.sh
 ```
 
 The server starts on `http://localhost:11434`. Only apps on the phone can reach it.
@@ -330,8 +372,10 @@ The server starts on `http://localhost:11434`. Only apps on the phone can reach 
 ### WiFi startup (access from any device)
 
 ```bash
-bash /sdcard/start-ollama.sh --wifi
+bash ~/olladroid/scripts/start-ollama.sh --wifi --chat
 ```
+
+`--wifi` binds Ollama + the PWA server on all interfaces. `--chat` also spins up the PWA server on `http://localhost:8000/` and opens the launcher in Chrome.
 
 Now any device on your WiFi network can use the AI:
 
@@ -350,7 +394,7 @@ Now any device on your WiFi network can use the AI:
 ### Set up aliases (optional)
 
 ```bash
-bash /sdcard/setup-autostart.sh
+bash ~/olladroid/scripts/setup-autostart.sh
 ```
 
 After that, just type `ollama-start-wifi` in Termux to start the server.
@@ -368,6 +412,70 @@ curl http://192.168.1.100:11434/api/generate \
 ```
 
 This works with VS Code extensions (Continue), Open WebUI, Chatbox, or any app that supports the Ollama/OpenAI API.
+
+---
+
+## Step 8: Build your own AI mini-apps (v0.3+)
+
+The chat UI is useful, but the whole point of olladroid is that you can **build your own**. A local spelling game for your kid. A summariser for meeting notes. A quiz app. A translator. Anything you can describe with a JSON schema and a system prompt.
+
+The scaffolder CLI is called `olladroid`. The one-liner install added it to your PATH via `~/.bashrc`. Run `source ~/.bashrc` once (or open a fresh Termux session) and you're ready:
+
+```bash
+olladroid --version
+# olladroid v0.3.0
+```
+
+### Scaffold an app (interactive)
+
+```bash
+cd ~/olladroid
+olladroid new
+```
+
+You'll be walked through:
+- **Slug** — a short name like `spelling-game` (used for the URL and the on-disk directory)
+- **App name** — human-facing name, e.g. `Spelling Game`
+- **Category** — `kids-game` or `productivity`
+- **Template** — Spell Bee or Summariser (more land in later releases)
+- **Age group** — kids-game only, `4-6` / `6-8` / `8-12`
+- **Model** — defaults to `qwen2.5:1.5b`; the scaffolder checks which models you have installed and picks a compatible one
+- **Ollama host** — defaults to `http://localhost:11434`
+- **Output directory** — defaults to `pwa/apps/<slug>/` so the launcher picks it up automatically
+
+When the scaffolder finishes, your new app is a single HTML file at `~/olladroid/pwa/apps/<slug>/index.html` with the ~20 KB SDK inlined as a plain `<script>`, template-specific CSS inlined as `<style>`, and per-app config inlined as a `<script type="application/json" id="app-config">` block. Plus `manifest.json`, `icon.svg`, `sw.js`, and a `fonts/` copy. **No build step, no framework, no `npm install`.** Just HTML, CSS, and vanilla JS — the same thing every phone browser has understood for 15 years.
+
+The scaffolder also registers your new app in `pwa/apps.json`, so the launcher picks up a new tile the next time you open `http://localhost:8000/`.
+
+### Scaffold non-interactively (scripts / CI)
+
+```bash
+olladroid new --non-interactive \
+  --slug my-summariser \
+  --template productivity/summariser \
+  --model qwen2.5:1.5b
+```
+
+All flags are documented in `olladroid new --help`.
+
+### Update an already-scaffolded app
+
+When the SDK gets a bug fix (or a template's `body.html` or `app.js` changes), re-inline the new version into an existing app without losing its embedded `app-config`:
+
+```bash
+olladroid update pwa/apps/my-summariser
+```
+
+Idempotent. Preserves your slug, model, host, and template choices from the original scaffold.
+
+### What ships today
+
+- **`kids-game/spell-bee`** — a local spelling game for kids aged 4-12. 5-state FSM, two `structuredChat` calls per round, bounded 5-round sessions, character-level diff highlighting for incorrect attempts. Real template, not a hello-world.
+- **`productivity/summariser`** — paste text (up to 2000 chars), get back a structured `{tldr, bullets, key_points}` JSON summary rendered as three TE-style cards. One `structuredChat` call per summarise. Copy-TLDR button. Restores the last summary from `localStorage` on reload.
+
+### What's next
+
+More templates land in later releases. Writing your own is ~200 lines of HTML + JS and is documented in [CONTRIBUTING.md#adding-a-template](https://github.com/s1dd4rth/olladroid/blob/main/CONTRIBUTING.md#adding-a-template).
 
 ---
 
@@ -461,12 +569,15 @@ Now that you have a working AI on your phone, here are some things you can do wi
 
 ## Conclusion
 
-An old phone that was gathering dust is now running a real AI model, privately, with no recurring costs. The entire stack is open source. Your data never leaves the device.
+An old phone that was gathering dust is now **a private AI runtime that you program**. Real models, really offline, really yours. No cloud, no account, no data leaving the device. The entire stack is open source.
 
-It won't replace GPT-4 — a 1.5B parameter model is what it is. But for quick questions, drafting text, brainstorming, summarizing, and simple code tasks? It's genuinely useful. And it's *yours*.
+`qwen2.5:1.5b` won't replace GPT-4 — a 1.5B parameter model is what it is. But for quick questions, drafting text, brainstorming, summarizing, and simple code tasks, it's genuinely useful. Layer a structured-JSON schema on top of it with `olladroid new` and suddenly the same tiny model is powering a proper mini-app with its own UI, its own state, and its own opinions about what "correct" looks like.
 
-The repo has everything you need to replicate this: **[github.com/s1dd4rth/olladroid](https://github.com/s1dd4rth/olladroid)**
+The olladroid scaffolding system ships two reference templates today — Spell Bee (a kids' spelling game) and Summariser (paste-text-in, structured summary out). More land in later releases. Writing your own is [~200 lines of HTML and JS](https://github.com/s1dd4rth/olladroid/blob/main/CONTRIBUTING.md#adding-a-template).
+
+**Get the code:** [github.com/s1dd4rth/olladroid](https://github.com/s1dd4rth/olladroid)
+**One-line install (inside Termux):** `curl -fsSL https://s1dd4rth.github.io/olladroid/install.sh | bash`
 
 ---
 
-*Built on a 2019-era Android phone with Termux, proot-distro, Ollama, and stubbornness.*
+*Built and validated end-to-end on an LG G8 ThinQ (Snapdragon 855, 5.5 GB RAM, Android 12) against real `qwen2.5:1.5b` through Ollama 0.20.5 — launcher renders, Summariser returns valid structured JSON, Spell Bee's 5-state FSM transitions cleanly, every byte reproducible via the scaffold-drift CI job. Tests: 185 passing.*
