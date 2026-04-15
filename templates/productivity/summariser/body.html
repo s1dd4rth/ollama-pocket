@@ -9,20 +9,20 @@
   .summariser {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-5);
+    gap: var(--olladroid-space-5);
   }
 
   /* Section label — TE-style "01 / PASTE TEXT" uppercase tag. */
   .sm-label {
     display: flex;
     align-items: center;
-    gap: var(--pocket-space-2);
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    gap: var(--olladroid-space-2);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sm-label__num {
@@ -32,8 +32,8 @@
     min-width: 18px;
     height: 18px;
     padding: 0 4px;
-    background: var(--pocket-white);
-    color: var(--pocket-black);
+    background: var(--olladroid-white);
+    color: var(--olladroid-black);
     font-size: 9px;
     font-weight: 700;
   }
@@ -41,7 +41,7 @@
   .sm-label__line {
     flex: 1 1 auto;
     height: 1px;
-    background: var(--pocket-gray-3);
+    background: var(--olladroid-gray-3);
   }
 
   /* Top strip: title + kicker */
@@ -49,39 +49,39 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: var(--pocket-space-4);
-    padding-bottom: var(--pocket-space-4);
-    border-bottom: 1px solid var(--pocket-gray-3);
+    gap: var(--olladroid-space-4);
+    padding-bottom: var(--olladroid-space-4);
+    border-bottom: 1px solid var(--olladroid-gray-3);
   }
 
   .sm-top__title {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xl);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xl);
     font-weight: 700;
     letter-spacing: -1px;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
     line-height: 1;
   }
 
   .sm-top__subtitle {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 400;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
     margin-top: 4px;
   }
 
   .sm-top__badge {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-black);
-    background: var(--pocket-white);
+    color: var(--olladroid-black);
+    background: var(--olladroid-white);
     padding: 4px 8px;
     flex: 0 0 auto;
   }
@@ -90,26 +90,26 @@
   .sm-panel {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-4);
+    gap: var(--olladroid-space-4);
   }
 
-  /* Textarea — reuses base `.pocket-card` framing. */
+  /* Textarea — reuses base `.olladroid-card` framing. */
   .sm-textarea-wrap {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   .sm-textarea {
     width: 100%;
     min-height: 220px;
-    padding: var(--pocket-space-3) var(--pocket-space-3);
-    background: var(--pocket-black);
-    color: var(--pocket-white);
-    border: 1px solid var(--pocket-gray-3);
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    padding: var(--olladroid-space-3) var(--olladroid-space-3);
+    background: var(--olladroid-black);
+    color: var(--olladroid-white);
+    border: 1px solid var(--olladroid-gray-3);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.5;
     resize: vertical;
     box-sizing: border-box;
@@ -117,11 +117,11 @@
 
   .sm-textarea:focus {
     outline: none;
-    border-color: var(--pocket-white);
+    border-color: var(--olladroid-white);
   }
 
   .sm-textarea:focus-visible {
-    outline: 2px solid var(--pocket-orange);
+    outline: 2px solid var(--olladroid-orange);
     outline-offset: 2px;
   }
 
@@ -129,19 +129,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sm-counter[data-tone="warn"] {
-    color: var(--pocket-orange);
+    color: var(--olladroid-orange);
   }
 
   .sm-counter[data-tone="err"] {
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sm-counter__value {
@@ -152,20 +152,20 @@
   .sm-thinking {
     display: flex;
     align-items: center;
-    gap: var(--pocket-space-3);
-    padding: var(--pocket-space-5) 0;
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-sm);
+    gap: var(--olladroid-space-3);
+    padding: var(--olladroid-space-5) 0;
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-sm);
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sm-thinking__dot {
     display: inline-block;
     width: 14px;
     height: 14px;
-    background: var(--pocket-orange);
+    background: var(--olladroid-orange);
     animation: sm-pulse 900ms steps(1, end) infinite;
   }
 
@@ -182,48 +182,48 @@
   .sm-result {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-4);
+    gap: var(--olladroid-space-4);
   }
 
   .sm-card {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
-    padding: var(--pocket-space-4);
-    border: 1px solid var(--pocket-gray-3);
-    background: var(--pocket-black);
+    gap: var(--olladroid-space-2);
+    padding: var(--olladroid-space-4);
+    border: 1px solid var(--olladroid-gray-3);
+    background: var(--olladroid-black);
   }
 
   .sm-card__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   .sm-card__title {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
     margin: 0;
   }
 
   .sm-card__meta {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sm-card__tldr {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-lg);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-lg);
     line-height: 1.4;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
   }
 
@@ -233,17 +233,17 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   .sm-card__list li {
     display: flex;
     align-items: flex-start;
-    gap: var(--pocket-space-3);
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    gap: var(--olladroid-space-3);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.4;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sm-card__list li::before {
@@ -253,27 +253,27 @@
     width: 6px;
     height: 6px;
     margin-top: 10px;
-    background: var(--pocket-orange);
+    background: var(--olladroid-orange);
   }
 
   .sm-result__actions {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   /* Error panel */
   .sm-error {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-3);
+    gap: var(--olladroid-space-3);
   }
 
   .sm-error__message {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.5;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
   }
 
@@ -304,7 +304,7 @@
     </div>
 
     <div class="sm-textarea-wrap">
-      <label for="paste-input" class="pocket-sr-only">Text to summarise</label>
+      <label for="paste-input" class="olladroid-sr-only">Text to summarise</label>
       <textarea
         id="paste-input"
         class="sm-textarea"
@@ -397,7 +397,7 @@
       <span class="sm-label__line" aria-hidden="true"></span>
     </div>
 
-    <div class="pocket-banner" data-tone="err">
+    <div class="olladroid-banner" data-tone="err">
       <p class="sm-error__message" id="sm-error-message">Something went wrong.</p>
     </div>
 

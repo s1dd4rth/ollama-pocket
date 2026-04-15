@@ -4,9 +4,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const Pocket = require('../pocket.js');
+const Olladroid = require('../olladroid.js');
 
-const { safeJSONForHTMLScript, compareSemver } = Pocket;
+const { safeJSONForHTMLScript, compareSemver } = Olladroid;
 
 test('safeJSONForHTMLScript: escapes </script> so it cannot break out', () => {
   const encoded = safeJSONForHTMLScript({

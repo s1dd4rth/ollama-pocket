@@ -314,7 +314,7 @@ test('defaultOutputDir is apps/<slug>', () => {
 // -----------------------------------------------------------------------------
 
 async function withTempDir(fn) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'pocket-new-test-'));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'olladroid-new-test-'));
   try {
     return await fn(dir);
   } finally {

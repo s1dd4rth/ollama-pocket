@@ -4,9 +4,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const Pocket = require('../pocket.js');
+const Olladroid = require('../olladroid.js');
 
-const { pickModel, MODEL_PREFERENCES } = Pocket;
+const { pickModel, MODEL_PREFERENCES } = Olladroid;
 
 test('pickModel: prefers qwen2.5:1.5b over gemma3:1b for structured output', () => {
   // gemma3:1b is deliberately excluded from the structured whitelist, so

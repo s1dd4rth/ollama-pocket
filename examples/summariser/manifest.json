@@ -1,7 +1,7 @@
 {
   "name": "Summariser (summariser)",
   "short_name": "Summariser",
-  "description": "Summariser — a local AI app scaffolded by ollama-pocket",
+  "description": "Summariser — a local AI app scaffolded by olladroid",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

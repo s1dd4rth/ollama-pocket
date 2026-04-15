@@ -1,15 +1,15 @@
-# ollama-pocket: App Scaffolding System
+# olladroid: App Scaffolding System
 
 ## Overview
 
-Extend the existing `ollama-pocket` repo with a CLI-based scaffolding system that lets anyone generate fully self-contained, offline-capable web apps powered by a local Ollama instance running on Android. Apps must require zero build tools, zero dependencies, and work directly from the Android filesystem or over WiFi.
+Extend the existing `olladroid` repo with a CLI-based scaffolding system that lets anyone generate fully self-contained, offline-capable web apps powered by a local Ollama instance running on Android. Apps must require zero build tools, zero dependencies, and work directly from the Android filesystem or over WiFi.
 
 ---
 
 ## Goals
 
 - A `cli/new.js` script that interactively scaffolds new apps into an `apps/` directory
-- A shared `sdk/pocket.js` that all apps import for Ollama communication, streaming, session management, and structured output
+- A shared `sdk/olladroid.js` that all apps import for Ollama communication, streaming, session management, and structured output
 - Template categories for **Kids Games** and **Productivity Tools**
 - All output is a single self-contained `index.html` per app (SDK inlined at scaffold time)
 - Open source — each template must be readable, forkable, and easy to customise
@@ -21,12 +21,12 @@ Extend the existing `ollama-pocket` repo with a CLI-based scaffolding system tha
 Extend the existing repo to match this layout:
 
 ```
-ollama-pocket/
+olladroid/
 ├── scripts/                  ← existing, do not modify
 ├── pwa/                      ← existing, do not modify
 │
 ├── sdk/
-│   └── pocket.js             ← shared SDK (source, not inlined yet)
+│   └── olladroid.js             ← shared SDK (source, not inlined yet)
 │
 ├── templates/
 │   ├── _base/
@@ -51,7 +51,7 @@ ollama-pocket/
 
 ---
 
-## SDK: `sdk/pocket.js`
+## SDK: `sdk/olladroid.js`
 
 A vanilla ES module (no bundler required). Must export the following:
 
@@ -118,7 +118,7 @@ node cli/new.js
 ### What the CLI Does
 
 1. Reads the chosen template from `templates/`
-2. Reads `sdk/pocket.js` and inlines it into a `<script>` block in the output HTML
+2. Reads `sdk/olladroid.js` and inlines it into a `<script>` block in the output HTML
 3. Injects all config values into a `<script type="application/json" id="app-config">` block at the top of the file
 4. Writes a single `apps/<app-name>/index.html`
 5. Prints a success message with the local access URL

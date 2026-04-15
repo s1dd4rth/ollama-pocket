@@ -11,7 +11,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
   <style>/* =============================================================================
- * templates/_base/style.css — ollama-pocket shared base layout
+ * templates/_base/style.css — olladroid shared base layout
  *
  * Design language: Teenage Engineering, mirroring pwa/chat.html.
  *   - Black background (#000000), white text, seven-step gray ramp.
@@ -38,8 +38,8 @@
  * What lives here vs in a per-template stylesheet:
  *   - Tokens (colour, space, radius, type scale)
  *   - Element defaults (button, input, h1-h4, p, pre, code, a)
- *   - The shared header (.pocket-header) + info bar + main
- *   - Utility primitives: .pocket-banner, .pocket-stack, .pocket-info-tag
+ *   - The shared header (.olladroid-header) + info bar + main
+ *   - Utility primitives: .olladroid-banner, .olladroid-stack, .olladroid-info-tag
  * Per-template CSS goes inline in body.html; don't bloat _base with
  * game-specific layout.
  * ========================================================================== */
@@ -82,80 +82,80 @@
 
   /* Greyscale ramp — matches pwa/chat.html so the whole project reads as
    * one design system. */
-  --pocket-black: #000000;
-  --pocket-white: #ffffff;
-  --pocket-gray-1: #111111;
-  --pocket-gray-2: #1a1a1a;
-  --pocket-gray-3: #222222;
-  --pocket-gray-4: #333333;
-  --pocket-gray-5: #666666;
-  --pocket-gray-6: #999999;
-  --pocket-gray-7: #cccccc;
-  --pocket-orange: #ff5c00;
+  --olladroid-black: #000000;
+  --olladroid-white: #ffffff;
+  --olladroid-gray-1: #111111;
+  --olladroid-gray-2: #1a1a1a;
+  --olladroid-gray-3: #222222;
+  --olladroid-gray-4: #333333;
+  --olladroid-gray-5: #666666;
+  --olladroid-gray-6: #999999;
+  --olladroid-gray-7: #cccccc;
+  --olladroid-orange: #ff5c00;
 
-  /* Semantic aliases — keeps `--pocket-bg` etc. consistent with earlier
+  /* Semantic aliases — keeps `--olladroid-bg` etc. consistent with earlier
    * scaffolding work without flipping every template ref when the palette
    * changes. */
-  --pocket-bg: var(--pocket-black);
-  --pocket-bg-raised: var(--pocket-gray-1);
-  --pocket-bg-hover: var(--pocket-gray-2);
-  --pocket-fg: var(--pocket-white);
-  --pocket-fg-muted: var(--pocket-gray-6);
-  --pocket-fg-subtle: var(--pocket-gray-5);
-  --pocket-border-color: var(--pocket-gray-3);
-  --pocket-border-strong: var(--pocket-gray-4);
-  --pocket-accent: var(--pocket-orange);
-  --pocket-accent-hover: #ff7722;
-  --pocket-accent-fg: var(--pocket-black);
-  --pocket-success: var(--pocket-white);  /* TE palette encodes state via typography, not colour */
-  --pocket-warning: var(--pocket-orange);
-  --pocket-error: var(--pocket-gray-5);
-  --pocket-focus-ring: var(--pocket-orange);
+  --olladroid-bg: var(--olladroid-black);
+  --olladroid-bg-raised: var(--olladroid-gray-1);
+  --olladroid-bg-hover: var(--olladroid-gray-2);
+  --olladroid-fg: var(--olladroid-white);
+  --olladroid-fg-muted: var(--olladroid-gray-6);
+  --olladroid-fg-subtle: var(--olladroid-gray-5);
+  --olladroid-border-color: var(--olladroid-gray-3);
+  --olladroid-border-strong: var(--olladroid-gray-4);
+  --olladroid-accent: var(--olladroid-orange);
+  --olladroid-accent-hover: #ff7722;
+  --olladroid-accent-fg: var(--olladroid-black);
+  --olladroid-success: var(--olladroid-white);  /* TE palette encodes state via typography, not colour */
+  --olladroid-warning: var(--olladroid-orange);
+  --olladroid-error: var(--olladroid-gray-5);
+  --olladroid-focus-ring: var(--olladroid-orange);
 
   /* Spacing scale — base 4px, tight on mobile. */
-  --pocket-space-1: 0.25rem;
-  --pocket-space-2: 0.5rem;
-  --pocket-space-3: 0.75rem;
-  --pocket-space-4: 1rem;
-  --pocket-space-5: 1.5rem;
-  --pocket-space-6: 2rem;
-  --pocket-space-7: 3rem;
+  --olladroid-space-1: 0.25rem;
+  --olladroid-space-2: 0.5rem;
+  --olladroid-space-3: 0.75rem;
+  --olladroid-space-4: 1rem;
+  --olladroid-space-5: 1.5rem;
+  --olladroid-space-6: 2rem;
+  --olladroid-space-7: 3rem;
 
   /* Type scale — small by default; chrome is intentionally tiny (9–11px)
    * with heavy tracking, body text reads at 13–14px. */
-  --pocket-font-size-2xs: 0.5625rem;  /* 9px  — chrome labels */
-  --pocket-font-size-xs: 0.6875rem;   /* 11px — tags, captions */
-  --pocket-font-size-sm: 0.8125rem;   /* 13px — body */
-  --pocket-font-size-base: 0.875rem;  /* 14px — controls */
-  --pocket-font-size-md: 1rem;        /* 16px — prompts */
-  --pocket-font-size-lg: 1.125rem;    /* 18px — hints */
-  --pocket-font-size-xl: 1.5rem;      /* 24px — emphasis */
-  --pocket-font-size-2xl: 2rem;       /* 32px — hero */
+  --olladroid-font-size-2xs: 0.5625rem;  /* 9px  — chrome labels */
+  --olladroid-font-size-xs: 0.6875rem;   /* 11px — tags, captions */
+  --olladroid-font-size-sm: 0.8125rem;   /* 13px — body */
+  --olladroid-font-size-base: 0.875rem;  /* 14px — controls */
+  --olladroid-font-size-md: 1rem;        /* 16px — prompts */
+  --olladroid-font-size-lg: 1.125rem;    /* 18px — hints */
+  --olladroid-font-size-xl: 1.5rem;      /* 24px — emphasis */
+  --olladroid-font-size-2xl: 2rem;       /* 32px — hero */
 
-  --pocket-line-height-tight: 1.15;
-  --pocket-line-height-body: 1.6;
+  --olladroid-line-height-tight: 1.15;
+  --olladroid-line-height-body: 1.6;
 
   /* Layout */
-  --pocket-max-width: 40rem;
-  --pocket-header-height: 48px;
+  --olladroid-max-width: 40rem;
+  --olladroid-header-height: 48px;
 
   /* Accessibility */
-  --pocket-tap-min: 48px;
-  --pocket-focus-ring-width: 2px;
-  --pocket-focus-ring-offset: 2px;
+  --olladroid-tap-min: 48px;
+  --olladroid-focus-ring-width: 2px;
+  --olladroid-focus-ring-offset: 2px;
 
   /* Motion */
-  --pocket-transition-fast: 120ms ease;
-  --pocket-transition-slow: 240ms ease;
+  --olladroid-transition-fast: 120ms ease;
+  --olladroid-transition-slow: 240ms ease;
 
   /* Fonts — Space Mono fallbacks to Courier, DM Sans fallbacks to system-ui. */
-  --pocket-mono: 'Space Mono', 'SF Mono', 'Courier New', Menlo, Consolas, monospace;
-  --pocket-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --olladroid-mono: 'Space Mono', 'SF Mono', 'Courier New', Menlo, Consolas, monospace;
+  --olladroid-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --pocket-safe-top: env(safe-area-inset-top, 0px);
-  --pocket-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --pocket-safe-left: env(safe-area-inset-left, 0px);
-  --pocket-safe-right: env(safe-area-inset-right, 0px);
+  --olladroid-safe-top: env(safe-area-inset-top, 0px);
+  --olladroid-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --olladroid-safe-left: env(safe-area-inset-left, 0px);
+  --olladroid-safe-right: env(safe-area-inset-right, 0px);
 }
 
 /* -----------------------------------------------------------------------------
@@ -173,11 +173,11 @@
 
 html,
 body {
-  background: var(--pocket-bg);
-  color: var(--pocket-fg);
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-base);
-  line-height: var(--pocket-line-height-body);
+  background: var(--olladroid-bg);
+  color: var(--olladroid-fg);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-base);
+  line-height: var(--olladroid-line-height-body);
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-text-size-adjust: 100%;
@@ -203,29 +203,29 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--pocket-mono);
+  font-family: var(--olladroid-mono);
   font-weight: 700;
-  line-height: var(--pocket-line-height-tight);
+  line-height: var(--olladroid-line-height-tight);
 }
 
 h1 {
-  font-size: var(--pocket-font-size-2xl);
+  font-size: var(--olladroid-font-size-2xl);
   letter-spacing: -0.01em;
 }
 
 h2 {
-  font-size: var(--pocket-font-size-xl);
+  font-size: var(--olladroid-font-size-xl);
   letter-spacing: -0.005em;
 }
 
 h3 {
-  font-size: var(--pocket-font-size-lg);
+  font-size: var(--olladroid-font-size-lg);
 }
 
 p {
-  font-family: var(--pocket-sans);
-  margin: 0 0 var(--pocket-space-3);
-  color: var(--pocket-gray-7);
+  font-family: var(--olladroid-sans);
+  margin: 0 0 var(--olladroid-space-3);
+  color: var(--olladroid-gray-7);
   line-height: 1.7;
 }
 
@@ -234,7 +234,7 @@ p:last-child {
 }
 
 a {
-  color: var(--pocket-orange);
+  color: var(--olladroid-orange);
   text-decoration: underline;
   text-underline-offset: 0.2em;
   text-decoration-thickness: 1px;
@@ -243,26 +243,26 @@ a {
 code,
 kbd,
 samp {
-  font-family: var(--pocket-mono);
+  font-family: var(--olladroid-mono);
   font-size: 0.95em;
   padding: 1px 6px;
-  background: var(--pocket-gray-2);
-  border: 1px solid var(--pocket-gray-3);
-  color: var(--pocket-orange);
+  background: var(--olladroid-gray-2);
+  border: 1px solid var(--olladroid-gray-3);
+  color: var(--olladroid-orange);
 }
 
 pre {
-  margin: 0 0 var(--pocket-space-3);
-  padding: var(--pocket-space-3) var(--pocket-space-4);
-  background: var(--pocket-gray-1);
-  border: 1px solid var(--pocket-gray-3);
+  margin: 0 0 var(--olladroid-space-3);
+  padding: var(--olladroid-space-3) var(--olladroid-space-4);
+  background: var(--olladroid-gray-1);
+  border: 1px solid var(--olladroid-gray-3);
   overflow-x: auto;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-xs);
-  color: var(--pocket-gray-7);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-xs);
+  color: var(--olladroid-gray-7);
 }
 
 pre code {
@@ -274,8 +274,8 @@ pre code {
 
 hr {
   border: 0;
-  border-top: 1px solid var(--pocket-gray-3);
-  margin: var(--pocket-space-5) 0;
+  border-top: 1px solid var(--olladroid-gray-3);
+  margin: var(--olladroid-space-5) 0;
 }
 
 /* Keyboard focus — always visible, orange outline. */
@@ -285,32 +285,32 @@ hr {
 }
 
 :focus-visible {
-  outline: var(--pocket-focus-ring-width) solid var(--pocket-focus-ring);
-  outline-offset: var(--pocket-focus-ring-offset);
+  outline: var(--olladroid-focus-ring-width) solid var(--olladroid-focus-ring);
+  outline-offset: var(--olladroid-focus-ring-offset);
 }
 
 /* -----------------------------------------------------------------------------
  * Layout — header, info bar, main
  * -------------------------------------------------------------------------- */
 
-.pocket-header {
+.olladroid-header {
   position: sticky;
   top: 0;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--pocket-space-3);
-  min-height: var(--pocket-header-height);
-  padding: calc(10px + var(--pocket-safe-top)) var(--pocket-space-4) 10px;
-  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
-  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
-  background: var(--pocket-black);
-  border-bottom: 1px solid var(--pocket-gray-3);
-  font-family: var(--pocket-mono);
+  gap: var(--olladroid-space-3);
+  min-height: var(--olladroid-header-height);
+  padding: calc(10px + var(--olladroid-safe-top)) var(--olladroid-space-4) 10px;
+  padding-left: calc(var(--olladroid-space-4) + var(--olladroid-safe-left));
+  padding-right: calc(var(--olladroid-space-4) + var(--olladroid-safe-right));
+  background: var(--olladroid-black);
+  border-bottom: 1px solid var(--olladroid-gray-3);
+  font-family: var(--olladroid-mono);
 }
 
-.pocket-header__left {
+.olladroid-header__left {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -318,7 +318,7 @@ hr {
   flex: 1 1 auto;
 }
 
-.pocket-header__right {
+.olladroid-header__right {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -327,19 +327,19 @@ hr {
 
 /* TE-style logo square with 2-letter app mark. Templates set textContent
  * via JS (or leave the default markup). */
-.pocket-logo {
+.olladroid-logo {
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--pocket-black);
-  border: 2px solid var(--pocket-white);
+  background: var(--olladroid-black);
+  border: 2px solid var(--olladroid-white);
   border-radius: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: -1px;
-  color: var(--pocket-white);
+  color: var(--olladroid-white);
   flex: 0 0 auto;
 }
 
@@ -348,7 +348,7 @@ hr {
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--pocket-white);
+  color: var(--olladroid-white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -359,10 +359,10 @@ hr {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--pocket-font-size-2xs);
+  font-size: var(--olladroid-font-size-2xs);
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--pocket-gray-6);
+  color: var(--olladroid-gray-6);
   font-weight: 400;
 }
 
@@ -371,9 +371,9 @@ hr {
   display: inline-block;
   width: 6px;
   height: 6px;
-  background: var(--pocket-gray-5);
+  background: var(--olladroid-gray-5);
   border-radius: 0; /* square */
-  transition: background var(--pocket-transition-fast);
+  transition: background var(--olladroid-transition-fast);
 }
 
 #connection-status:empty {
@@ -381,74 +381,74 @@ hr {
 }
 
 #connection-status[data-state="ok"]::before {
-  background: var(--pocket-white);
+  background: var(--olladroid-white);
 }
 
 #connection-status[data-state="warn"]::before {
-  background: var(--pocket-orange);
-  animation: pocket-blink 0.8s step-end infinite;
+  background: var(--olladroid-orange);
+  animation: olladroid-blink 0.8s step-end infinite;
 }
 
 #connection-status[data-state="err"]::before {
-  background: var(--pocket-gray-5);
+  background: var(--olladroid-gray-5);
 }
 
-@keyframes pocket-blink {
+@keyframes olladroid-blink {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.2; }
 }
 
 /* Info bar — renders model / ageGroup / score tags in a thin strip below
  * the header. Optional; templates that don't want it simply omit the
- * .pocket-info-bar block. */
-.pocket-info-bar {
+ * .olladroid-info-bar block. */
+.olladroid-info-bar {
   display: flex;
   align-items: center;
-  gap: var(--pocket-space-3);
-  padding: 6px var(--pocket-space-4);
-  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
-  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
-  border-bottom: 1px solid var(--pocket-gray-3);
-  background: var(--pocket-gray-1);
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-2xs);
+  gap: var(--olladroid-space-3);
+  padding: 6px var(--olladroid-space-4);
+  padding-left: calc(var(--olladroid-space-4) + var(--olladroid-safe-left));
+  padding-right: calc(var(--olladroid-space-4) + var(--olladroid-safe-right));
+  border-bottom: 1px solid var(--olladroid-gray-3);
+  background: var(--olladroid-gray-1);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-2xs);
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--pocket-gray-5);
+  color: var(--olladroid-gray-5);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-.pocket-info-bar::-webkit-scrollbar {
+.olladroid-info-bar::-webkit-scrollbar {
   display: none;
 }
 
-.pocket-info-bar__group {
+.olladroid-info-bar__group {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
 }
 
-.pocket-info-tag {
+.olladroid-info-tag {
   padding: 2px 8px;
-  border: 1px solid var(--pocket-gray-4);
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-2xs);
+  border: 1px solid var(--olladroid-gray-4);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-2xs);
   letter-spacing: 1px;
-  color: var(--pocket-gray-6);
+  color: var(--olladroid-gray-6);
   text-transform: none;
   white-space: nowrap;
 }
 
 main#app-root {
   width: 100%;
-  max-width: var(--pocket-max-width);
+  max-width: var(--olladroid-max-width);
   margin: 0 auto;
-  padding: var(--pocket-space-5) var(--pocket-space-4);
-  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
-  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
-  padding-bottom: calc(var(--pocket-space-6) + var(--pocket-safe-bottom));
+  padding: var(--olladroid-space-5) var(--olladroid-space-4);
+  padding-left: calc(var(--olladroid-space-4) + var(--olladroid-safe-left));
+  padding-right: calc(var(--olladroid-space-4) + var(--olladroid-safe-right));
+  padding-bottom: calc(var(--olladroid-space-6) + var(--olladroid-safe-bottom));
   flex: 1 1 auto;
 }
 
@@ -460,96 +460,96 @@ button,
 input[type="button"],
 input[type="submit"],
 input[type="reset"] {
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-2xs);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-2xs);
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--pocket-space-2);
-  min-height: var(--pocket-tap-min);
-  min-width: var(--pocket-tap-min);
-  padding: 0 var(--pocket-space-5);
-  background: var(--pocket-white);
-  color: var(--pocket-black);
-  border: 2px solid var(--pocket-white);
+  gap: var(--olladroid-space-2);
+  min-height: var(--olladroid-tap-min);
+  min-width: var(--olladroid-tap-min);
+  padding: 0 var(--olladroid-space-5);
+  background: var(--olladroid-white);
+  color: var(--olladroid-black);
+  border: 2px solid var(--olladroid-white);
   border-radius: 0;
   cursor: pointer;
-  transition: background var(--pocket-transition-fast),
-    color var(--pocket-transition-fast),
-    border-color var(--pocket-transition-fast);
+  transition: background var(--olladroid-transition-fast),
+    color var(--olladroid-transition-fast),
+    border-color var(--olladroid-transition-fast);
   user-select: none;
 }
 
 button:hover:not(:disabled) {
-  background: var(--pocket-gray-7);
-  border-color: var(--pocket-gray-7);
+  background: var(--olladroid-gray-7);
+  border-color: var(--olladroid-gray-7);
 }
 
 button:active:not(:disabled) {
-  background: var(--pocket-black);
-  color: var(--pocket-white);
-  border-color: var(--pocket-white);
+  background: var(--olladroid-black);
+  color: var(--olladroid-white);
+  border-color: var(--olladroid-white);
 }
 
 button:disabled {
   background: transparent;
-  color: var(--pocket-gray-4);
-  border-color: var(--pocket-gray-4);
+  color: var(--olladroid-gray-4);
+  border-color: var(--olladroid-gray-4);
   cursor: not-allowed;
 }
 
 button[data-variant="accent"] {
-  background: var(--pocket-orange);
-  color: var(--pocket-black);
-  border-color: var(--pocket-orange);
+  background: var(--olladroid-orange);
+  color: var(--olladroid-black);
+  border-color: var(--olladroid-orange);
 }
 
 button[data-variant="accent"]:hover:not(:disabled) {
-  background: var(--pocket-accent-hover);
-  border-color: var(--pocket-accent-hover);
+  background: var(--olladroid-accent-hover);
+  border-color: var(--olladroid-accent-hover);
 }
 
 button[data-variant="accent"]:active:not(:disabled) {
-  background: var(--pocket-black);
-  color: var(--pocket-orange);
-  border-color: var(--pocket-orange);
+  background: var(--olladroid-black);
+  color: var(--olladroid-orange);
+  border-color: var(--olladroid-orange);
 }
 
 button[data-variant="secondary"] {
   background: transparent;
-  color: var(--pocket-white);
-  border-color: var(--pocket-gray-4);
+  color: var(--olladroid-white);
+  border-color: var(--olladroid-gray-4);
 }
 
 button[data-variant="secondary"]:hover:not(:disabled) {
-  background: var(--pocket-gray-2);
-  border-color: var(--pocket-gray-5);
+  background: var(--olladroid-gray-2);
+  border-color: var(--olladroid-gray-5);
 }
 
 button[data-variant="secondary"]:active:not(:disabled) {
-  background: var(--pocket-white);
-  color: var(--pocket-black);
-  border-color: var(--pocket-white);
+  background: var(--olladroid-white);
+  color: var(--olladroid-black);
+  border-color: var(--olladroid-white);
 }
 
 button[data-variant="ghost"] {
   background: transparent;
-  color: var(--pocket-gray-6);
+  color: var(--olladroid-gray-6);
   border-color: transparent;
 }
 
 button[data-variant="ghost"]:hover:not(:disabled) {
-  color: var(--pocket-white);
-  border-color: var(--pocket-gray-4);
+  color: var(--olladroid-white);
+  border-color: var(--olladroid-gray-4);
 }
 
 button[data-variant="ghost"]:active:not(:disabled) {
-  background: var(--pocket-white);
-  color: var(--pocket-black);
-  border-color: var(--pocket-white);
+  background: var(--olladroid-white);
+  color: var(--olladroid-black);
+  border-color: var(--olladroid-white);
 }
 
 input[type="text"],
@@ -561,100 +561,100 @@ input[type="url"],
 input[type="password"],
 textarea,
 select {
-  font-family: var(--pocket-sans);
-  font-size: var(--pocket-font-size-md);
+  font-family: var(--olladroid-sans);
+  font-size: var(--olladroid-font-size-md);
   display: block;
   width: 100%;
-  min-height: var(--pocket-tap-min);
-  padding: var(--pocket-space-3) 0;
+  min-height: var(--olladroid-tap-min);
+  padding: var(--olladroid-space-3) 0;
   background: transparent;
-  color: var(--pocket-white);
+  color: var(--olladroid-white);
   border: none;
-  border-bottom: 1px solid var(--pocket-gray-4);
+  border-bottom: 1px solid var(--olladroid-gray-4);
   border-radius: 0;
   line-height: 1.4;
   outline: none;
-  transition: border-color var(--pocket-transition-fast);
+  transition: border-color var(--olladroid-transition-fast);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-bottom-color: var(--pocket-white);
+  border-bottom-color: var(--olladroid-white);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--pocket-gray-5);
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-xs);
+  color: var(--olladroid-gray-5);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-xs);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 
 label {
   display: block;
-  margin-bottom: var(--pocket-space-2);
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-2xs);
+  margin-bottom: var(--olladroid-space-2);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-2xs);
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--pocket-gray-5);
+  color: var(--olladroid-gray-5);
 }
 
 /* -----------------------------------------------------------------------------
  * Utility primitives
  * -------------------------------------------------------------------------- */
 
-.pocket-stack {
+.olladroid-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--pocket-space-4);
+  gap: var(--olladroid-space-4);
 }
 
-.pocket-stack--tight {
-  gap: var(--pocket-space-2);
+.olladroid-stack--tight {
+  gap: var(--olladroid-space-2);
 }
 
-.pocket-stack--loose {
-  gap: var(--pocket-space-6);
+.olladroid-stack--loose {
+  gap: var(--olladroid-space-6);
 }
 
 /* Double-border card — TE-style section container. */
-.pocket-card {
+.olladroid-card {
   position: relative;
-  padding: var(--pocket-space-4) var(--pocket-space-5);
-  background: var(--pocket-gray-1);
-  border: 1px solid var(--pocket-gray-3);
+  padding: var(--olladroid-space-4) var(--olladroid-space-5);
+  background: var(--olladroid-gray-1);
+  border: 1px solid var(--olladroid-gray-3);
 }
 
-.pocket-card--double::before {
+.olladroid-card--double::before {
   content: "";
   position: absolute;
   top: 4px;
   left: 4px;
   right: -4px;
   bottom: -4px;
-  border: 1px solid var(--pocket-gray-3);
+  border: 1px solid var(--olladroid-gray-3);
   pointer-events: none;
 }
 
 /* Banner: inline notifications. Border-only, uppercase mono label. */
-.pocket-banner {
+.olladroid-banner {
   display: flex;
   align-items: center;
-  gap: var(--pocket-space-3);
-  padding: var(--pocket-space-3) var(--pocket-space-4);
-  background: var(--pocket-gray-1);
-  border: 1px solid var(--pocket-gray-4);
-  font-family: var(--pocket-mono);
-  font-size: var(--pocket-font-size-xs);
+  gap: var(--olladroid-space-3);
+  padding: var(--olladroid-space-3) var(--olladroid-space-4);
+  background: var(--olladroid-gray-1);
+  border: 1px solid var(--olladroid-gray-4);
+  font-family: var(--olladroid-mono);
+  font-size: var(--olladroid-font-size-xs);
   letter-spacing: 0.5px;
-  color: var(--pocket-gray-7);
+  color: var(--olladroid-gray-7);
 }
 
-.pocket-banner::before {
+.olladroid-banner::before {
   content: "!";
   display: inline-flex;
   align-items: center;
@@ -662,45 +662,45 @@ label {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  background: var(--pocket-gray-4);
-  color: var(--pocket-white);
+  background: var(--olladroid-gray-4);
+  color: var(--olladroid-white);
   font-weight: 700;
   border-radius: 0;
 }
 
-.pocket-banner[data-tone="warn"] {
-  border-color: var(--pocket-orange);
-  color: var(--pocket-white);
+.olladroid-banner[data-tone="warn"] {
+  border-color: var(--olladroid-orange);
+  color: var(--olladroid-white);
 }
 
-.pocket-banner[data-tone="warn"]::before {
-  background: var(--pocket-orange);
-  color: var(--pocket-black);
+.olladroid-banner[data-tone="warn"]::before {
+  background: var(--olladroid-orange);
+  color: var(--olladroid-black);
 }
 
-.pocket-banner[data-tone="err"] {
-  border-color: var(--pocket-gray-5);
-  color: var(--pocket-gray-6);
+.olladroid-banner[data-tone="err"] {
+  border-color: var(--olladroid-gray-5);
+  color: var(--olladroid-gray-6);
 }
 
-.pocket-banner[data-tone="err"]::before {
+.olladroid-banner[data-tone="err"]::before {
   content: "X";
-  background: var(--pocket-gray-5);
-  color: var(--pocket-white);
+  background: var(--olladroid-gray-5);
+  color: var(--olladroid-white);
 }
 
-.pocket-banner[data-tone="ok"] {
-  border-color: var(--pocket-white);
+.olladroid-banner[data-tone="ok"] {
+  border-color: var(--olladroid-white);
 }
 
-.pocket-banner[data-tone="ok"]::before {
+.olladroid-banner[data-tone="ok"]::before {
   content: "✓";
-  background: var(--pocket-white);
-  color: var(--pocket-black);
+  background: var(--olladroid-white);
+  color: var(--olladroid-black);
 }
 
 /* Visually hidden, still readable by screen readers. */
-.pocket-sr-only {
+.olladroid-sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -718,23 +718,23 @@ label {
 
 @media (min-width: 48rem) {
   :root {
-    --pocket-header-height: 56px;
+    --olladroid-header-height: 56px;
   }
 
-  .pocket-header {
-    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
-    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  .olladroid-header {
+    padding-left: calc(var(--olladroid-space-5) + var(--olladroid-safe-left));
+    padding-right: calc(var(--olladroid-space-5) + var(--olladroid-safe-right));
   }
 
-  .pocket-info-bar {
-    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
-    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  .olladroid-info-bar {
+    padding-left: calc(var(--olladroid-space-5) + var(--olladroid-safe-left));
+    padding-right: calc(var(--olladroid-space-5) + var(--olladroid-safe-right));
   }
 
   main#app-root {
-    padding: var(--pocket-space-6) var(--pocket-space-5);
-    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
-    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+    padding: var(--olladroid-space-6) var(--olladroid-space-5);
+    padding-left: calc(var(--olladroid-space-5) + var(--olladroid-safe-left));
+    padding-right: calc(var(--olladroid-space-5) + var(--olladroid-safe-right));
   }
 }
 
@@ -755,19 +755,19 @@ label {
 </style>
   <script type="application/json" id="app-config">{"appName":"Summariser","appSlug":"summariser","category":"productivity","template":"productivity/summariser","defaultModel":"qwen2.5:1.5b","host":"http://localhost:11434","sdkVersion":"0.3.0-dev","scaffoldedAt":"2026-01-01T00:00:00.000Z"}</script>
   <script>// =============================================================================
-// sdk/pocket.js — ollama-pocket shared SDK
+// sdk/olladroid.js — olladroid shared SDK
 //
 // UMD-lite module that runs identically in three contexts with ZERO source
 // transformation:
 //
 //   1. Inlined into a scaffolded <script> block (non-module, plain script)
-//   2. <script src="pocket.js"> loaded from disk
-//   3. require('./pocket.js') in Node.js for unit tests and the CLI
+//   2. <script src="olladroid.js"> loaded from disk
+//   3. require('./olladroid.js') in Node.js for unit tests and the CLI
 //
-// The wrapper at the bottom either assigns to `window.Pocket` (browser) or
-// to `module.exports` (Node). The inline-script path uses the `window.Pocket`
-// branch, so every scaffolded app accesses the SDK as `Pocket.OllamaClient`,
-// `Pocket.SessionManager`, etc. — no ES-module scoping trap.
+// The wrapper at the bottom either assigns to `window.Olladroid` (browser) or
+// to `module.exports` (Node). The inline-script path uses the `window.Olladroid`
+// branch, so every scaffolded app accesses the SDK as `Olladroid.OllamaClient`,
+// `Olladroid.SessionManager`, etc. — no ES-module scoping trap.
 //
 // Why not ES modules: an inline <script type="module"> has its own module
 // scope, so `export class OllamaClient` would be unreachable from the
@@ -784,7 +784,7 @@ label {
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
   } else {
-    root.Pocket = api;
+    root.Olladroid = api;
   }
 })(
   typeof globalThis !== 'undefined'
@@ -1111,7 +1111,7 @@ label {
           self._versionWarned = true;
           if (typeof console !== 'undefined' && console.warn) {
             console.warn(
-              '[Pocket] Ollama version ' + info.version +
+              '[Olladroid] Ollama version ' + info.version +
               ' is older than the ' + MIN_OLLAMA_VERSION +
               ' minimum recommended for structured output. ' +
               'structuredChat() may return prose instead of JSON.'
@@ -1199,7 +1199,7 @@ label {
     }
 
     SessionManager.prototype._keyFor = function (suffix) {
-      return 'pocket:' + this.key + ':' + suffix;
+      return 'olladroid:' + this.key + ':' + suffix;
     };
 
     SessionManager.prototype._read = function (suffix) {
@@ -1333,24 +1333,24 @@ label {
 </script>
 </head>
 <body>
-  <header class="pocket-header" role="banner">
-    <div class="pocket-header__left">
-      <div class="pocket-logo" id="app-logo" aria-hidden="true">::</div>
+  <header class="olladroid-header" role="banner">
+    <div class="olladroid-header__left">
+      <div class="olladroid-logo" id="app-logo" aria-hidden="true">::</div>
       <span id="app-title">Summariser</span>
     </div>
-    <div class="pocket-header__right">
+    <div class="olladroid-header__right">
       <span id="connection-status" aria-live="polite"></span>
     </div>
   </header>
 
-  <div class="pocket-info-bar" id="info-bar" role="region" aria-label="Session info">
-    <span class="pocket-info-bar__group">
+  <div class="olladroid-info-bar" id="info-bar" role="region" aria-label="Session info">
+    <span class="olladroid-info-bar__group">
       <span>Model</span>
-      <span class="pocket-info-tag" id="model-badge">—</span>
+      <span class="olladroid-info-tag" id="model-badge">—</span>
     </span>
-    <span class="pocket-info-bar__group">
+    <span class="olladroid-info-bar__group">
       <span>Host</span>
-      <span class="pocket-info-tag" id="host-badge">local</span>
+      <span class="olladroid-info-tag" id="host-badge">local</span>
     </span>
   </div>
 
@@ -1365,20 +1365,20 @@ label {
   .summariser {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-5);
+    gap: var(--olladroid-space-5);
   }
 
   /* Section label — TE-style "01 / PASTE TEXT" uppercase tag. */
   .sm-label {
     display: flex;
     align-items: center;
-    gap: var(--pocket-space-2);
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    gap: var(--olladroid-space-2);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sm-label__num {
@@ -1388,8 +1388,8 @@ label {
     min-width: 18px;
     height: 18px;
     padding: 0 4px;
-    background: var(--pocket-white);
-    color: var(--pocket-black);
+    background: var(--olladroid-white);
+    color: var(--olladroid-black);
     font-size: 9px;
     font-weight: 700;
   }
@@ -1397,7 +1397,7 @@ label {
   .sm-label__line {
     flex: 1 1 auto;
     height: 1px;
-    background: var(--pocket-gray-3);
+    background: var(--olladroid-gray-3);
   }
 
   /* Top strip: title + kicker */
@@ -1405,39 +1405,39 @@ label {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: var(--pocket-space-4);
-    padding-bottom: var(--pocket-space-4);
-    border-bottom: 1px solid var(--pocket-gray-3);
+    gap: var(--olladroid-space-4);
+    padding-bottom: var(--olladroid-space-4);
+    border-bottom: 1px solid var(--olladroid-gray-3);
   }
 
   .sm-top__title {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xl);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xl);
     font-weight: 700;
     letter-spacing: -1px;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
     line-height: 1;
   }
 
   .sm-top__subtitle {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 400;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
     margin-top: 4px;
   }
 
   .sm-top__badge {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-black);
-    background: var(--pocket-white);
+    color: var(--olladroid-black);
+    background: var(--olladroid-white);
     padding: 4px 8px;
     flex: 0 0 auto;
   }
@@ -1446,26 +1446,26 @@ label {
   .sm-panel {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-4);
+    gap: var(--olladroid-space-4);
   }
 
-  /* Textarea — reuses base `.pocket-card` framing. */
+  /* Textarea — reuses base `.olladroid-card` framing. */
   .sm-textarea-wrap {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   .sm-textarea {
     width: 100%;
     min-height: 220px;
-    padding: var(--pocket-space-3) var(--pocket-space-3);
-    background: var(--pocket-black);
-    color: var(--pocket-white);
-    border: 1px solid var(--pocket-gray-3);
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    padding: var(--olladroid-space-3) var(--olladroid-space-3);
+    background: var(--olladroid-black);
+    color: var(--olladroid-white);
+    border: 1px solid var(--olladroid-gray-3);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.5;
     resize: vertical;
     box-sizing: border-box;
@@ -1473,11 +1473,11 @@ label {
 
   .sm-textarea:focus {
     outline: none;
-    border-color: var(--pocket-white);
+    border-color: var(--olladroid-white);
   }
 
   .sm-textarea:focus-visible {
-    outline: 2px solid var(--pocket-orange);
+    outline: 2px solid var(--olladroid-orange);
     outline-offset: 2px;
   }
 
@@ -1485,19 +1485,19 @@ label {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sm-counter[data-tone="warn"] {
-    color: var(--pocket-orange);
+    color: var(--olladroid-orange);
   }
 
   .sm-counter[data-tone="err"] {
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sm-counter__value {
@@ -1508,20 +1508,20 @@ label {
   .sm-thinking {
     display: flex;
     align-items: center;
-    gap: var(--pocket-space-3);
-    padding: var(--pocket-space-5) 0;
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-sm);
+    gap: var(--olladroid-space-3);
+    padding: var(--olladroid-space-5) 0;
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-sm);
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sm-thinking__dot {
     display: inline-block;
     width: 14px;
     height: 14px;
-    background: var(--pocket-orange);
+    background: var(--olladroid-orange);
     animation: sm-pulse 900ms steps(1, end) infinite;
   }
 
@@ -1538,48 +1538,48 @@ label {
   .sm-result {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-4);
+    gap: var(--olladroid-space-4);
   }
 
   .sm-card {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
-    padding: var(--pocket-space-4);
-    border: 1px solid var(--pocket-gray-3);
-    background: var(--pocket-black);
+    gap: var(--olladroid-space-2);
+    padding: var(--olladroid-space-4);
+    border: 1px solid var(--olladroid-gray-3);
+    background: var(--olladroid-black);
   }
 
   .sm-card__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   .sm-card__title {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
     margin: 0;
   }
 
   .sm-card__meta {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sm-card__tldr {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-lg);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-lg);
     line-height: 1.4;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
   }
 
@@ -1589,17 +1589,17 @@ label {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   .sm-card__list li {
     display: flex;
     align-items: flex-start;
-    gap: var(--pocket-space-3);
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    gap: var(--olladroid-space-3);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.4;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sm-card__list li::before {
@@ -1609,27 +1609,27 @@ label {
     width: 6px;
     height: 6px;
     margin-top: 10px;
-    background: var(--pocket-orange);
+    background: var(--olladroid-orange);
   }
 
   .sm-result__actions {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-2);
+    gap: var(--olladroid-space-2);
   }
 
   /* Error panel */
   .sm-error {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-3);
+    gap: var(--olladroid-space-3);
   }
 
   .sm-error__message {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.5;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
   }
 
@@ -1660,7 +1660,7 @@ label {
     </div>
 
     <div class="sm-textarea-wrap">
-      <label for="paste-input" class="pocket-sr-only">Text to summarise</label>
+      <label for="paste-input" class="olladroid-sr-only">Text to summarise</label>
       <textarea
         id="paste-input"
         class="sm-textarea"
@@ -1753,7 +1753,7 @@ label {
       <span class="sm-label__line" aria-hidden="true"></span>
     </div>
 
-    <div class="pocket-banner" data-tone="err">
+    <div class="olladroid-banner" data-tone="err">
       <p class="sm-error__message" id="sm-error-message">Something went wrong.</p>
     </div>
 
@@ -1825,30 +1825,30 @@ label {
     return (name || '').toUpperCase().replace(/\s+/g, '_');
   }
 
-  if (!window.Pocket || !window.Pocket.OllamaClient) {
-    console.error('[summariser] window.Pocket is not loaded — is sdk/pocket.js inlined correctly?');
+  if (!window.Olladroid || !window.Olladroid.OllamaClient) {
+    console.error('[summariser] window.Olladroid is not loaded — is sdk/olladroid.js inlined correctly?');
     var root = document.querySelector('.summariser');
     if (root) {
       root.innerHTML =
-        '<div class="pocket-banner" data-tone="err">' +
+        '<div class="olladroid-banner" data-tone="err">' +
         'SDK failed to load. Refresh the page.' +
         '</div>';
     }
     return;
   }
 
-  var Pocket = window.Pocket;
+  var Olladroid = window.Olladroid;
 
   // ---------------------------------------------------------------------------
   // SDK instances
   // ---------------------------------------------------------------------------
 
-  var client = new Pocket.OllamaClient({
+  var client = new Olladroid.OllamaClient({
     host: config.host,
     model: config.defaultModel,
   });
 
-  var session = new Pocket.SessionManager({
+  var session = new Olladroid.SessionManager({
     key: 'summariser-' + (config.appSlug || 'default'),
     maxTurns: 1,
   });

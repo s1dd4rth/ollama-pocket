@@ -8,20 +8,20 @@
   .spell-bee {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-5);
+    gap: var(--olladroid-space-5);
   }
 
   /* Section label — TE-style "01 / READY" uppercase tag. */
   .sb-label {
     display: flex;
     align-items: center;
-    gap: var(--pocket-space-2);
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    gap: var(--olladroid-space-2);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sb-label__num {
@@ -31,8 +31,8 @@
     min-width: 18px;
     height: 18px;
     padding: 0 4px;
-    background: var(--pocket-white);
-    color: var(--pocket-black);
+    background: var(--olladroid-white);
+    color: var(--olladroid-black);
     font-size: 9px;
     font-weight: 700;
   }
@@ -40,7 +40,7 @@
   .sb-label__line {
     flex: 1 1 auto;
     height: 1px;
-    background: var(--pocket-gray-3);
+    background: var(--olladroid-gray-3);
   }
 
   /* Top strip: title + subtitle + score */
@@ -48,28 +48,28 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: var(--pocket-space-4);
-    padding-bottom: var(--pocket-space-4);
-    border-bottom: 1px solid var(--pocket-gray-3);
+    gap: var(--olladroid-space-4);
+    padding-bottom: var(--olladroid-space-4);
+    border-bottom: 1px solid var(--olladroid-gray-3);
   }
 
   .sb-top__title {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xl);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xl);
     font-weight: 700;
     letter-spacing: -1px;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
     line-height: 1;
   }
 
   .sb-top__subtitle {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 400;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
     margin-top: 4px;
   }
 
@@ -82,20 +82,20 @@
   }
 
   .sb-score__label {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sb-score__value {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xl);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xl);
     font-weight: 700;
     line-height: 1;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     font-variant-numeric: tabular-nums;
   }
 
@@ -103,16 +103,16 @@
   .sb-panel {
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-4);
+    gap: var(--olladroid-space-4);
     animation: sb-fade-in 200ms ease;
   }
 
   /* Lead text (idle intro) */
   .sb-lead {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.6;
-    color: var(--pocket-gray-7);
+    color: var(--olladroid-gray-7);
     margin: 0;
     max-width: 38ch;
   }
@@ -121,29 +121,29 @@
   .sb-spinner {
     display: flex;
     align-items: center;
-    gap: var(--pocket-space-3);
-    padding: var(--pocket-space-5) 0;
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    gap: var(--olladroid-space-3);
+    padding: var(--olladroid-space-5) 0;
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-6);
+    color: var(--olladroid-gray-6);
   }
 
   .sb-spinner__cursor {
     display: inline-block;
     width: 8px;
     height: 14px;
-    background: var(--pocket-orange);
+    background: var(--olladroid-orange);
     animation: sb-cursor 0.8s step-end infinite;
   }
 
   /* Hint card — double-border TE card with big sans body */
   .sb-hint-card {
     position: relative;
-    padding: var(--pocket-space-5);
-    background: var(--pocket-gray-1);
-    border: 1px solid var(--pocket-gray-3);
+    padding: var(--olladroid-space-5);
+    background: var(--olladroid-gray-1);
+    border: 1px solid var(--olladroid-gray-3);
   }
 
   .sb-hint-card::before {
@@ -153,7 +153,7 @@
     left: 4px;
     right: -4px;
     bottom: -4px;
-    border: 1px solid var(--pocket-gray-3);
+    border: 1px solid var(--olladroid-gray-3);
     pointer-events: none;
   }
 
@@ -161,75 +161,75 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--pocket-space-3);
-    margin-bottom: var(--pocket-space-3);
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    gap: var(--olladroid-space-3);
+    margin-bottom: var(--olladroid-space-3);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sb-difficulty {
     display: inline-flex;
     align-items: center;
     padding: 2px 8px;
-    border: 1px solid var(--pocket-gray-4);
-    font-family: var(--pocket-mono);
+    border: 1px solid var(--olladroid-gray-4);
+    font-family: var(--olladroid-mono);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--pocket-gray-6);
+    color: var(--olladroid-gray-6);
   }
 
   .sb-difficulty[data-level="easy"] {
-    border-color: var(--pocket-white);
-    color: var(--pocket-white);
+    border-color: var(--olladroid-white);
+    color: var(--olladroid-white);
   }
 
   .sb-difficulty[data-level="medium"] {
-    border-color: var(--pocket-orange);
-    color: var(--pocket-orange);
+    border-color: var(--olladroid-orange);
+    color: var(--olladroid-orange);
   }
 
   .sb-difficulty[data-level="hard"] {
-    border-color: var(--pocket-orange);
-    background: var(--pocket-orange);
-    color: var(--pocket-black);
+    border-color: var(--olladroid-orange);
+    background: var(--olladroid-orange);
+    color: var(--olladroid-black);
   }
 
   .sb-hint-card__body {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-lg);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-lg);
     line-height: 1.55;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     margin: 0;
   }
 
   /* Attempt input */
   .sb-attempt-label {
     display: block;
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
-    margin-bottom: var(--pocket-space-2);
+    color: var(--olladroid-gray-5);
+    margin-bottom: var(--olladroid-space-2);
   }
 
   #attempt-input {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-xl);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-xl);
     font-weight: 500;
     letter-spacing: 0.02em;
-    color: var(--pocket-white);
-    border-bottom-color: var(--pocket-gray-4);
+    color: var(--olladroid-white);
+    border-bottom-color: var(--olladroid-gray-4);
   }
 
   #attempt-input:focus {
-    border-bottom-color: var(--pocket-orange);
+    border-bottom-color: var(--olladroid-orange);
   }
 
   /* Feedback card */
@@ -237,10 +237,10 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--pocket-space-3);
-    padding: var(--pocket-space-5);
-    background: var(--pocket-gray-1);
-    border: 1px solid var(--pocket-gray-4);
+    gap: var(--olladroid-space-3);
+    padding: var(--olladroid-space-5);
+    background: var(--olladroid-gray-1);
+    border: 1px solid var(--olladroid-gray-4);
   }
 
   .sb-feedback::before {
@@ -250,54 +250,54 @@
     left: 4px;
     right: -4px;
     bottom: -4px;
-    border: 1px solid var(--pocket-gray-3);
+    border: 1px solid var(--olladroid-gray-3);
     pointer-events: none;
   }
 
   .sb-feedback[data-result="correct"] {
-    border-color: var(--pocket-white);
+    border-color: var(--olladroid-white);
   }
 
   .sb-feedback[data-result="wrong"] {
-    border-color: var(--pocket-orange);
+    border-color: var(--olladroid-orange);
   }
 
   .sb-feedback__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--pocket-space-3);
+    gap: var(--olladroid-space-3);
   }
 
   .sb-feedback__status {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
   }
 
   .sb-feedback[data-result="correct"] .sb-feedback__status {
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sb-feedback[data-result="wrong"] .sb-feedback__status {
-    color: var(--pocket-orange);
+    color: var(--olladroid-orange);
   }
 
   .sb-feedback__delta {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-xs);
     font-weight: 700;
     letter-spacing: 1px;
-    color: var(--pocket-gray-6);
+    color: var(--olladroid-gray-6);
   }
 
   .sb-feedback__body {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-md);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-md);
     line-height: 1.55;
-    color: var(--pocket-gray-7);
+    color: var(--olladroid-gray-7);
     margin: 0;
   }
 
@@ -305,29 +305,29 @@
   .sb-feedback__compare {
     display: grid;
     grid-template-columns: auto 1fr;
-    column-gap: var(--pocket-space-4);
-    row-gap: var(--pocket-space-2);
+    column-gap: var(--olladroid-space-4);
+    row-gap: var(--olladroid-space-2);
     align-items: baseline;
-    padding: var(--pocket-space-3) 0 0;
-    margin-top: var(--pocket-space-2);
-    border-top: 1px solid var(--pocket-gray-3);
+    padding: var(--olladroid-space-3) 0 0;
+    margin-top: var(--olladroid-space-2);
+    border-top: 1px solid var(--olladroid-gray-3);
   }
 
   .sb-feedback__compare-label {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sb-feedback__compare-value {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-md);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-md);
     font-weight: 700;
     letter-spacing: 0.05em;
-    color: var(--pocket-gray-6);
+    color: var(--olladroid-gray-6);
     text-transform: uppercase;
     overflow-wrap: break-word;
     word-break: break-word;
@@ -344,15 +344,15 @@
   .sb-char--wrong {
     position: relative;
     padding: 0 1px;
-    color: var(--pocket-black);
-    background: var(--pocket-orange);
+    color: var(--olladroid-black);
+    background: var(--olladroid-orange);
   }
 
   .sb-char--missing {
     position: relative;
     padding: 0 1px;
-    color: var(--pocket-black);
-    background: var(--pocket-white);
+    color: var(--olladroid-black);
+    background: var(--olladroid-white);
   }
 
   /* Placeholder glyph for an insertion point where the attempt is missing
@@ -360,28 +360,28 @@
   .sb-char--ghost {
     display: inline-block;
     width: 0.55em;
-    color: var(--pocket-gray-4);
+    color: var(--olladroid-gray-4);
   }
 
   /* On correct: both rows read white. On wrong: attempt is orange, target
    * is white, so the eye can read them as "you/word". */
   .sb-feedback[data-result="correct"] .sb-feedback__compare-value {
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   .sb-feedback[data-result="wrong"] #feedback-attempt-value {
-    color: var(--pocket-orange);
+    color: var(--olladroid-orange);
   }
 
   .sb-feedback[data-result="wrong"] #feedback-word-value {
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
   }
 
   /* Button row */
   .sb-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--pocket-space-3);
+    gap: var(--olladroid-space-3);
   }
 
   .sb-actions button {
@@ -393,10 +393,10 @@
     position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--pocket-space-4);
-    padding: var(--pocket-space-5);
-    background: var(--pocket-gray-1);
-    border: 1px solid var(--pocket-white);
+    gap: var(--olladroid-space-4);
+    padding: var(--olladroid-space-5);
+    background: var(--olladroid-gray-1);
+    border: 1px solid var(--olladroid-white);
   }
 
   .sb-summary::before {
@@ -406,7 +406,7 @@
     left: 4px;
     right: -4px;
     bottom: -4px;
-    border: 1px solid var(--pocket-gray-3);
+    border: 1px solid var(--olladroid-gray-3);
     pointer-events: none;
   }
 
@@ -421,31 +421,31 @@
   }
 
   .sb-summary__label {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xs);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xs);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--pocket-gray-5);
+    color: var(--olladroid-gray-5);
   }
 
   .sb-summary__value {
-    font-family: var(--pocket-mono);
-    font-size: var(--pocket-font-size-2xl);
+    font-family: var(--olladroid-mono);
+    font-size: var(--olladroid-font-size-2xl);
     font-weight: 700;
     line-height: 1;
-    color: var(--pocket-white);
+    color: var(--olladroid-white);
     font-variant-numeric: tabular-nums;
   }
 
   .sb-summary__value--accent {
-    color: var(--pocket-orange);
+    color: var(--olladroid-orange);
   }
 
   .sb-summary__note {
-    font-family: var(--pocket-sans);
-    font-size: var(--pocket-font-size-sm);
-    color: var(--pocket-gray-6);
+    font-family: var(--olladroid-sans);
+    font-size: var(--olladroid-font-size-sm);
+    color: var(--olladroid-gray-6);
     margin: 0;
     grid-column: 1 / -1;
   }
@@ -481,7 +481,7 @@
     </div>
   </div>
 
-  <div class="pocket-banner" data-tone="warn" id="model-warning" hidden>
+  <div class="olladroid-banner" data-tone="warn" id="model-warning" hidden>
     <span id="model-warning-text"></span>
   </div>
 
@@ -624,7 +624,7 @@
         <span>Word fetch failed</span>
         <span class="sb-label__line"></span>
       </div>
-      <div class="pocket-banner" data-tone="warn">
+      <div class="olladroid-banner" data-tone="warn">
         <span>The model could not produce a valid word. Tap retry.</span>
       </div>
       <div class="sb-actions">
@@ -639,7 +639,7 @@
         <span>Offline</span>
         <span class="sb-label__line"></span>
       </div>
-      <div class="pocket-banner" data-tone="err">
+      <div class="olladroid-banner" data-tone="err">
         <span>
           Can't reach Ollama at <code id="offline-host">localhost:11434</code>.
           Make sure it's running on this device.

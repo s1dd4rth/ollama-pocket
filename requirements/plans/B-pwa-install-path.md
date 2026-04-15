@@ -10,8 +10,8 @@ The "private local PWA installable to home screen" story is silently broken on t
 
 Three concrete defects compound:
 
-1. `scripts/start-ollama.sh:74-83` opens the PWA via `am start ... -d file:///sdcard/ollama-pocket/pwa/chat.html`. Service workers **do not register on `file://` origins**. So `sw.js` never runs, offline caching never happens, and "Add to Home Screen" produces a broken PWA with no offline capability.
-2. Nothing in `scripts/install-ollama.sh` actually copies `pwa/` to `/sdcard/ollama-pocket/pwa/`. The README Quick Start tells users to run `start-ollama.sh --chat` but the target file doesn't exist unless they manually `adb push pwa/`.
+1. `scripts/start-ollama.sh:74-83` opens the PWA via `am start ... -d file:///sdcard/olladroid/pwa/chat.html`. Service workers **do not register on `file://` origins**. So `sw.js` never runs, offline caching never happens, and "Add to Home Screen" produces a broken PWA with no offline capability.
+2. Nothing in `scripts/install-ollama.sh` actually copies `pwa/` to `/sdcard/olladroid/pwa/`. The README Quick Start tells users to run `start-ollama.sh --chat` but the target file doesn't exist unless they manually `adb push pwa/`.
 3. `pwa/chat.html:14` pulls Space Mono and DM Sans from `fonts.googleapis.com`. `pwa/sw.js:2` only caches `chat.html, manifest.json, icon.svg` — fonts are never cached. First offline launch = FOUT forever, or fallback to system mono. The "fully offline" claim is false.
 
 There is also a **layering trap**: `install-ollama.sh:99-108` writes a second `~/start-ollama.sh` — a hardcoded 8-line stub that just runs `ollama serve`. This shadows the richer `scripts/start-ollama.sh` and confuses anyone debugging why `--chat` doesn't work on their machine.
@@ -45,7 +45,7 @@ Runtime flow after this plan lands:
 │        │                                                     │
 │        ├─► python3 -m http.server 8000 \                     │
 │        │     --bind $BIND_ADDR \                             │
-│        │     --directory /sdcard/ollama-pocket/pwa           │
+│        │     --directory /sdcard/olladroid/pwa           │
 │        │   (background, PID=$PYTHON_PID)                     │
 │        │                                                     │
 │        ├─► am start ... -d http://localhost:8000/chat.html   │
@@ -176,11 +176,11 @@ Python on Termux is ~15 MB installed. `iproute2` is ~2 MB. Acceptable.
 
 **Why `iproute2`:** `scripts/start-ollama.sh:48` already uses `ip -4 addr show wlan0` to detect the LAN IP, but `ip` is **not** in the default Termux package set — it lives in `iproute2`. The v0.1.0 script silently falls back to `LOCAL_IP="unknown"` on a fresh Termux install. This is a latent v0.1.0 regression being fixed as part of B.
 
-**3b.** Add a `copy_pwa_files` function that provisions `/sdcard/ollama-pocket/pwa/`:
+**3b.** Add a `copy_pwa_files` function that provisions `/sdcard/olladroid/pwa/`:
 
 ```bash
 copy_pwa_files() {
-  local target="/sdcard/ollama-pocket/pwa"
+  local target="/sdcard/olladroid/pwa"
   local repo_root
   repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -197,9 +197,9 @@ copy_pwa_files() {
   info "No local pwa/ directory found — fetching from GitHub..."
   local tmp
   tmp="$(mktemp -d)"
-  if curl -fsSL https://github.com/s1dd4rth/ollama-pocket/archive/refs/heads/main.tar.gz \
+  if curl -fsSL https://github.com/s1dd4rth/olladroid/archive/refs/heads/main.tar.gz \
       | tar xz -C "$tmp"; then
-    cp -r "$tmp/ollama-pocket-main/pwa/." "$target/"
+    cp -r "$tmp/olladroid-main/pwa/." "$target/"
     rm -rf "$tmp"
     ok "PWA downloaded and installed"
   else
@@ -238,7 +238,7 @@ grep -q "/usr/local/bin" /root/.bashrc 2>/dev/null || \
 Replace lines 72-84 (current `--chat` block) with:
 
 ```bash
-PWA_DIR="/sdcard/ollama-pocket/pwa"
+PWA_DIR="/sdcard/olladroid/pwa"
 PWA_PORT=8000
 PYTHON_PID=""
 
@@ -341,11 +341,11 @@ Add a "Troubleshooting" row:
 Manual, on the target device. No automated tests in this PR.
 
 **Clean install path (primary):**
-1. Fresh Termux (or `rm -rf ~/ollama-pocket /sdcard/ollama-pocket` on existing).
-2. `git clone https://github.com/s1dd4rth/ollama-pocket && cd ollama-pocket`.
+1. Fresh Termux (or `rm -rf ~/olladroid /sdcard/olladroid` on existing).
+2. `git clone https://github.com/s1dd4rth/olladroid && cd olladroid`.
 3. `bash scripts/install-ollama.sh`.
    - ✓ Python installed without prompting.
-   - ✓ `/sdcard/ollama-pocket/pwa/chat.html` exists after install.
+   - ✓ `/sdcard/olladroid/pwa/chat.html` exists after install.
    - ✓ `~/start-ollama.sh` does **not** exist (the stub is gone).
    - ✓ Re-running the installer does not duplicate lines in `/root/.bashrc`.
 4. `bash scripts/start-ollama.sh --wifi --chat`.
@@ -402,7 +402,7 @@ Every new codepath, one realistic failure:
 | `cleanup` trap | SIGKILL bypasses trap | **no** — SIGKILL is unhandleable | orphan process on `kill -9` | acceptable: documented limitation |
 | Font cache on first load | network blip during SW install | no | SW install fails, SW never activates | **silent failure** — flag |
 
-**Supply-chain note on `copy_pwa_files` curl fallback:** the fallback downloads `https://github.com/s1dd4rth/ollama-pocket/archive/refs/heads/main.tar.gz`. TLS guarantees the endpoint; it does not guarantee the tarball contents haven't been tampered with by a compromised GitHub CDN, a hijacked account, or a DNS poisoning attack on the install machine. This is a second instance of the `curl | sh` pattern (the first is `ollama.com/install.sh` at `install-ollama.sh:81`). Both are currently unverifiable. **Mitigation for v0.2.0:** prefer the *release tag* path over `main` — `https://github.com/s1dd4rth/ollama-pocket/archive/refs/tags/v0.2.0.tar.gz`. Release tags are immutable in git; a compromised tag would change the commit SHA and be externally observable. Pin to the latest release tag in the script, not `main`. Document a warning in README that both install scripts trust their upstreams and recommend inspecting them before running (`curl … > install.sh && less install.sh && bash install.sh`).
+**Supply-chain note on `copy_pwa_files` curl fallback:** the fallback downloads `https://github.com/s1dd4rth/olladroid/archive/refs/heads/main.tar.gz`. TLS guarantees the endpoint; it does not guarantee the tarball contents haven't been tampered with by a compromised GitHub CDN, a hijacked account, or a DNS poisoning attack on the install machine. This is a second instance of the `curl | sh` pattern (the first is `ollama.com/install.sh` at `install-ollama.sh:81`). Both are currently unverifiable. **Mitigation for v0.2.0:** prefer the *release tag* path over `main` — `https://github.com/s1dd4rth/olladroid/archive/refs/tags/v0.2.0.tar.gz`. Release tags are immutable in git; a compromised tag would change the commit SHA and be externally observable. Pin to the latest release tag in the script, not `main`. Document a warning in README that both install scripts trust their upstreams and recommend inspecting them before running (`curl … > install.sh && less install.sh && bash install.sh`).
 
 The last row is the one risk worth calling out: if the user is on a flaky network when they first open the PWA, `caches.open(CACHE).then(c => c.addAll(ASSETS))` rejects the entire install if any asset fails to fetch. The SW never activates. Next load re-tries from scratch. Mitigation: `addAll` already does this atomically — either all-or-nothing — which is the correct behavior. Not actually a bug. Leave as-is.
 
@@ -451,7 +451,7 @@ CHANGELOG entry under `[Unreleased]`:
   enabling service worker registration and real offline support.
 - Self-hosted Space Mono and DM Sans fonts (~75 KB) in `pwa/fonts/`; no more
   requests to `fonts.googleapis.com`.
-- `install-ollama.sh` now copies `pwa/` to `/sdcard/ollama-pocket/pwa/` and
+- `install-ollama.sh` now copies `pwa/` to `/sdcard/olladroid/pwa/` and
   installs `python` for the local PWA server. No more manual `adb push`.
 - `install-ollama.sh` no longer appends duplicate PATH entries on re-run.
 - Removed the hardcoded `~/start-ollama.sh` stub that shadowed the real script.

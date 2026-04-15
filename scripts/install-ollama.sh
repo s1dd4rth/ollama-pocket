@@ -52,7 +52,7 @@ ok "Running in Termux"
 #
 # Detect that case by checking whether $BASH_SOURCE (or $0) points at a real
 # file that has a sibling pwa/ directory. If it doesn't, we're running from
-# a pipe — pin the mirror, install git, clone the repo to ~/ollama-pocket,
+# a pipe — pin the mirror, install git, clone the repo to ~/olladroid,
 # and re-exec this script from the clone. The second invocation finds the
 # pwa/ directory, skips this bootstrap block, and proceeds normally.
 _INSTALL_SELF="${BASH_SOURCE[0]:-$0}"
@@ -72,13 +72,13 @@ if [ ! -f "$_INSTALL_SELF" ] || [ ! -d "$(dirname "$_INSTALL_SELF")/../pwa" ]; t
   pkg update -y
   pkg install -y git
 
-  REPO_DIR="$HOME/ollama-pocket"
+  REPO_DIR="$HOME/olladroid"
   if [ -d "$REPO_DIR/.git" ]; then
     info "Updating existing clone at $REPO_DIR"
     (cd "$REPO_DIR" && git fetch origin main && git reset --hard origin/main)
   else
-    info "Cloning https://github.com/s1dd4rth/ollama-pocket to $REPO_DIR"
-    git clone --depth 1 https://github.com/s1dd4rth/ollama-pocket "$REPO_DIR"
+    info "Cloning https://github.com/s1dd4rth/olladroid to $REPO_DIR"
+    git clone --depth 1 https://github.com/s1dd4rth/olladroid "$REPO_DIR"
   fi
 
   ok "Bootstrap complete. Re-executing from $REPO_DIR/scripts/install-ollama.sh"
@@ -187,7 +187,7 @@ ok "Ollama installed inside Debian"
 # this directory. Primary source: the local repo checkout. Fallback: fetch the
 # repo tarball from GitHub over HTTPS.
 copy_pwa_files() {
-  local target="/sdcard/ollama-pocket/pwa"
+  local target="/sdcard/olladroid/pwa"
   local repo_root
   repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -206,9 +206,9 @@ copy_pwa_files() {
   info "No local pwa/ directory found, fetching from GitHub..."
   local tmp
   tmp="$(mktemp -d)"
-  if curl -fsSL https://github.com/s1dd4rth/ollama-pocket/archive/refs/heads/main.tar.gz \
+  if curl -fsSL https://github.com/s1dd4rth/olladroid/archive/refs/heads/main.tar.gz \
         | tar xz -C "$tmp" 2>/dev/null; then
-    cp -r "$tmp/ollama-pocket-main/pwa/." "$target/"
+    cp -r "$tmp/olladroid-main/pwa/." "$target/"
     rm -rf "$tmp"
     ok "PWA downloaded and installed"
     return 0

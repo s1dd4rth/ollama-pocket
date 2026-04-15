@@ -1,10 +1,10 @@
-# ollama-pocket
+# olladroid
 
-[![CI](https://github.com/s1dd4rth/ollama-pocket/actions/workflows/ci.yml/badge.svg)](https://github.com/s1dd4rth/ollama-pocket/actions/workflows/ci.yml)
+[![CI](https://github.com/s1dd4rth/olladroid/actions/workflows/ci.yml/badge.svg)](https://github.com/s1dd4rth/olladroid/actions/workflows/ci.yml)
 
 **The AI app framework that fits in one phone — offline, private, yours.**
 
-ollama-pocket is a framework for building personalised AI mini-apps that run
+olladroid is a framework for building personalised AI mini-apps that run
 entirely on a phone you already own. Scaffold an app in one command, inline a
 tiny SDK, talk to a local LLM via structured JSON. No cloud, no account, no
 data leaving the device. Your phone becomes a private AI runtime that you
@@ -15,19 +15,19 @@ local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev)
 and a built-in PWA chat UI — the original v0.1.0 use case is unchanged and
 still one command away.
 
-[**Read the full guide →**](https://s1dd4rth.github.io/ollama-pocket)
+[**Read the full guide →**](https://s1dd4rth.github.io/olladroid)
 
 ## Quick Start
 
 **In Termux on your phone** — one line:
 
 ```bash
-curl -fsSL https://s1dd4rth.github.io/ollama-pocket/install.sh | bash
+curl -fsSL https://s1dd4rth.github.io/olladroid/install.sh | bash
 ```
 
 That's it. The installer pins a known-good Termux mirror, clones the repo
-to `~/ollama-pocket`, installs Debian inside `proot-distro`, installs
-Ollama, and copies the PWA chat UI to `/sdcard/ollama-pocket/pwa/`. When
+to `~/olladroid`, installs Debian inside `proot-distro`, installs
+Ollama, and copies the PWA chat UI to `/sdcard/olladroid/pwa/`. When
 it finishes it prints the exact command to start the server.
 
 Then:
@@ -37,7 +37,7 @@ Then:
 proot-distro login debian -- ollama pull qwen2.5:1.5b
 
 # Start the server + chat UI (opens Chrome at http://localhost:8000/chat.html)
-bash ~/ollama-pocket/scripts/start-ollama.sh --wifi --chat
+bash ~/olladroid/scripts/start-ollama.sh --wifi --chat
 ```
 
 **Prefer to inspect before you run?** The `curl | bash` one-liner is
@@ -46,8 +46,8 @@ first, clone the repo manually:
 
 ```bash
 pkg install -y git
-git clone https://github.com/s1dd4rth/ollama-pocket
-cd ollama-pocket
+git clone https://github.com/s1dd4rth/olladroid
+cd olladroid
 less scripts/install-ollama.sh      # read it
 bash scripts/install-ollama.sh      # run it
 ```
@@ -65,8 +65,8 @@ of RAM by removing bloatware). Do this **before** the Termux steps above:
 
 ```bash
 # On your PC, with phone connected via USB and USB debugging enabled
-git clone https://github.com/s1dd4rth/ollama-pocket
-cd ollama-pocket
+git clone https://github.com/s1dd4rth/olladroid
+cd olladroid
 
 # Always start with --dry-run to preview what would be removed on your phone
 ./scripts/debloat.sh --dry-run
@@ -209,7 +209,7 @@ Every scaffolded app is:
   model is a reasoning engine, not a chatbot.
 - **Byte-deterministic** — every template has a reference output under
   [`examples/`](examples/) that CI regenerates on every PR. If your edit
-  to `sdk/pocket.js` or a template breaks the scaffolder, CI fails loudly
+  to `sdk/olladroid.js` or a template breaks the scaffolder, CI fails loudly
   with a diff.
 
 v0.2.1 ships **one reference template — Spell Bee**, a local spelling game
@@ -244,11 +244,11 @@ python3 -m http.server 8000 --directory apps/spell-bee-demo
 
 **Reference output:** [`examples/spell-bee/`](examples/spell-bee/) is the
 byte-deterministic scaffold output, regenerated and diff-checked in CI on
-every PR so edits to `sdk/pocket.js`, the base template, or the Spell Bee
+every PR so edits to `sdk/olladroid.js`, the base template, or the Spell Bee
 template never silently break the scaffolder.
 
 **Escape hatch for the inlined SDK:** scaffolded apps have the entire
-`sdk/pocket.js` inlined into `<script>` at scaffold time. When the SDK gets
+`sdk/olladroid.js` inlined into `<script>` at scaffold time. When the SDK gets
 a bug fix, run `node cli/update.js apps/<slug>` to re-inline the new version
 into an existing app without losing the embedded `app-config`.
 

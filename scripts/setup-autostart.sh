@@ -36,7 +36,7 @@ if [ -n "${ZSH_VERSION:-}" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
 fi
 
 # -- Add aliases (idempotent) --
-MARKER="# ollama-pocket aliases"
+MARKER="# olladroid aliases"
 
 if grep -q "$MARKER" "$SHELL_RC" 2>/dev/null; then
   echo -e "${YELLOW}Aliases already configured in $SHELL_RC${NC}"

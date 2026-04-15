@@ -4,9 +4,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const Pocket = require('../pocket.js');
+const Olladroid = require('../olladroid.js');
 
-const { SessionManager } = Pocket;
+const { SessionManager } = Olladroid;
 
 // Minimal localStorage shim so these tests can run under Node.
 function makeStorage() {

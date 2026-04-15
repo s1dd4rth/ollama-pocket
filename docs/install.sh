@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # docs/install.sh — bootstrap redirector served at:
-#   https://s1dd4rth.github.io/ollama-pocket/install.sh
+#   https://s1dd4rth.github.io/olladroid/install.sh
 #
 # Fetches the real install-ollama.sh from the main branch and runs it.
 # Exists so users can paste ONE pretty URL into Termux instead of a raw
@@ -8,11 +8,11 @@
 # repo, re-exec from local copy).
 #
 # Usage (inside Termux):
-#   curl -fsSL https://s1dd4rth.github.io/ollama-pocket/install.sh | bash
+#   curl -fsSL https://s1dd4rth.github.io/olladroid/install.sh | bash
 
 set -euo pipefail
 
-REAL_URL="https://raw.githubusercontent.com/s1dd4rth/ollama-pocket/main/scripts/install-ollama.sh"
+REAL_URL="https://raw.githubusercontent.com/s1dd4rth/olladroid/main/scripts/install-ollama.sh"
 
 echo "[bootstrap] fetching $REAL_URL"
 exec bash <(curl -fsSL "$REAL_URL")

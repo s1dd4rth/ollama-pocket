@@ -63,7 +63,7 @@ else
 fi
 
 # -- PWA server state (used by --chat) --
-PWA_DIR="/sdcard/ollama-pocket/pwa"
+PWA_DIR="/sdcard/olladroid/pwa"
 PWA_PORT=8000
 PYTHON_PID=""
 

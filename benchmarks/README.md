@@ -26,7 +26,7 @@ command + one PR**:
 
 ```bash
 # In Termux, with the server already running in another session
-bash ~/ollama-pocket/scripts/bench.sh
+bash ~/olladroid/scripts/bench.sh
 
 # This writes benchmarks/<your-device-slug>.md. Open a PR with that file.
 ```
@@ -39,13 +39,13 @@ the version — old benchmarks become stale the moment the fixed set changes.
 
 1. Start the Ollama server and pull the model you want to benchmark:
    ```bash
-   bash ~/ollama-pocket/scripts/start-ollama.sh --wifi
+   bash ~/olladroid/scripts/start-ollama.sh --wifi
    # in another Termux session:
    proot-distro login debian -- ollama pull qwen2.5:1.5b
    ```
 2. Run the bench (multiple runs recommended for warm median stability):
    ```bash
-   bash ~/ollama-pocket/scripts/bench.sh --runs 3
+   bash ~/olladroid/scripts/bench.sh --runs 3
    ```
 3. The script writes `benchmarks/<device-slug>.md`. Inspect it — the
    Warm median should be > 0 tok/s and the Per-prompt detail table should

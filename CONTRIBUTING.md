@@ -1,4 +1,4 @@
-# Contributing to ollama-pocket
+# Contributing to olladroid
 
 Thanks for helping make it easier to run private AI on old phones.
 
@@ -34,7 +34,7 @@ This keeps history readable and lets us automate `CHANGELOG.md` later.
 - **Shell scripts**: run `shellcheck scripts/*.sh` before pushing. CI will fail on errors.
 - **SDK**: `node --test sdk/test/*.test.js` — zero deps, runs on Node 18+.
 - **CLI**: `node --test cli/test/*.test.js` — same.
-- **Scaffold drift**: if you touched `sdk/pocket.js`, `templates/`, or `cli/scaffold.js`, run the one-liner below to regenerate `examples/spell-bee/` and commit the result (see [Scaffold drift check](#scaffold-drift-check)).
+- **Scaffold drift**: if you touched `sdk/olladroid.js`, `templates/`, or `cli/scaffold.js`, run the one-liner below to regenerate `examples/spell-bee/` and commit the result (see [Scaffold drift check](#scaffold-drift-check)).
 - **PWA**: open `pwa/chat.html` in a browser and verify it still loads and can talk to an Ollama instance.
 - **Docs**: if you have Jekyll installed, run `bundle exec jekyll serve` from the repo root and check `docs/`.
 
@@ -59,7 +59,7 @@ your phone's numbers is **one command + one PR**:
 
 ```bash
 # In Termux, with the Ollama server running
-bash ~/ollama-pocket/scripts/bench.sh --runs 3
+bash ~/olladroid/scripts/bench.sh --runs 3
 ```
 
 See [`benchmarks/README.md`](benchmarks/README.md) for the full workflow
@@ -126,23 +126,23 @@ per-app config:
 |--------|--------|-------|
 | `<!-- APP_NAME -->` | prompt answer / `--app-name` | HTML-escaped at substitution time |
 | `<!-- STYLE_INLINE -->` | `templates/_base/style.css` | `</style>` sequences escaped to `<\/style>` |
-| `<!-- SDK_INLINE -->` | `sdk/pocket.js` | `</script>` sequences escaped to `<\/script>` |
+| `<!-- SDK_INLINE -->` | `sdk/olladroid.js` | `</script>` sequences escaped to `<\/script>` |
 | `<!-- APP_CONFIG -->` | generated JSON blob | `<`, `>`, `&`, U+2028, U+2029 escaped via `safeJSONForHTMLScript` |
 | `<!-- APP_BODY -->` | `templates/<cat>/<name>/body.html` | Trusted verbatim |
 | `<!-- APP_SCRIPT -->` | `templates/<cat>/<name>/app.js` | `</script>` sequences escaped |
 
 **What your template inherits for free** from `_base/style.css`:
 
-- TE design tokens: `--pocket-black`, `--pocket-white`, `--pocket-gray-1..7`, `--pocket-orange`, spacing + type scale, `--pocket-tap-min: 48px`.
+- TE design tokens: `--olladroid-black`, `--olladroid-white`, `--olladroid-gray-1..7`, `--olladroid-orange`, spacing + type scale, `--olladroid-tap-min: 48px`.
 - Element defaults: `button` (invert-on-active, `data-variant="accent|secondary|ghost|danger"`), form inputs with bottom-border focus, `:focus-visible` orange outline.
-- Shared layout: sticky `.pocket-header` with `#app-logo`, `#app-title`, `#connection-status[data-state="ok|warn|err"]`, the `.pocket-info-bar` strip, and `main#app-root` with max-width + safe-area padding.
-- Utilities: `.pocket-stack` (`--tight` / `--loose`), `.pocket-card` / `.pocket-card--double`, `.pocket-banner[data-tone="warn|err|ok"]`, `.pocket-sr-only`.
+- Shared layout: sticky `.olladroid-header` with `#app-logo`, `#app-title`, `#connection-status[data-state="ok|warn|err"]`, the `.olladroid-info-bar` strip, and `main#app-root` with max-width + safe-area padding.
+- Utilities: `.olladroid-stack` (`--tight` / `--loose`), `.olladroid-card` / `.olladroid-card--double`, `.olladroid-banner[data-tone="warn|err|ok"]`, `.olladroid-sr-only`.
 - `[hidden] { display: none !important; }` so the `hidden` attribute always wins over `display: inline-flex` / `display: flex`.
 - `prefers-reduced-motion` neutralises transitions and animations.
 
 **Rules for `body.html` + `app.js`:**
 
-1. Everything your template needs lives on `window.Pocket` — `OllamaClient`, `SessionManager`, `EventBus`, `pickModel`, `MODEL_PREFERENCES`, `StructuredChatError`. Don't import. The SDK is inlined as a plain script, not a module.
+1. Everything your template needs lives on `window.Olladroid` — `OllamaClient`, `SessionManager`, `EventBus`, `pickModel`, `MODEL_PREFERENCES`, `StructuredChatError`. Don't import. The SDK is inlined as a plain script, not a module.
 2. Read your per-app config via `JSON.parse(document.getElementById('app-config').textContent)` — the `APP_CONFIG` marker writes it as `<script type="application/json" id="app-config">`.
 3. Populate `#app-title`, `#app-logo`, `#model-badge`, `#host-badge`, and `#connection-status` yourself. Spell Bee's `app.js` is the reference.
 4. Per-template CSS goes inside an inline `<style>` block at the top of `body.html`. Keep it under ~200 lines — if it grows beyond that, promote to a dedicated marker in a follow-up PR.
@@ -173,7 +173,7 @@ output, the drift check will fail — see the next section for the fix.
 
 Every template under `templates/<category>/<name>/` has a committed, byte-identical
 scaffolded reference under `examples/<slug>/`. On every PR, CI rescaffolds each one
-from scratch and runs `git diff --exit-code -- examples/`. If you edit `sdk/pocket.js`,
+from scratch and runs `git diff --exit-code -- examples/`. If you edit `sdk/olladroid.js`,
 `cli/scaffold.js`, `templates/_base/`, or any `templates/<category>/<name>/` and don't
 update the matching `examples/<slug>/`, the job fails loudly with a pointer to the
 regenerate commands.

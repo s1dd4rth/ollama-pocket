@@ -1,7 +1,7 @@
 // templates/kids-game/spell-bee/app.js
 // Spell Bee v1 — the real game controller (scaffolding PR 4).
 //
-// Wires the 5-state FSM to window.Pocket.OllamaClient + SessionManager.
+// Wires the 5-state FSM to window.Olladroid.OllamaClient + SessionManager.
 // Two structuredChat calls per round:
 //   1. fetch a word (schema: { word, hint, difficulty })
 //   2. judge the child's attempt (schema: { correct, feedback, score_delta })
@@ -9,7 +9,7 @@
 // Failure handling mirrors the plan:
 //   - Word fetch throws → switch to word_error panel + retry button.
 //     3 consecutive word-fetch failures → surface the "try qwen2.5:1.5b" hint
-//     via the .pocket-banner in the header area.
+//     via the .olladroid-banner in the header area.
 //   - Judgment throws → fall back to local string compare (lowercased exact
 //     match), so the round never hard-stalls on a bad JSON response.
 //   - Ping on boot fails → offline panel with retry button.
@@ -66,30 +66,30 @@
     return (name || '').toUpperCase().replace(/\s+/g, '_');
   }
 
-  if (!window.Pocket || !window.Pocket.OllamaClient) {
-    console.error('[spell-bee] window.Pocket is not loaded — is sdk/pocket.js inlined correctly?');
+  if (!window.Olladroid || !window.Olladroid.OllamaClient) {
+    console.error('[spell-bee] window.Olladroid is not loaded — is sdk/olladroid.js inlined correctly?');
     var stage = document.querySelector('.spell-bee__stage');
     if (stage) {
       stage.innerHTML =
-        '<div class="pocket-banner" data-tone="err">' +
+        '<div class="olladroid-banner" data-tone="err">' +
         'SDK failed to load. Refresh the page.' +
         '</div>';
     }
     return;
   }
 
-  var Pocket = window.Pocket;
+  var Olladroid = window.Olladroid;
 
   // ---------------------------------------------------------------------------
   // SDK instances
   // ---------------------------------------------------------------------------
 
-  var client = new Pocket.OllamaClient({
+  var client = new Olladroid.OllamaClient({
     host: config.host,
     model: config.defaultModel,
   });
 
-  var session = new Pocket.SessionManager({
+  var session = new Olladroid.SessionManager({
     key: 'spell-bee-' + (config.appSlug || 'default'),
     maxTurns: 100,
   });
@@ -286,7 +286,7 @@
 
       // Decide whether any installed model is reliable for structured output.
       // We don't block the game — a yellow warning banner is enough.
-      var structured = Pocket.pickModel(result.models || [], 'structured');
+      var structured = Olladroid.pickModel(result.models || [], 'structured');
       if (!structured) {
         setConnectionIndicator('warn', 'Model');
         showModelWarning(
