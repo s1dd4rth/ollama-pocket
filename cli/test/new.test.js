@@ -66,8 +66,48 @@ test('parseFlags throws when a value flag is missing its value', () => {
 // validateFlags / optsFromFlags
 // -----------------------------------------------------------------------------
 
-test('validateFlags requires slug/template/age-group/model', () => {
+test('validateFlags requires slug/template/model for every category', () => {
   assert.throws(() => newCli.validateFlags({}), /missing required flag/);
+});
+
+test('validateFlags requires --age-group when template category needs one', () => {
+  // kids-game → age-group is required
+  assert.throws(
+    () =>
+      newCli.validateFlags({
+        slug: 'spell-bee',
+        template: 'kids-game/spell-bee',
+        model: 'qwen2.5:1.5b',
+      }),
+    /missing required flag.*age-group/
+  );
+});
+
+test('validateFlags does NOT require --age-group for productivity templates', () => {
+  // productivity → age-group is optional (and absent from APP_CONFIG)
+  assert.doesNotThrow(() =>
+    newCli.validateFlags({
+      slug: 'summariser',
+      template: 'productivity/summariser',
+      model: 'qwen2.5:1.5b',
+      host: 'http://localhost:11434',
+    })
+  );
+});
+
+test('validateFlags still validates --age-group if a productivity caller passes it', () => {
+  // If the caller passes a bad value we reject it even for non-kids categories
+  // — better to fail on a typo than silently ignore it.
+  assert.throws(
+    () =>
+      newCli.validateFlags({
+        slug: 'summariser',
+        template: 'productivity/summariser',
+        model: 'qwen2.5:1.5b',
+        'age-group': '3-5',
+      }),
+    /age group must be/
+  );
 });
 
 test('validateFlags rejects invalid slug', () => {
@@ -157,6 +197,56 @@ test('optsFromFlags respects explicit --app-name', () => {
     model: 'qwen2.5:1.5b',
   });
   assert.equal(opts.appName, 'SpellBot 9000');
+});
+
+test('optsFromFlags sets opts.ageGroup for kids-game templates', () => {
+  const opts = newCli.optsFromFlags({
+    slug: 'spell-bee',
+    template: 'kids-game/spell-bee',
+    'age-group': '6-8',
+    model: 'qwen2.5:1.5b',
+  });
+  assert.equal(opts.ageGroup, '6-8');
+});
+
+test('optsFromFlags omits opts.ageGroup for productivity templates', () => {
+  // Summariser should never carry an ageGroup through to APP_CONFIG —
+  // the field is kids-game-only.
+  const opts = newCli.optsFromFlags({
+    slug: 'summariser',
+    template: 'productivity/summariser',
+    model: 'qwen2.5:1.5b',
+  });
+  assert.equal('ageGroup' in opts, false);
+  assert.equal(opts.category, 'productivity');
+  assert.equal(opts.templateName, 'productivity/summariser');
+});
+
+test('optsFromFlags still omits ageGroup for productivity even if --age-group is passed', () => {
+  // Belt-and-braces: if some caller legitimately passes --age-group to a
+  // non-kids template we drop it rather than carry a meaningless field.
+  const opts = newCli.optsFromFlags({
+    slug: 'summariser',
+    template: 'productivity/summariser',
+    'age-group': '6-8',
+    model: 'qwen2.5:1.5b',
+  });
+  assert.equal('ageGroup' in opts, false);
+});
+
+test('categoryFromTemplate extracts the leading segment', () => {
+  assert.equal(newCli.categoryFromTemplate('kids-game/spell-bee'), 'kids-game');
+  assert.equal(newCli.categoryFromTemplate('productivity/summariser'), 'productivity');
+  assert.equal(newCli.categoryFromTemplate('no-slash'), null);
+  assert.equal(newCli.categoryFromTemplate(null), null);
+  assert.equal(newCli.categoryFromTemplate(undefined), null);
+});
+
+test('categoryRequiresAgeGroup only returns true for kids-game', () => {
+  assert.equal(newCli.categoryRequiresAgeGroup('kids-game'), true);
+  assert.equal(newCli.categoryRequiresAgeGroup('productivity'), false);
+  assert.equal(newCli.categoryRequiresAgeGroup('creative'), false);
+  assert.equal(newCli.categoryRequiresAgeGroup(null), false);
 });
 
 // -----------------------------------------------------------------------------
@@ -278,6 +368,52 @@ test('main() runs non-interactive scaffold against real templates', async () => 
     for (const name of ['icon.svg', 'index.html', 'manifest.json', 'sw.js']) {
       assert.ok(files.includes(name), 'expected scaffolded output to include ' + name);
     }
+  });
+});
+
+test('main() scaffolds productivity/summariser without --age-group', async () => {
+  await withTempDir(async (tmp) => {
+    const outDir = path.join(tmp, 'summariser');
+    const code = await muteStdout(() =>
+      newCli.main([
+        'node',
+        'cli/new.js',
+        '--non-interactive',
+        '--slug',
+        'summariser',
+        '--template',
+        'productivity/summariser',
+        '--model',
+        'qwen2.5:1.5b',
+        '--host',
+        'http://localhost:11434',
+        '--output',
+        outDir,
+        '--skip-detection',
+      ])
+    );
+    assert.equal(code, 0);
+
+    const files = (await fs.readdir(outDir)).sort();
+    for (const name of ['icon.svg', 'index.html', 'manifest.json', 'sw.js']) {
+      assert.ok(files.includes(name), 'expected scaffolded output to include ' + name);
+    }
+
+    // APP_CONFIG should NOT contain an ageGroup field.
+    const indexHTML = await fs.readFile(path.join(outDir, 'index.html'), 'utf8');
+    const configMatch = indexHTML.match(/<script[^>]*id="app-config"[^>]*>([\s\S]*?)<\/script>/);
+    assert.ok(configMatch, 'expected app-config block in index.html');
+    const config = JSON.parse(configMatch[1]);
+    assert.equal(config.category, 'productivity');
+    assert.equal(config.template, 'productivity/summariser');
+    assert.equal('ageGroup' in config, false, 'productivity templates should not carry ageGroup');
+
+    // Sanity: the summariser body must include the paste textarea and
+    // the three result cards that app.js writes into.
+    assert.match(indexHTML, /id="paste-input"/);
+    assert.match(indexHTML, /id="sm-tldr-text"/);
+    assert.match(indexHTML, /id="sm-bullets-list"/);
+    assert.match(indexHTML, /id="sm-keypoints-list"/);
   });
 });
 

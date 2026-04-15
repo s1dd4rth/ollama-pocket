@@ -51,17 +51,33 @@ const REPO_ROOT = update.findRepoRoot(__dirname);
 const DEFAULT_HOST = 'http://localhost:11434';
 const CATEGORIES = [
   { value: 'kids-game', label: 'kids-game' },
-  { value: 'productivity', label: 'productivity (stubs only, v2+)' },
+  { value: 'productivity', label: 'productivity' },
 ];
 const TEMPLATES_BY_CATEGORY = {
-  'kids-game': [{ value: 'kids-game/spell-bee', label: 'spell-bee (stub — real game in scaffolding PR 4)' }],
-  productivity: [],
+  'kids-game': [{ value: 'kids-game/spell-bee', label: 'spell-bee — local spelling game, ages 4-12' }],
+  productivity: [{ value: 'productivity/summariser', label: 'summariser — paste text, get TL;DR + bullets + key points' }],
 };
 const AGE_GROUPS = [
   { value: '4-6', label: '4-6 (pre-readers, very easy words)' },
   { value: '6-8', label: '6-8 (early readers)' },
   { value: '8-12', label: '8-12 (confident readers)' },
 ];
+
+// Categories that require an age-group prompt / flag / config entry. Every
+// other category scaffolds without an age group and APP_CONFIG omits the
+// field entirely (see cli/scaffold.js buildAppConfig). Kept as a set so new
+// kid-targeted categories can opt in with a one-line change.
+const CATEGORIES_REQUIRING_AGE_GROUP = new Set(['kids-game']);
+
+function categoryRequiresAgeGroup(category) {
+  return CATEGORIES_REQUIRING_AGE_GROUP.has(category);
+}
+
+function categoryFromTemplate(template) {
+  if (typeof template !== 'string') return null;
+  const slash = template.indexOf('/');
+  return slash > 0 ? template.slice(0, slash) : null;
+}
 
 function printUsage() {
   const usage = [
@@ -73,8 +89,8 @@ function printUsage() {
     '  --non-interactive      disable all prompts',
     '  --slug <slug>          app slug [a-z0-9-]',
     '  --app-name <name>      human-facing name (default: derived from slug)',
-    '  --template <cat/name>  e.g. kids-game/spell-bee',
-    '  --age-group <grp>      4-6 | 6-8 | 8-12',
+    '  --template <cat/name>  e.g. kids-game/spell-bee or productivity/summariser',
+    '  --age-group <grp>      4-6 | 6-8 | 8-12  (required for kids-game only)',
     '  --model <name>         default model for the scaffolded runtime',
     '  --host <url>           Ollama host URL (default: ' + DEFAULT_HOST + ')',
     '  --output <dir>         output directory (default: apps/<slug>)',
@@ -154,7 +170,19 @@ function defaultOutputDir(slug) {
 // -----------------------------------------------------------------------------
 
 function validateFlags(flags) {
-  const required = ['slug', 'template', 'age-group', 'model'];
+  // Base required set — every template needs these.
+  const required = ['slug', 'template', 'model'];
+  // --age-group is required only for categories that use one (currently
+  // just kids-game). Template validation runs before the missing-flag
+  // check so we can refuse malformed --template values up front without
+  // a useless "missing --age-group" error trailing behind them.
+  const templateErr = prompts.validateTemplate(flags.template || '');
+  if (flags.template && !templateErr) {
+    const category = categoryFromTemplate(flags.template);
+    if (categoryRequiresAgeGroup(category)) {
+      required.push('age-group');
+    }
+  }
   const missing = required.filter(function (k) {
     return !flags[k];
   });
@@ -164,7 +192,7 @@ function validateFlags(flags) {
   const v =
     prompts.validateSlug(flags.slug) ||
     prompts.validateTemplate(flags.template) ||
-    prompts.validateAgeGroup(flags['age-group']) ||
+    (flags['age-group'] ? prompts.validateAgeGroup(flags['age-group']) : null) ||
     prompts.validateHost(flags.host || DEFAULT_HOST);
   if (v) throw new Error(v);
   if (flags['app-name']) {
@@ -201,10 +229,15 @@ function optsFromFlags(flags) {
     slug: slug,
     category: category,
     templateName: flags.template,
-    ageGroup: flags['age-group'],
     model: flags.model,
     host: flags.host || DEFAULT_HOST,
   };
+  // Age group is only carried through for categories that need it (e.g.
+  // kids-game). For productivity/creative templates the field is dropped
+  // entirely so APP_CONFIG doesn't end up with a dangling null.
+  if (flags['age-group'] && categoryRequiresAgeGroup(category)) {
+    opts.ageGroup = flags['age-group'];
+  }
   // Pin the timestamp if caller provided one. Used by the scaffold-drift
   // CI job so regenerated output is byte-identical to the committed
   // examples/spell-bee/ copy. Normalised through `new Date(...)
@@ -277,11 +310,16 @@ async function runInteractive(flags) {
       defaultIndex: 0,
     });
 
-    const ageGroup = await prompts.askChoice(rl, {
-      label: 'Age group',
-      options: AGE_GROUPS,
-      defaultIndex: 1,
-    });
+    // Age group is kids-game-only. Productivity/creative templates skip
+    // this prompt entirely and APP_CONFIG omits the field.
+    let ageGroup = null;
+    if (categoryRequiresAgeGroup(category)) {
+      ageGroup = await prompts.askChoice(rl, {
+        label: 'Age group',
+        options: AGE_GROUPS,
+        defaultIndex: 1,
+      });
+    }
 
     const host = await prompts.askText(rl, {
       label: 'Ollama host',
@@ -306,7 +344,7 @@ async function runInteractive(flags) {
             '  ! installed models (' +
             detection.models.join(', ') +
             ') are not in the structured-output preference list.\n' +
-            '    Spell Bee may fail mid-round. Install qwen2.5:1.5b for best results:\n' +
+            '    Scaffolded apps that use structured JSON may fail. Install qwen2.5:1.5b for best results:\n' +
             '      ollama pull qwen2.5:1.5b';
         } else {
           detectionNote = '  ! no models installed — run `ollama pull qwen2.5:1.5b`';
@@ -332,10 +370,12 @@ async function runInteractive(flags) {
       slug: slug,
       category: category,
       templateName: templateName,
-      ageGroup: ageGroup,
       model: model,
       host: host,
     };
+    if (ageGroup) {
+      opts.ageGroup = ageGroup;
+    }
 
     const resolved = path.resolve(outputDir);
     let force = flags.force === true;
@@ -419,4 +459,6 @@ module.exports = {
   optsFromFlags: optsFromFlags,
   titleCase: titleCase,
   defaultOutputDir: defaultOutputDir,
+  categoryFromTemplate: categoryFromTemplate,
+  categoryRequiresAgeGroup: categoryRequiresAgeGroup,
 };

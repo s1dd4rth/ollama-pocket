@@ -1,0 +1,406 @@
+<!-- templates/productivity/summariser/body.html
+     Summariser v1 — Teenage Engineering aesthetic.
+     3-state FSM: idle → thinking → showing_summary → idle
+                                  ↘ error → idle
+     Per-template CSS lives inline in this <style> block because the
+     base scaffolder doesn't add a per-template stylesheet marker. -->
+
+<style>
+  .summariser {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-5);
+  }
+
+  /* Section label — TE-style "01 / PASTE TEXT" uppercase tag. */
+  .sm-label {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-2);
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sm-label__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: var(--pocket-white);
+    color: var(--pocket-black);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .sm-label__line {
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--pocket-gray-3);
+  }
+
+  /* Top strip: title + kicker */
+  .sm-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--pocket-space-4);
+    padding-bottom: var(--pocket-space-4);
+    border-bottom: 1px solid var(--pocket-gray-3);
+  }
+
+  .sm-top__title {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xl);
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--pocket-white);
+    margin: 0;
+    line-height: 1;
+  }
+
+  .sm-top__subtitle {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+    margin-top: 4px;
+  }
+
+  .sm-top__badge {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-black);
+    background: var(--pocket-white);
+    padding: 4px 8px;
+    flex: 0 0 auto;
+  }
+
+  /* Panels — one per FSM state. hidden attr gates visibility. */
+  .sm-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-4);
+  }
+
+  /* Textarea — reuses base `.pocket-card` framing. */
+  .sm-textarea-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+  }
+
+  .sm-textarea {
+    width: 100%;
+    min-height: 220px;
+    padding: var(--pocket-space-3) var(--pocket-space-3);
+    background: var(--pocket-black);
+    color: var(--pocket-white);
+    border: 1px solid var(--pocket-gray-3);
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .sm-textarea:focus {
+    outline: none;
+    border-color: var(--pocket-white);
+  }
+
+  .sm-textarea:focus-visible {
+    outline: 2px solid var(--pocket-orange);
+    outline-offset: 2px;
+  }
+
+  .sm-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sm-counter[data-tone="warn"] {
+    color: var(--pocket-orange);
+  }
+
+  .sm-counter[data-tone="err"] {
+    color: var(--pocket-white);
+  }
+
+  .sm-counter__value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Thinking indicator — TE-style orange pulse square + label. */
+  .sm-thinking {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-3);
+    padding: var(--pocket-space-5) 0;
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-sm);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-white);
+  }
+
+  .sm-thinking__dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background: var(--pocket-orange);
+    animation: sm-pulse 900ms steps(1, end) infinite;
+  }
+
+  @keyframes sm-pulse {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0.25; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sm-thinking__dot { animation: none; opacity: 1; }
+  }
+
+  /* Summary result cards */
+  .sm-result {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-4);
+  }
+
+  .sm-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+    padding: var(--pocket-space-4);
+    border: 1px solid var(--pocket-gray-3);
+    background: var(--pocket-black);
+  }
+
+  .sm-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pocket-space-2);
+  }
+
+  .sm-card__title {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+    margin: 0;
+  }
+
+  .sm-card__meta {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sm-card__tldr {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-lg);
+    line-height: 1.4;
+    color: var(--pocket-white);
+    margin: 0;
+  }
+
+  .sm-card__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+  }
+
+  .sm-card__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--pocket-space-3);
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.4;
+    color: var(--pocket-white);
+  }
+
+  .sm-card__list li::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    margin-top: 10px;
+    background: var(--pocket-orange);
+  }
+
+  .sm-result__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+  }
+
+  /* Error panel */
+  .sm-error {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-3);
+  }
+
+  .sm-error__message {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.5;
+    color: var(--pocket-white);
+    margin: 0;
+  }
+
+  /* Spell-bee-style word break for long model output */
+  .sm-card__tldr,
+  .sm-card__list li {
+    overflow-wrap: anywhere;
+  }
+</style>
+
+<section class="summariser" aria-label="Summariser">
+  <div class="sm-top">
+    <div>
+      <h1 class="sm-top__title" id="sm-title">SUMMARISER</h1>
+      <div class="sm-top__subtitle" id="sm-subtitle">TLDR / BULLETS / KEY POINTS</div>
+    </div>
+    <span class="sm-top__badge" id="sm-state-badge" data-state="idle">READY</span>
+  </div>
+
+  <!-- =========================================================================
+       Panel: idle — paste + summarise button
+       ========================================================================= -->
+  <div class="sm-panel" data-state="idle">
+    <div class="sm-label">
+      <span class="sm-label__num">01</span>
+      <span>PASTE TEXT</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="sm-textarea-wrap">
+      <label for="paste-input" class="pocket-sr-only">Text to summarise</label>
+      <textarea
+        id="paste-input"
+        class="sm-textarea"
+        placeholder="Paste an article, a meeting transcript, an email thread — anything up to 2000 characters."
+        maxlength="2000"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+      ></textarea>
+      <div class="sm-counter" id="sm-counter" data-tone="ok">
+        <span>CHARS</span>
+        <span><span class="sm-counter__value" id="sm-counter-value">0</span> / 2000</span>
+      </div>
+    </div>
+
+    <button
+      id="btn-summarise"
+      type="button"
+      data-variant="accent"
+      disabled
+    >Summarise</button>
+  </div>
+
+  <!-- =========================================================================
+       Panel: thinking — orange pulse while structuredChat runs
+       ========================================================================= -->
+  <div class="sm-panel" data-state="thinking" hidden>
+    <div class="sm-label">
+      <span class="sm-label__num">02</span>
+      <span>SUMMARISING</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="sm-thinking">
+      <span class="sm-thinking__dot" aria-hidden="true"></span>
+      <span>Reading your text</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Panel: showing_summary — TL;DR + bullets + key points
+       ========================================================================= -->
+  <div class="sm-panel" data-state="showing_summary" hidden>
+    <div class="sm-label">
+      <span class="sm-label__num">03</span>
+      <span>SUMMARY</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="sm-result">
+      <div class="sm-card" id="sm-card-tldr">
+        <div class="sm-card__header">
+          <h2 class="sm-card__title">TLDR</h2>
+          <span class="sm-card__meta" id="sm-meta-chars">—</span>
+        </div>
+        <p class="sm-card__tldr" id="sm-tldr-text"></p>
+      </div>
+
+      <div class="sm-card" id="sm-card-bullets">
+        <div class="sm-card__header">
+          <h2 class="sm-card__title">BULLETS</h2>
+          <span class="sm-card__meta" id="sm-meta-bullets">—</span>
+        </div>
+        <ul class="sm-card__list" id="sm-bullets-list"></ul>
+      </div>
+
+      <div class="sm-card" id="sm-card-keypoints">
+        <div class="sm-card__header">
+          <h2 class="sm-card__title">KEY POINTS</h2>
+          <span class="sm-card__meta" id="sm-meta-keypoints">—</span>
+        </div>
+        <ul class="sm-card__list" id="sm-keypoints-list"></ul>
+      </div>
+    </div>
+
+    <div class="sm-result__actions">
+      <button id="btn-new-summary" type="button" data-variant="accent">New summary</button>
+      <button id="btn-copy" type="button" data-variant="secondary">Copy TLDR</button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Panel: error — structured call failed or returned junk
+       ========================================================================= -->
+  <div class="sm-panel" data-state="error" hidden>
+    <div class="sm-label">
+      <span class="sm-label__num">!!</span>
+      <span>ERROR</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="pocket-banner" data-tone="err">
+      <p class="sm-error__message" id="sm-error-message">Something went wrong.</p>
+    </div>
+
+    <button id="btn-retry" type="button" data-variant="accent">Try again</button>
+  </div>
+</section>

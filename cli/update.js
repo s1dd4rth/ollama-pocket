@@ -51,16 +51,24 @@ async function extractConfig(indexHTMLPath) {
 function configToScaffoldOpts(config) {
   // Translate the embedded runtime config back into the shape scaffold()
   // expects. Keep this symmetric with cli/scaffold.js buildAppConfig.
-  return {
+  //
+  // ageGroup is only carried through if the source config had it —
+  // productivity / creative templates omit the field entirely, and
+  // re-scaffolding shouldn't introduce a spurious `ageGroup: undefined`
+  // into the output.
+  const opts = {
     appName: config.appName,
     slug: config.appSlug,
     category: config.category,
     templateName: config.template,
-    ageGroup: config.ageGroup,
     model: config.defaultModel,
     host: config.host,
     // scaffoldedAt intentionally re-generated so each update rolls the timestamp
   };
+  if (config.ageGroup) {
+    opts.ageGroup = config.ageGroup;
+  }
+  return opts;
 }
 
 function findRepoRoot(startDir) {

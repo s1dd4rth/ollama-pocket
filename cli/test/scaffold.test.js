@@ -114,6 +114,43 @@ test('buildAppConfig defaults scaffoldedAt to now when omitted', () => {
   assert.match(cfg.scaffoldedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
 });
 
+test('buildAppConfig omits ageGroup when opts.ageGroup is falsy', () => {
+  // Productivity / creative templates drop the field entirely rather
+  // than carrying a dangling null or undefined through APP_CONFIG.
+  const cfg = scaffold.buildAppConfig({
+    appName: 'Summariser',
+    slug: 'summariser',
+    category: 'productivity',
+    templateName: 'productivity/summariser',
+    model: 'qwen2.5:1.5b',
+    host: 'http://localhost:11434',
+    scaffoldedAt: '2026-01-01T00:00:00.000Z',
+  });
+  assert.equal('ageGroup' in cfg, false);
+  assert.equal(cfg.category, 'productivity');
+  assert.equal(cfg.template, 'productivity/summariser');
+});
+
+test('buildAppConfig preserves ageGroup insertion order for kids-game (drift-check byte order)', () => {
+  // examples/spell-bee/index.html is byte-compared in CI. The order of
+  // keys in the JSON must remain: appName, appSlug, category, template,
+  // ageGroup, defaultModel, host, sdkVersion, scaffoldedAt — because
+  // that's the order the pre-v0.3 reference was scaffolded with.
+  const cfg = scaffold.buildAppConfig(SAMPLE_OPTS);
+  const keys = Object.keys(cfg);
+  assert.deepEqual(keys, [
+    'appName',
+    'appSlug',
+    'category',
+    'template',
+    'ageGroup',
+    'defaultModel',
+    'host',
+    'sdkVersion',
+    'scaffoldedAt',
+  ]);
+});
+
 test('buildManifest produces a per-app PWA manifest', () => {
   const m = scaffold.buildManifest(SAMPLE_OPTS);
   assert.equal(m.name, 'Spell Bee (spell-bee)');

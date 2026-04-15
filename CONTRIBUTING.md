@@ -171,16 +171,22 @@ output, the drift check will fail — see the next section for the fix.
 
 ## Scaffold drift check
 
-[`examples/spell-bee/`](examples/spell-bee/) is the committed, byte-identical
-scaffolded output of `templates/kids-game/spell-bee/`. On every PR, CI
-rescaffolds it from scratch and runs `git diff --exit-code -- examples/`. If
-you edit `sdk/pocket.js`, `cli/scaffold.js`, `templates/_base/`, or
-`templates/kids-game/spell-bee/` and don't update `examples/spell-bee/`, the
-job fails loudly with a pointer to the regenerate command.
+Every template under `templates/<category>/<name>/` has a committed, byte-identical
+scaffolded reference under `examples/<slug>/`. On every PR, CI rescaffolds each one
+from scratch and runs `git diff --exit-code -- examples/`. If you edit `sdk/pocket.js`,
+`cli/scaffold.js`, `templates/_base/`, or any `templates/<category>/<name>/` and don't
+update the matching `examples/<slug>/`, the job fails loudly with a pointer to the
+regenerate commands.
+
+Two references are currently committed:
+
+- [`examples/spell-bee/`](examples/spell-bee/) — from `templates/kids-game/spell-bee/`
+- [`examples/summariser/`](examples/summariser/) — from `templates/productivity/summariser/`
 
 **Regenerate locally:**
 
 ```bash
+# Spell Bee
 rm -rf examples/spell-bee
 node cli/new.js --non-interactive \
   --slug spell-bee \
@@ -191,8 +197,24 @@ node cli/new.js --non-interactive \
   --output examples/spell-bee \
   --skip-detection \
   --scaffolded-at 2026-01-01T00:00:00.000Z
-git add examples/spell-bee
+
+# Summariser
+rm -rf examples/summariser
+node cli/new.js --non-interactive \
+  --slug summariser \
+  --template productivity/summariser \
+  --model qwen2.5:1.5b \
+  --host http://localhost:11434 \
+  --output examples/summariser \
+  --skip-detection \
+  --scaffolded-at 2026-01-01T00:00:00.000Z
+
+git add examples/
 ```
+
+Note that `productivity/summariser` has no `--age-group` flag — that option is
+kids-game-only, and productivity / creative templates omit the field entirely
+from `APP_CONFIG`.
 
 **Why the pinned `--scaffolded-at` matters:** without it, `APP_CONFIG.scaffoldedAt` defaults to `new Date().toISOString()` and every rescaffold produces a byte-different `index.html`, breaking `git diff --exit-code` as a drift detector. The pinned `2026-01-01T00:00:00.000Z` is the one the CI job uses, so your local regeneration must use the same value.
 
