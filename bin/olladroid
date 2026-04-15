@@ -1,0 +1,126 @@
+#!/usr/bin/env node
+// =============================================================================
+// bin/olladroid — CLI entry point
+//
+// Thin Node dispatcher that turns the `node cli/<file>.js` invocations into a
+// first-class `olladroid <subcommand>` CLI. Zero external deps, Node 18+
+// built-ins only — same constraint as the rest of the CLI.
+//
+// Subcommands:
+//   olladroid new [options]      scaffold a new mini-app
+//   olladroid update <app-dir>   re-inline the current SDK into an existing app
+//
+// Flags:
+//   --version, -v     print the olladroid version from sdk/olladroid.js
+//   --help, -h        print this usage and exit
+//
+// How to put olladroid on your PATH (one-time, inside Termux or any POSIX shell):
+//
+//   echo 'export PATH="$HOME/olladroid/bin:$PATH"' >> ~/.bashrc
+//   source ~/.bashrc
+//
+// After that, `olladroid new spell-bee` reads the same as `node cli/new.js
+// --slug spell-bee ...` but without remembering the node invocation or the
+// full flag set up front.
+//
+// The dispatcher uses `require()` rather than spawning a child process so
+// `process.exit` codes propagate cleanly and there's no second Node boot.
+// =============================================================================
+
+'use strict';
+
+const path = require('path');
+
+// The script lives at <repoRoot>/bin/olladroid, so <repoRoot> is one level up.
+// Everything the dispatcher loads is keyed off this resolved path so the
+// wrapper works regardless of the caller's cwd.
+const REPO_ROOT = path.resolve(__dirname, '..');
+
+// Load the SDK synchronously just for the VERSION constant. The SDK is the
+// single source of truth for the olladroid version and `chore: cut v0.3.x`
+// bumps it. Doing this via require() keeps the dispatcher self-consistent:
+// `olladroid --version` can never drift from `sdk/olladroid.js`.
+const OlladroidSDK = require(path.join(REPO_ROOT, 'sdk', 'olladroid.js'));
+const OLLADROID_VERSION = OlladroidSDK && OlladroidSDK.VERSION
+  ? OlladroidSDK.VERSION
+  : 'unknown';
+
+const USAGE = [
+  '',
+  'olladroid v' + OLLADROID_VERSION + ' — scaffold local AI mini-apps that run on your phone',
+  '',
+  'usage:',
+  '  olladroid new [options]        scaffold a new mini-app (interactive or --non-interactive)',
+  '  olladroid update <app-dir>     re-inline the current SDK into an existing scaffolded app',
+  '  olladroid --version, -v        print the olladroid version',
+  '  olladroid --help, -h           print this message',
+  '',
+  'examples:',
+  '  olladroid new                  walk through slug / template / model interactively',
+  '  olladroid new --non-interactive \\',
+  '    --slug my-app \\',
+  '    --template productivity/summariser \\',
+  '    --model qwen2.5:1.5b',
+  '  olladroid update pwa/apps/my-app',
+  '',
+  'run "olladroid new --help" for the full list of scaffold flags',
+  '',
+].join('\n');
+
+function printUsage(stream) {
+  (stream || process.stdout).write(USAGE);
+}
+
+async function dispatch(argv) {
+  // argv here is the full process.argv; drop node + script path so args[0] is
+  // the subcommand.
+  const args = argv.slice(2);
+
+  if (args.length === 0 || args[0] === '-h' || args[0] === '--help') {
+    printUsage();
+    return 0;
+  }
+
+  if (args[0] === '-v' || args[0] === '--version') {
+    process.stdout.write('olladroid v' + OLLADROID_VERSION + '\n');
+    return 0;
+  }
+
+  const subcommand = args[0];
+  const rest = args.slice(1);
+
+  if (subcommand === 'new') {
+    // cli/new.js expects argv in the `node cli/new.js <flags...>` shape — its
+    // parseFlags() does argv.slice(2). We reconstruct that prefix so nothing
+    // inside the CLI needs to know it was invoked via the bin wrapper.
+    const newCli = require(path.join(REPO_ROOT, 'cli', 'new.js'));
+    return newCli.main(['node', 'cli/new.js'].concat(rest));
+  }
+
+  if (subcommand === 'update') {
+    const updateCli = require(path.join(REPO_ROOT, 'cli', 'update.js'));
+    return updateCli.runUpdate(['node', 'cli/update.js'].concat(rest));
+  }
+
+  process.stderr.write('olladroid: unknown subcommand: ' + subcommand + '\n');
+  printUsage(process.stderr);
+  return 2;
+}
+
+if (require.main === module) {
+  dispatch(process.argv).then(
+    function (code) {
+      process.exit(code || 0);
+    },
+    function (err) {
+      process.stderr.write('olladroid: ' + ((err && err.message) || String(err)) + '\n');
+      process.exit(1);
+    }
+  );
+}
+
+module.exports = {
+  dispatch: dispatch,
+  USAGE: USAGE,
+  OLLADROID_VERSION: OLLADROID_VERSION,
+};

@@ -50,6 +50,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run CLI unit tests
         run: node --test cli/test/*.test.js
+      - name: Run bin wrapper unit tests
+        run: node --test bin/test/*.test.js
 
   scaffold-drift:
     name: Scaffold drift (Node ${{ matrix.node-version }})
