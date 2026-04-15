@@ -3,14 +3,14 @@
 //
 // Covers the HTTP client surface without any real network calls. Each test
 // constructs a ClientStub fetch that records requests and returns canned
-// responses, then asserts the Pocket.OllamaClient behavior against it.
+// responses, then asserts the Olladroid.OllamaClient behavior against it.
 'use strict';
 
 const test = require('node:test');
 const assert = require('node:assert');
-const Pocket = require('../pocket.js');
+const Olladroid = require('../olladroid.js');
 
-const { OllamaClient, StructuredChatError } = Pocket;
+const { OllamaClient, StructuredChatError } = Olladroid;
 
 // ----- fetch stub helpers -----
 

@@ -50,7 +50,7 @@ err()   { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DEBLOAT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/debloat"
 if [ ! -d "$DEBLOAT_DIR" ]; then
-  err "debloat/ directory not found at $DEBLOAT_DIR. Run from a checkout of the ollama-pocket repo."
+  err "debloat/ directory not found at $DEBLOAT_DIR. Run from a checkout of the olladroid repo."
 fi
 
 # -- Default flags --

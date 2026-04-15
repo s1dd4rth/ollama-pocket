@@ -32,7 +32,7 @@ const SAMPLE_OPTS = {
 };
 
 async function withTempDir(fn) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'pocket-update-test-'));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'olladroid-update-test-'));
   try {
     return await fn(dir);
   } finally {
@@ -101,7 +101,7 @@ test('configToScaffoldOpts is the inverse of buildAppConfig (shape)', () => {
 // findRepoRoot
 // -----------------------------------------------------------------------------
 
-test('findRepoRoot walks up to the sdk/pocket.js file', () => {
+test('findRepoRoot walks up to the sdk/olladroid.js file', () => {
   const fromCliDir = update.findRepoRoot(path.join(REPO_ROOT, 'cli'));
   assert.equal(fromCliDir, REPO_ROOT);
   const fromTestDir = update.findRepoRoot(path.join(REPO_ROOT, 'cli', 'test'));

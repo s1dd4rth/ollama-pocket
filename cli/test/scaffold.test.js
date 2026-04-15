@@ -5,7 +5,7 @@
 // build, manifest/icon/sw generation) plus an end-to-end scaffold() run
 // against a temp dir that uses the real repo templates. The end-to-end
 // test is what gives us confidence that a PR touching any of:
-//   - sdk/pocket.js
+//   - sdk/olladroid.js
 //   - templates/_base/*
 //   - templates/kids-game/spell-bee/*
 //   - cli/scaffold.js
@@ -22,7 +22,7 @@ const os = require('os');
 const path = require('path');
 
 const scaffold = require('../scaffold.js');
-const Pocket = require('../../sdk/pocket.js');
+const Olladroid = require('../../sdk/olladroid.js');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 
@@ -104,7 +104,7 @@ test('buildAppConfig surfaces the fields the runtime reads', () => {
   assert.equal(cfg.ageGroup, '6-8');
   assert.equal(cfg.defaultModel, 'qwen2.5:1.5b');
   assert.equal(cfg.host, 'http://localhost:11434');
-  assert.equal(cfg.sdkVersion, Pocket.VERSION);
+  assert.equal(cfg.sdkVersion, Olladroid.VERSION);
   assert.equal(cfg.scaffoldedAt, '2026-04-13T00:00:00.000Z');
 });
 
@@ -183,7 +183,7 @@ test('buildIconSVG derives different hues for different slugs', () => {
 
 test('buildServiceWorker references the per-app cache name', () => {
   const sw = scaffold.buildServiceWorker(SAMPLE_OPTS);
-  assert.match(sw, /pocket-spell-bee-v2/, 'per-slug cache name must include a version');
+  assert.match(sw, /olladroid-spell-bee-v2/, 'per-slug cache name must include a version');
   assert.match(sw, /install/);
   assert.match(sw, /fetch/);
   // Network-first: the fetch handler must hit fetch() before caches.match().
@@ -288,7 +288,7 @@ test('escapeInlineScript neutralises stray </script> / </style>', () => {
 });
 
 test('composeIndexHTML escapes </script> inside SDK_INLINE (breakout guard)', () => {
-  // Regression: the real sdk/pocket.js has a comment containing literal
+  // Regression: the real sdk/olladroid.js has a comment containing literal
   // `</script>` which prematurely closed the inlined <script> tag and
   // left the rest of the SDK as visible DOM text. The scaffolder must
   // transform `</script>` to `<\/script>` before substitution.
@@ -346,7 +346,7 @@ test('composeIndexHTML escapes U+2028 / U+2029 inside APP_CONFIG', () => {
 // -----------------------------------------------------------------------------
 
 async function withTempDir(fn) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'pocket-scaffold-test-'));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'olladroid-scaffold-test-'));
   try {
     return await fn(dir);
   } finally {
@@ -386,7 +386,7 @@ test('scaffold() produces a complete app from the real templates', async () => {
 
     // index.html: SDK inlined, app-config present, no stray markers
     const html = await fs.readFile(path.join(outDir, 'index.html'), 'utf8');
-    assert.match(html, /Pocket\.OllamaClient|OllamaClient/); // SDK is actually inlined
+    assert.match(html, /Olladroid\.OllamaClient|OllamaClient/); // SDK is actually inlined
     assert.match(html, /<script type="application\/json" id="app-config">/);
     assert.ok(!/<!--\s*[A-Z][A-Z0-9_]*\s*-->/.test(html), 'no unresolved markers in output');
 
@@ -403,14 +403,14 @@ test('scaffold() produces a complete app from the real templates', async () => {
 
     // sw.js: contains the per-app cache name
     const sw = await fs.readFile(path.join(outDir, 'sw.js'), 'utf8');
-    assert.match(sw, /pocket-spell-bee-v2/);
+    assert.match(sw, /olladroid-spell-bee-v2/);
 
     // _base layout pin: TE-flavoured tokens and fonts. If someone replaces
     // the base with a placeholder again, or drops the TE palette, these
     // assertions fail loudly.
-    assert.match(html, /--pocket-bg/, 'scaffolded output should include the real _base tokens');
-    assert.match(html, /--pocket-tap-min/);
-    assert.match(html, /--pocket-orange:\s*#ff5c00/i, 'TE orange accent must be in the tokens');
+    assert.match(html, /--olladroid-bg/, 'scaffolded output should include the real _base tokens');
+    assert.match(html, /--olladroid-tap-min/);
+    assert.match(html, /--olladroid-orange:\s*#ff5c00/i, 'TE orange accent must be in the tokens');
     assert.match(html, /Space Mono/, 'base must reference Space Mono for chrome typography');
     assert.match(html, /DM Sans/, 'base must reference DM Sans for body typography');
     assert.match(html, /prefers-reduced-motion: reduce/);

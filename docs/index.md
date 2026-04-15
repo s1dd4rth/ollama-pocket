@@ -294,18 +294,18 @@ Chatting in the terminal works, but it's not great on a phone touchscreen. We bu
 
 ```bash
 # On your PC
-adb shell mkdir -p //sdcard/ollama-pocket/pwa
-adb push pwa/chat.html //sdcard/ollama-pocket/pwa/
-adb push pwa/manifest.json //sdcard/ollama-pocket/pwa/
-adb push pwa/sw.js //sdcard/ollama-pocket/pwa/
-adb push pwa/icon.svg //sdcard/ollama-pocket/pwa/
+adb shell mkdir -p //sdcard/olladroid/pwa
+adb push pwa/chat.html //sdcard/olladroid/pwa/
+adb push pwa/manifest.json //sdcard/olladroid/pwa/
+adb push pwa/sw.js //sdcard/olladroid/pwa/
+adb push pwa/icon.svg //sdcard/olladroid/pwa/
 ```
 
 ### Open it
 
 1. Make sure the Ollama server is running (next step)
 2. Open Chrome on your phone
-3. Navigate to `file:///sdcard/ollama-pocket/pwa/chat.html`
+3. Navigate to `file:///sdcard/olladroid/pwa/chat.html`
 4. Start chatting
 
 ### Add to home screen
@@ -465,7 +465,7 @@ An old phone that was gathering dust is now running a real AI model, privately, 
 
 It won't replace GPT-4 — a 1.5B parameter model is what it is. But for quick questions, drafting text, brainstorming, summarizing, and simple code tasks? It's genuinely useful. And it's *yours*.
 
-The repo has everything you need to replicate this: **[github.com/s1dd4rth/ollama-pocket](https://github.com/s1dd4rth/ollama-pocket)**
+The repo has everything you need to replicate this: **[github.com/s1dd4rth/olladroid](https://github.com/s1dd4rth/olladroid)**
 
 ---
 

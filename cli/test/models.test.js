@@ -1,7 +1,7 @@
 // =============================================================================
 // cli/test/models.test.js — unit tests for cli/models.js
 //
-// Validates that the CLI thin-wraps sdk/pocket.js (single source of truth
+// Validates that the CLI thin-wraps sdk/olladroid.js (single source of truth
 // for MODEL_PREFERENCES and pickModel) and that detectInstalledModels
 // never throws — it only returns { ok, models, error } so the CLI can
 // fall through on failure without a try/catch.
@@ -13,22 +13,22 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const models = require('../models.js');
-const Pocket = require('../../sdk/pocket.js');
+const Olladroid = require('../../sdk/olladroid.js');
 
 // -----------------------------------------------------------------------------
 // re-exports
 // -----------------------------------------------------------------------------
 
-test('MODEL_PREFERENCES is the exact object exported by sdk/pocket.js', () => {
-  assert.equal(models.MODEL_PREFERENCES, Pocket.MODEL_PREFERENCES);
+test('MODEL_PREFERENCES is the exact object exported by sdk/olladroid.js', () => {
+  assert.equal(models.MODEL_PREFERENCES, Olladroid.MODEL_PREFERENCES);
 });
 
-test('pickModel is the exact function exported by sdk/pocket.js', () => {
-  assert.equal(models.pickModel, Pocket.pickModel);
+test('pickModel is the exact function exported by sdk/olladroid.js', () => {
+  assert.equal(models.pickModel, Olladroid.pickModel);
 });
 
-test('SDK_VERSION matches sdk/pocket.js VERSION', () => {
-  assert.equal(models.SDK_VERSION, Pocket.VERSION);
+test('SDK_VERSION matches sdk/olladroid.js VERSION', () => {
+  assert.equal(models.SDK_VERSION, Olladroid.VERSION);
 });
 
 // -----------------------------------------------------------------------------

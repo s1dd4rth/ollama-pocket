@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// cli/new.js — scaffold a new ollama-pocket app
+// cli/new.js — scaffold a new olladroid app
 //
 // Two modes:
 //
@@ -277,7 +277,7 @@ async function runNonInteractive(flags) {
 async function runInteractive(flags) {
   const rl = prompts.createInterface();
   try {
-    process.stdout.write('\nollama-pocket — new app scaffolder\n');
+    process.stdout.write('\nolladroid — new app scaffolder\n');
     process.stdout.write('-----------------------------------\n\n');
 
     const slug = await prompts.askText(rl, {

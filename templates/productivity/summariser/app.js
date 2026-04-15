@@ -61,30 +61,30 @@
     return (name || '').toUpperCase().replace(/\s+/g, '_');
   }
 
-  if (!window.Pocket || !window.Pocket.OllamaClient) {
-    console.error('[summariser] window.Pocket is not loaded — is sdk/pocket.js inlined correctly?');
+  if (!window.Olladroid || !window.Olladroid.OllamaClient) {
+    console.error('[summariser] window.Olladroid is not loaded — is sdk/olladroid.js inlined correctly?');
     var root = document.querySelector('.summariser');
     if (root) {
       root.innerHTML =
-        '<div class="pocket-banner" data-tone="err">' +
+        '<div class="olladroid-banner" data-tone="err">' +
         'SDK failed to load. Refresh the page.' +
         '</div>';
     }
     return;
   }
 
-  var Pocket = window.Pocket;
+  var Olladroid = window.Olladroid;
 
   // ---------------------------------------------------------------------------
   // SDK instances
   // ---------------------------------------------------------------------------
 
-  var client = new Pocket.OllamaClient({
+  var client = new Olladroid.OllamaClient({
     host: config.host,
     model: config.defaultModel,
   });
 
-  var session = new Pocket.SessionManager({
+  var session = new Olladroid.SessionManager({
     key: 'summariser-' + (config.appSlug || 'default'),
     maxTurns: 1,
   });

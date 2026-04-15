@@ -4,9 +4,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const Pocket = require('../pocket.js');
+const Olladroid = require('../olladroid.js');
 
-const { EventBus } = Pocket;
+const { EventBus } = Olladroid;
 
 test('EventBus: on + emit delivers payload to handler', () => {
   const bus = new EventBus();

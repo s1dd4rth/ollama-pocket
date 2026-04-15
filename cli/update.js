@@ -28,7 +28,7 @@ const scaffold = require('./scaffold.js');
 const APP_CONFIG_RE = /<script\s+type="application\/json"\s+id="app-config">([\s\S]*?)<\/script>/;
 
 function unescapeHTMLScriptJSON(text) {
-  // Inverse of sdk/pocket.js safeJSONForHTMLScript: the scaffolder escapes
+  // Inverse of sdk/olladroid.js safeJSONForHTMLScript: the scaffolder escapes
   // <, >, &, U+2028, U+2029 as \uXXXX sequences inside the JSON string.
   // JSON.parse handles \u escapes natively, so we don't need to do anything
   // except hand it the raw text.
@@ -72,18 +72,18 @@ function configToScaffoldOpts(config) {
 }
 
 function findRepoRoot(startDir) {
-  // Walk up until we find sdk/pocket.js. Keeps the CLI runnable from any
+  // Walk up until we find sdk/olladroid.js. Keeps the CLI runnable from any
   // cwd inside the repo, not just the root.
   let dir = path.resolve(startDir);
   while (true) {
-    const candidate = path.join(dir, 'sdk', 'pocket.js');
+    const candidate = path.join(dir, 'sdk', 'olladroid.js');
     try {
       require('fs').accessSync(candidate);
       return dir;
     } catch (_) {
       const parent = path.dirname(dir);
       if (parent === dir) {
-        throw new Error('update: could not locate repo root (no sdk/pocket.js up the tree from ' + startDir + ')');
+        throw new Error('update: could not locate repo root (no sdk/olladroid.js up the tree from ' + startDir + ')');
       }
       dir = parent;
     }
@@ -95,7 +95,7 @@ async function runUpdate(argv) {
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     process.stdout.write('usage: node cli/update.js <app-dir>\n');
     process.stdout.write('\n');
-    process.stdout.write('  Re-inlines the current sdk/pocket.js and re-renders index.html,\n');
+    process.stdout.write('  Re-inlines the current sdk/olladroid.js and re-renders index.html,\n');
     process.stdout.write('  manifest.json, icon.svg, and sw.js into <app-dir>, preserving the\n');
     process.stdout.write('  existing app-config block.\n');
     return 0;

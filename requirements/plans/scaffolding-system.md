@@ -17,7 +17,7 @@
 ## Scope (what v1 ships)
 
 **Shipped:**
-- `sdk/pocket.js` — complete SDK with `OllamaClient`, `SessionManager`, `EventBus`, and `pickModel()` helper.
+- `sdk/olladroid.js` — complete SDK with `OllamaClient`, `SessionManager`, `EventBus`, and `pickModel()` helper.
 - `cli/new.js` + `cli/prompts.js` + `cli/scaffold.js` — Node 18+ built-ins only, zero npm deps.
 - `cli/update.js` — re-inlines the current SDK into an already-scaffolded app. Fixes the "inlined SDK is stranded" problem.
 - `templates/_base/index.html` + `templates/_base/style.css` — shared layout, CSS variables, mobile-first.
@@ -38,12 +38,12 @@
 ## Repo layout delta
 
 ```
-ollama-pocket/
+olladroid/
 ├── scripts/              ← unchanged
 ├── pwa/                  ← will be modified by Plan B, unchanged by this plan
 ├── docs/                 ← unchanged
 ├── sdk/                  ← NEW
-│   └── pocket.js
+│   └── olladroid.js
 ├── templates/            ← NEW
 │   ├── _base/
 │   │   ├── index.html
@@ -67,25 +67,25 @@ ollama-pocket/
 
 **Note:** the requirements doc said `pwa/` should "not be modified". Plan B modifies it. Once Scaffolding lands, the long-term direction is that `pwa/chat.html` gets replaced by a scaffolded "chat" template and `pwa/` becomes the launcher/homepage for installed apps. That migration is explicitly **not** in v1 scope — `pwa/` stays as-is after B lands.
 
-## SDK: `sdk/pocket.js`
+## SDK: `sdk/olladroid.js`
 
 Single file, self-contained. **UMD-lite pattern** — works identically in three contexts with zero transformation:
 
 - **Inlined** into a scaffolded `<script>` block (plain script, not `type="module"`)
-- **`<script src="pocket.js">`** loaded from disk
-- **`require('sdk/pocket.js')`** from Node `node --test` in CI
+- **`<script src="olladroid.js">`** loaded from disk
+- **`require('sdk/olladroid.js')`** from Node `node --test` in CI
 
 ### Why not ES modules
 
-An inline `<script type="module">` has its own module scope — classes declared at the top level are **not** attached to `window`, so a template's app-script in the same document cannot see `OllamaClient` without an `import`, and inline modules cannot be imported from anywhere. The previous draft of this plan hand-waved "CLI wraps the module body and re-exposes via `window.Pocket`" which would require a brittle source transformation in `scaffold.js` (strip `export` keywords, wrap in an IIFE, detect class/function declarations, re-bind). That transformation is load-bearing, fragile, and one SDK source change away from silently breaking every scaffolded app.
+An inline `<script type="module">` has its own module scope — classes declared at the top level are **not** attached to `window`, so a template's app-script in the same document cannot see `OllamaClient` without an `import`, and inline modules cannot be imported from anywhere. The previous draft of this plan hand-waved "CLI wraps the module body and re-exposes via `window.Olladroid`" which would require a brittle source transformation in `scaffold.js` (strip `export` keywords, wrap in an IIFE, detect class/function declarations, re-bind). That transformation is load-bearing, fragile, and one SDK source change away from silently breaking every scaffolded app.
 
-The cleanest fix: write `sdk/pocket.js` as a plain script with UMD-lite bootstrap at the bottom. **No transformation required** in the scaffolder — `cat sdk/pocket.js` straight into the output.
+The cleanest fix: write `sdk/olladroid.js` as a plain script with UMD-lite bootstrap at the bottom. **No transformation required** in the scaffolder — `cat sdk/olladroid.js` straight into the output.
 
 ### File shape
 
 ```js
-// sdk/pocket.js — runs in any JS context, zero transformation needed.
-// Exposes the public API as `Pocket` on window (browser) or module.exports (node).
+// sdk/olladroid.js — runs in any JS context, zero transformation needed.
+// Exposes the public API as `Olladroid` on window (browser) or module.exports (node).
 (function (root) {
   'use strict';
 
@@ -131,12 +131,12 @@ The cleanest fix: write `sdk/pocket.js` as a plain script with UMD-lite bootstra
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
   } else {
-    root.Pocket = api;
+    root.Olladroid = api;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this));
 ```
 
-Template JS accesses everything via `window.Pocket.OllamaClient`. Node tests do `const Pocket = require('../pocket.js');`. Same source file. No build step.
+Template JS accesses everything via `window.Olladroid.OllamaClient`. Node tests do `const Olladroid = require('../olladroid.js');`. Same source file. No build step.
 
 ### `OllamaClient`
 
@@ -201,7 +201,7 @@ async client.structuredChat(messages, schema, options = {})
 new SessionManager({ key: 'spell-bee', maxTurns: 20 })
 ```
 
-Backed by `localStorage` under `pocket:<key>:history` and `pocket:<key>:state`. Chat history is capped at `maxTurns` entries (oldest dropped first).
+Backed by `localStorage` under `olladroid:<key>:history` and `olladroid:<key>:state`. Chat history is capped at `maxTurns` entries (oldest dropped first).
 
 **Methods:**
 
@@ -300,7 +300,7 @@ Node 18+. `readline/promises`, `fs/promises`, `path`, `os`, `crypto` — no othe
 $ node cli/new.js
 
   ┌─────────────────────────────────────┐
-  │  ollama-pocket — new app scaffolder │
+  │  olladroid — new app scaffolder │
   └─────────────────────────────────────┘
 
   ? App slug (letters, digits, dashes): spell-bee-alpha
@@ -317,7 +317,7 @@ $ node cli/new.js
     ✓ read templates/_base/index.html
     ✓ read templates/_base/style.css
     ✓ read templates/kids-game/spell-bee.html
-    ✓ inlined sdk/pocket.js (12.4 KB)
+    ✓ inlined sdk/olladroid.js (12.4 KB)
     ✓ injected app-config block
     ✓ generated manifest.json (per-app, name="Spell Bee")
     ✓ wrote apps/spell-bee-alpha/index.html (47.1 KB)
@@ -336,11 +336,11 @@ $ node cli/new.js
 
 **`cli/prompts.js`** — `readline/promises`-based questions. Each prompt is an async function returning a validated value. Simple regex validation (slug: `/^[a-z0-9-]+$/`, URL: basic), re-prompts on invalid input. No arrow-key selection — uses numbered menus ("1/2/3"). Acceptably rough for v1; we have an escape hatch documented in CONTRIBUTING for v2 if users complain.
 
-**`cli/scaffold.js`** — file generation. Reads the base template, reads the specific template, reads `sdk/pocket.js`, substitutes `<!-- SDK_INLINE -->` / `<!-- APP_CONFIG -->` / `<!-- APP_NAME -->` / `<!-- STYLE_INLINE -->` markers, writes the output. Idempotent: if the output directory already exists, prompts before overwriting.
+**`cli/scaffold.js`** — file generation. Reads the base template, reads the specific template, reads `sdk/olladroid.js`, substitutes `<!-- SDK_INLINE -->` / `<!-- APP_CONFIG -->` / `<!-- APP_NAME -->` / `<!-- STYLE_INLINE -->` markers, writes the output. Idempotent: if the output directory already exists, prompts before overwriting.
 
 **`cli/update.js`** — re-inlines SDK into an existing scaffolded app, preserving the app-config block. Usage: `node cli/update.js apps/spell-bee-alpha`. Reads the existing `index.html`, extracts the `<script type="application/json" id="app-config">` block verbatim, regenerates everything else from the current templates, writes back. This is the escape hatch for SDK bug fixes propagating to already-scaffolded apps.
 
-**`cli/models.js`** — helper module imported by `new.js`. Exports `detectInstalledModels(host)` (calls `/api/tags`) and re-exports `MODEL_PREFERENCES` + `pickModel` from `sdk/pocket.js` so the CLI uses the exact same preference list as the runtime.
+**`cli/models.js`** — helper module imported by `new.js`. Exports `detectInstalledModels(host)` (calls `/api/tags`) and re-exports `MODEL_PREFERENCES` + `pickModel` from `sdk/olladroid.js` so the CLI uses the exact same preference list as the runtime.
 
 ### Template substitution
 
@@ -377,9 +377,9 @@ Templates use HTML comments as markers. Example `templates/_base/index.html`:
 </html>
 ```
 
-**Note the non-module `<script>` tags** for both `SDK_INLINE` and `APP_SCRIPT`. Everything the template's app-script needs is on `window.Pocket` — no `import` needed, no module scope trap.
+**Note the non-module `<script>` tags** for both `SDK_INLINE` and `APP_SCRIPT`. Everything the template's app-script needs is on `window.Olladroid` — no `import` needed, no module scope trap.
 
-**Per-template files** provide `APP_BODY` (the template's HTML) and `APP_SCRIPT` (the template's JS, which references `window.Pocket.OllamaClient` etc.). `SDK_INLINE`, `STYLE_INLINE`, `APP_CONFIG`, `APP_NAME` are injected by `scaffold.js`.
+**Per-template files** provide `APP_BODY` (the template's HTML) and `APP_SCRIPT` (the template's JS, which references `window.Olladroid.OllamaClient` etc.). `SDK_INLINE`, `STYLE_INLINE`, `APP_CONFIG`, `APP_NAME` are injected by `scaffold.js`.
 
 **Security — `</script>` injection in `APP_CONFIG`:** a naive `JSON.stringify` does **not** escape `<`, `>`, or `&`. A config value like `systemPrompt: "write </script><script>alert(1)</script>"` would break out of the `<script type="application/json">` block because the HTML parser recognises the literal `</script>` tag regardless of the script element's `type` attribute. **Mitigation:** `scaffold.js` runs a post-stringify pass:
 
@@ -396,7 +396,7 @@ function safeJSONForHTMLScript(value) {
 
 Applied to `APP_CONFIG` and nowhere else. All other substitutions (`SDK_INLINE`, `STYLE_INLINE`, `APP_BODY`, `APP_SCRIPT`) come from files committed to the repo and are trusted. `APP_NAME` is also validated at the prompt step (`/^[a-zA-Z0-9 \-]+$/`), so no HTML-unsafe characters can reach the output.
 
-**SDK inlining:** literal file read + string substitute. `fs.readFile('sdk/pocket.js') → insert at <!-- SDK_INLINE -->`. No source transformation. The UMD-lite pattern means the inlined SDK runs as a regular script, self-registers `window.Pocket`, and is immediately usable by the app-script that follows.
+**SDK inlining:** literal file read + string substitute. `fs.readFile('sdk/olladroid.js') → insert at <!-- SDK_INLINE -->`. No source transformation. The UMD-lite pattern means the inlined SDK runs as a regular script, self-registers `window.Olladroid`, and is immediately usable by the app-script that follows.
 
 ### Per-app manifest
 
@@ -512,7 +512,7 @@ The judgment fallback is deliberate: a child shouldn't experience a game-breakin
 
 ## `examples/` + CI drift check
 
-**Why:** the inlined SDK goes stale the moment `sdk/pocket.js` changes. `examples/spell-bee/` is a committed canary — CI regenerates it from the current templates and fails if the result differs from what's checked in. Forces every SDK edit to be accompanied by a re-scaffold.
+**Why:** the inlined SDK goes stale the moment `sdk/olladroid.js` changes. `examples/spell-bee/` is a committed canary — CI regenerates it from the current templates and fails if the result differs from what's checked in. Forces every SDK edit to be accompanied by a re-scaffold.
 
 **What gets committed to `examples/spell-bee/`:** the **full scaffold output** — `index.html`, `manifest.json`, `icon.svg`, and `sw.js`. Not just `index.html`. The scaffolder writes all four; the drift check must compare all four. Committing only `index.html` would miss drift in the per-app manifest, icon, or service worker.
 
@@ -639,7 +639,7 @@ No automated test for the template's UX in v1 — that requires a browser harnes
 
 ### Drift CI test
 
-- Merge a test PR that edits `sdk/pocket.js` without re-scaffolding `examples/`. CI should fail with a clear `git diff` output.
+- Merge a test PR that edits `sdk/olladroid.js` without re-scaffolding `examples/`. CI should fail with a clear `git diff` output.
 - Re-run `node cli/new.js --non-interactive ...` locally, commit, CI passes.
 
 ## Failure modes
@@ -647,7 +647,7 @@ No automated test for the template's UX in v1 — that requires a browser harnes
 | Codepath | Failure | Detected? | Handled? | User-visible |
 |----------|---------|-----------|----------|--------------|
 | CLI template read | template file missing / renamed | yes — ENOENT | clean error message with suggested fix | "Template kids-game/spell-bee not found in templates/" |
-| CLI SDK inline | `sdk/pocket.js` missing | yes — ENOENT | error + exit 1 | "sdk/pocket.js not found — repo is broken" |
+| CLI SDK inline | `sdk/olladroid.js` missing | yes — ENOENT | error + exit 1 | "sdk/olladroid.js not found — repo is broken" |
 | CLI model detect | Ollama not running at scaffold time | yes — fetch error | skips detection, falls back to user-declared model | "Could not reach Ollama — using your declared default. Will re-check at runtime." |
 | CLI output conflict | `apps/<slug>/` already exists | yes — `fs.stat` | prompts user to overwrite | "apps/spell-bee-alpha exists. Overwrite? (y/N)" |
 | Runtime `pickModel` returns null | user has only `smollm2:360m` installed | yes — runtime check on boot | yellow banner, game still plays but likely fails structured output | "Your installed models may not work for this game — try qwen2.5:1.5b" |
@@ -707,7 +707,7 @@ No automated test for the template's UX in v1 — that requires a browser harnes
 Two lanes once the SDK API is agreed:
 
 ```
-Lane A (SDK): sdk/pocket.js + sdk/test/ + CI sdk-tests job
+Lane A (SDK): sdk/olladroid.js + sdk/test/ + CI sdk-tests job
 Lane B (CLI): cli/*.js + examples/ + CI scaffold-drift job
      └─ depends on Lane A SDK API being frozen (interface lock, not implementation)
 
@@ -750,7 +750,7 @@ Minimum viable v1 = PR 1-2-5-6-7-8-9. That's **seven PRs** on the critical path.
 
 2. **Node 18 readline:** `readline/promises` shipped in Node 18 but the API evolved in 20 and 21. Pin to Node 18 behavior (`rl.question` returns a promise). Test in CI with `node-version: '18'` matrix, not just `'20'`.
 
-3. **The SDK becomes a dependency magnet:** it's tempting to add helpers for every template we might build. Resist. v1 SDK ships what Spell Bee actually needs and nothing else. A second template in v2 is a forcing function for honest reuse — if `pocket.js` can serve both without modification, the SDK is done; if it can't, we learn what was missing.
+3. **The SDK becomes a dependency magnet:** it's tempting to add helpers for every template we might build. Resist. v1 SDK ships what Spell Bee actually needs and nothing else. A second template in v2 is a forcing function for honest reuse — if `olladroid.js` can serve both without modification, the SDK is done; if it can't, we learn what was missing.
 
 4. **Template authoring ergonomics:** writing a new template means editing a file with HTML markers and knowing which variables are available. Documentation is the only defense. `CONTRIBUTING.md` gets a "Creating a template" section with the full marker list and a worked example.
 
@@ -758,7 +758,7 @@ Minimum viable v1 = PR 1-2-5-6-7-8-9. That's **seven PRs** on the critical path.
 
 ## Positioning — keep the platform quiet until v0.3.0
 
-The project's current identity is a 4-script install kit that turns an old phone into an AI server. v0.2.0 adds a scaffolding system but only ships **one** reference template (Spell Bee). Announcing "ollama-pocket is now an app platform!" on the strength of a single kids game reads as half-finished.
+The project's current identity is a 4-script install kit that turns an old phone into an AI server. v0.2.0 adds a scaffolding system but only ships **one** reference template (Spell Bee). Announcing "olladroid is now an app platform!" on the strength of a single kids game reads as half-finished.
 
 **Rule for v0.2.0:** the README's top-level story does **not** change.
 
@@ -782,7 +782,7 @@ Ten PRs, spread over three weeks, rebase-merge per repo policy. Changelog gets a
 - Scaffolding system: `cli/new.js` generates self-contained AI apps from
   templates. Zero build tools, zero dependencies. First template:
   Spelling Bee for kids aged 4-12.
-- `sdk/pocket.js`: shared SDK for Ollama communication, session management,
+- `sdk/olladroid.js`: shared SDK for Ollama communication, session management,
   and structured output with retries.
 - Plan B: PWA now served over HTTP with real offline support.
 - Plan A: vendor-agnostic debloat with manifests per manufacturer.

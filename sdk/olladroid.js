@@ -1,17 +1,17 @@
 // =============================================================================
-// sdk/pocket.js — ollama-pocket shared SDK
+// sdk/olladroid.js — olladroid shared SDK
 //
 // UMD-lite module that runs identically in three contexts with ZERO source
 // transformation:
 //
 //   1. Inlined into a scaffolded <script> block (non-module, plain script)
-//   2. <script src="pocket.js"> loaded from disk
-//   3. require('./pocket.js') in Node.js for unit tests and the CLI
+//   2. <script src="olladroid.js"> loaded from disk
+//   3. require('./olladroid.js') in Node.js for unit tests and the CLI
 //
-// The wrapper at the bottom either assigns to `window.Pocket` (browser) or
-// to `module.exports` (Node). The inline-script path uses the `window.Pocket`
-// branch, so every scaffolded app accesses the SDK as `Pocket.OllamaClient`,
-// `Pocket.SessionManager`, etc. — no ES-module scoping trap.
+// The wrapper at the bottom either assigns to `window.Olladroid` (browser) or
+// to `module.exports` (Node). The inline-script path uses the `window.Olladroid`
+// branch, so every scaffolded app accesses the SDK as `Olladroid.OllamaClient`,
+// `Olladroid.SessionManager`, etc. — no ES-module scoping trap.
 //
 // Why not ES modules: an inline <script type="module"> has its own module
 // scope, so `export class OllamaClient` would be unreachable from the
@@ -28,7 +28,7 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
   } else {
-    root.Pocket = api;
+    root.Olladroid = api;
   }
 })(
   typeof globalThis !== 'undefined'
@@ -355,7 +355,7 @@
           self._versionWarned = true;
           if (typeof console !== 'undefined' && console.warn) {
             console.warn(
-              '[Pocket] Ollama version ' + info.version +
+              '[Olladroid] Ollama version ' + info.version +
               ' is older than the ' + MIN_OLLAMA_VERSION +
               ' minimum recommended for structured output. ' +
               'structuredChat() may return prose instead of JSON.'
@@ -443,7 +443,7 @@
     }
 
     SessionManager.prototype._keyFor = function (suffix) {
-      return 'pocket:' + this.key + ':' + suffix;
+      return 'olladroid:' + this.key + ':' + suffix;
     };
 
     SessionManager.prototype._read = function (suffix) {

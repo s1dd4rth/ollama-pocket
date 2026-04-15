@@ -1,7 +1,7 @@
 // =============================================================================
 // cli/models.js — model detection + preference re-export
 //
-// Thin wrapper around sdk/pocket.js so the CLI uses the exact same model
+// Thin wrapper around sdk/olladroid.js so the CLI uses the exact same model
 // preference list and picker as the runtime (scaffolded apps). The only
 // CLI-specific piece is detectInstalledModels(), which hits /api/tags so
 // new.js can pre-select a good default.
@@ -12,11 +12,11 @@
 const path = require('path');
 
 // Re-export the SDK's preference list and picker. Single source of truth.
-const Pocket = require(path.join(__dirname, '..', 'sdk', 'pocket.js'));
+const Olladroid = require(path.join(__dirname, '..', 'sdk', 'olladroid.js'));
 
-const MODEL_PREFERENCES = Pocket.MODEL_PREFERENCES;
-const pickModel = Pocket.pickModel;
-const SDK_VERSION = Pocket.VERSION;
+const MODEL_PREFERENCES = Olladroid.MODEL_PREFERENCES;
+const pickModel = Olladroid.pickModel;
+const SDK_VERSION = Olladroid.VERSION;
 
 // -----------------------------------------------------------------------------
 // detectInstalledModels(host) → { ok, models, error }

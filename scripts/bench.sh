@@ -50,7 +50,7 @@ BENCHMARKS_DIR="$REPO_DIR/benchmarks"
 PROMPTS_FILE="$BENCHMARKS_DIR/prompts.json"
 
 if [ ! -f "$PROMPTS_FILE" ]; then
-  err "prompts.json not found at $PROMPTS_FILE. Run from an ollama-pocket checkout."
+  err "prompts.json not found at $PROMPTS_FILE. Run from an olladroid checkout."
 fi
 
 # -- Default flags --
@@ -133,7 +133,7 @@ fi
 # -- Banner --
 echo -e "${BOLD}"
 echo "  ┌──────────────────────────────────────┐"
-echo "  │       OLLAMA-POCKET BENCH             │"
+echo "  │         OLLADROID BENCH              │"
 echo "  └──────────────────────────────────────┘"
 echo -e "${NC}"
 

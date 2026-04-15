@@ -1,7 +1,7 @@
 {
   "name": "Spell Bee (spell-bee)",
   "short_name": "Spell Bee",
-  "description": "Spell Bee — a local AI app scaffolded by ollama-pocket",
+  "description": "Spell Bee — a local AI app scaffolded by olladroid",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

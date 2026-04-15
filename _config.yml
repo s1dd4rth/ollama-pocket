@@ -1,7 +1,7 @@
-title: "ollama-pocket"
+title: "olladroid"
 description: "The AI app framework that fits in one phone — offline, private, yours. Scaffold personalised AI mini-apps that run entirely on an Android phone you already own. No cloud, no account, no data leaving the device."
 theme: minima
-baseurl: "/ollama-pocket"
+baseurl: "/olladroid"
 url: ""
 
 header_pages: []

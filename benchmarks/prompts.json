@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Fixed prompt set for ollama-pocket bench.sh. Changing this file breaks cross-device comparability — bump the version if you do.",
+  "description": "Fixed prompt set for olladroid bench.sh. Changing this file breaks cross-device comparability — bump the version if you do.",
   "prompts": [
     {
       "id": "hello",
