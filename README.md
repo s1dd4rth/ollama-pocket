@@ -88,30 +88,47 @@ one PR, one file). Opt-in category bundles for social apps, preloaded games,
 and Google first-party apps load by default; toggle with `--category`,
 `--no-categories`, or `--skip-categories google-apps`.
 
-### Two paths, same install
+### One launcher, many apps
 
-The Quick Start above installs **both** the chat UI and the app scaffolder in
-one go. What you do next depends on what you want:
+The Quick Start installs the whole PWA tree under `pwa/`. When you run
+`scripts/start-ollama.sh --chat`, Chrome opens the **launcher** at
+`http://localhost:8000/` — a TE-styled tile grid that lists the v0.1.0 chat
+UI plus every mini-app you've scaffolded under `pwa/apps/<slug>/`. Tap a
+tile; you land in the app. That's it.
 
-1. **Use your phone as a local AI server** — `bash scripts/start-ollama.sh --wifi --chat`
-   opens the built-in chat UI and makes the Ollama API reachable from any
-   device on your LAN. This is the v0.1.0 use case and it is unchanged. Skip
-   straight to [How It Works](#how-it-works).
-2. **Scaffold your own AI mini-app** — `node cli/new.js` walks you through
-   creating a self-contained, installable, offline-first AI app under
-   `apps/<slug>/`. Everything is inlined (SDK, fonts, styles) so the app is
-   one HTML file you can serve with any static HTTP server. Jump to
-   [Building Apps](#building-apps) for the full flow and the
-   [Spell Bee reference template](examples/spell-bee/).
+1. **Use your phone as a local AI server.** The chat tile gives you the
+   v0.1.0 use case — a clean chat UI over `http://localhost:11434`, plus
+   any device on your LAN when you pass `--wifi`. Unchanged since v0.1.0.
+   Skip to [How It Works](#how-it-works).
+2. **Scaffold your own AI mini-app.** Run `node cli/new.js` and the
+   scaffolder walks you through a slug, a template (Spell Bee or
+   Summariser today), a model, and a host. It writes a self-contained
+   offline-first AI app into `pwa/apps/<slug>/`, inlines the ~20 KB SDK,
+   registers the app in `pwa/apps.json`, and the launcher picks up the new
+   tile the next time you open it. Jump to [Building Apps](#building-apps)
+   for the full flow, the [Spell Bee reference](examples/spell-bee/), and
+   the [Summariser reference](examples/summariser/).
 
-Both paths run entirely on the phone. Nothing leaves the device unless you
-explicitly expose the Ollama port over WiFi.
+Everything runs on the phone. Nothing leaves the device unless you
+explicitly expose the Ollama port over WiFi with `--wifi`.
+
+Prefer the v0.1.0 direct-to-chat flow with no launcher? Pass
+`--chat-direct` instead of `--chat` and Chrome opens `chat.html` straight
+up.
 
 ## Demo
 
-The scaffolded Spell Bee template running on an LG G8 ThinQ — `qwen2.5:1.5b`,
-Ollama 0.20.5, offline, installed from the home screen as a real WebAPK. Every
-frame below was captured live from a single session on the phone:
+All captured on an **LG G8 ThinQ** (Snapdragon 855, 5.5 GB RAM, Android 12) running `qwen2.5:1.5b` through Ollama 0.20.5. Every frame is real — no mocks, no post-processing, no cloud calls. Offline mode, real WebAPK install, real structured JSON output.
+
+### The launcher
+
+<p align="center">
+  <img src="demo-assets/storyboard-00-launcher.png" alt="olladroid launcher — OLLADROID header, 3 MODELS connected badge, YOUR APPS kicker, two tiles: Chat (v0.1.0 builtin) and Summariser (productivity, SU icon)" width="320" />
+</p>
+
+`pwa/index.html` reads `pwa/apps.json` on boot and renders a tile per installed app. The chat UI is a fixed builtin; every scaffolded mini-app under `pwa/apps/<slug>/` auto-registers at scaffold time. The header status badge does a best-effort ping against `/api/tags` and reports `N MODELS` or `OFFLINE`. Tile icons come from each app's `icon.svg` (with a two-letter initials fallback if the SVG fails to load).
+
+### Spell Bee — one full round
 
 | `01` Start | `02` Fetching | `03` Your turn | `04` Judging | `05` Result |
 |---|---|---|---|---|
@@ -133,15 +150,21 @@ flowchart TB
                 OLLAMA["Ollama API<br/>localhost:11434<br/>qwen2.5:1.5b · gemma3:1b · smollm2:360m"]
             end
         end
+        LAUNCHER["pwa/index.html<br/>launcher · reads apps.json"]
         CHAT["pwa/chat.html<br/>v0.1.0 chat UI"]
-        APP["Scaffolded mini-app<br/>apps/&lt;slug&gt;/index.html<br/>SDK inlined · structured JSON"]
+        APP1["pwa/apps/spell-bee/<br/>scaffolded · SDK inlined"]
+        APP2["pwa/apps/summariser/<br/>scaffolded · SDK inlined"]
     end
+    LAUNCHER -->|tile| CHAT
+    LAUNCHER -->|tile| APP1
+    LAUNCHER -->|tile| APP2
     CHAT -->|fetch| OLLAMA
-    APP  -->|"structuredChat(schema)"| OLLAMA
+    APP1 -->|"structuredChat(schema)"| OLLAMA
+    APP2 -->|"structuredChat(schema)"| OLLAMA
     LAN(("Any device on LAN")) -. "--wifi flag" .-> OLLAMA
 ```
 
-Two consumers of the same local Ollama API: the v0.1.0 chat UI and any mini-app scaffolded by `node cli/new.js`. Both are inert HTML files served by Python's `http.server` — nothing proprietary, nothing phoning home.
+Everything under `pwa/` is static HTML served by Python's `http.server` — nothing proprietary, nothing phoning home. The launcher is the entry point: `bash scripts/start-ollama.sh --chat` opens `http://localhost:8000/` in Chrome, which loads `pwa/index.html`, which reads `pwa/apps.json` and renders a tile per installed app. Every tile navigates to another same-origin HTML file on the same server. Scaffolded apps live under `pwa/apps/<slug>/`, register themselves in `apps.json` at scaffold time, and inherit the same service worker scope so they work offline once cached.
 
 **Why Debian inside Termux?** Ollama is compiled against glibc. Android (and Alpine Linux) use different C libraries. Debian provides glibc, so Ollama runs natively. No root needed — `proot-distro` fakes root access in userspace.
 
@@ -151,14 +174,46 @@ Two consumers of the same local Ollama API: the v0.1.0 chat UI and any mini-app 
 |------|-------------|
 | `scripts/debloat.sh` | Vendor-aware ADB debloat. Auto-detects your phone's manufacturer, loads the matching manifest from `debloat/`, and removes preinstalled bloat. Reversible, with `--dry-run` and `--save-report` modes |
 | `scripts/install-ollama.sh` | Full install: Termux → proot Debian → Ollama. Run once |
-| `scripts/start-ollama.sh` | Start server with `--wifi` and `--chat` flags |
+| `scripts/start-ollama.sh` | Start server with `--wifi`, `--chat` (opens the launcher), and `--chat-direct` (skips the launcher, opens chat.html) flags |
 | `scripts/setup-autostart.sh` | Add shell aliases + optional boot-on-start |
 | `scripts/bench.sh` | Benchmark your phone's Ollama throughput against a fixed prompt set. Writes a markdown report to `benchmarks/<device-slug>.md`. See [`benchmarks/README.md`](benchmarks/README.md) |
 | `debloat/*.txt` | Plain-text package manifests consumed by `debloat.sh`. One file per OEM (`lge.txt`, ...) plus opt-in category bundles (`social.txt`, `games.txt`, `google-apps.txt`). See [`debloat/README.md`](debloat/README.md) for how to add a list for your phone |
 | `benchmarks/*.md` | One benchmark report per device, generated by `scripts/bench.sh`. See [`benchmarks/README.md`](benchmarks/README.md) for the contribution workflow |
+| `pwa/index.html` | **Launcher** — TE-styled tile grid, reads `apps.json` on boot, lists chat + every scaffolded mini-app |
+| `pwa/apps.json` | Runtime manifest of installed apps. Committed with just the chat builtin; `cli/new.js` upserts an entry at scaffold time |
 | `pwa/chat.html` | Standalone chat UI — zero overhead, auto-detects model |
+| `pwa/apps/<slug>/` | Scaffolded mini-apps live here (gitignored per-user state). The launcher reaches them via relative `./apps/<slug>/` hrefs |
 | `pwa/manifest.json` | PWA manifest for "Add to Home Screen" |
 | `pwa/sw.js` | Service worker for offline caching |
+| `sdk/olladroid.js` | UMD-lite SDK inlined into every scaffolded app: `OllamaClient`, `SessionManager`, `EventBus`, `pickModel`, `structuredChat`, `safeJSONForHTMLScript`, `StructuredChatError` |
+| `cli/new.js` | Scaffolder — `node cli/new.js [--non-interactive ...]` writes a new app under `pwa/apps/<slug>/` and registers it in `pwa/apps.json` |
+| `cli/apps-manifest.js` | Read/write API for `pwa/apps.json` — stable key order, stable sort, tolerates missing file by returning the default set |
+| `cli/update.js` | Re-inlines the current SDK into an already-scaffolded app, preserving its `APP_CONFIG` block |
+| `templates/_base/` | Shared HTML shell + CSS tokens every template inherits from (TE design language) |
+| `templates/kids-game/spell-bee/` | Reference template: local spelling game for ages 4-12, 5-state FSM, two `structuredChat` calls per round |
+| `templates/productivity/summariser/` | Reference template: paste-text-in, structured summary out (`{tldr, bullets, key_points}`) |
+| `examples/<slug>/` | Byte-deterministic reference outputs for every template, regenerated and diff-checked by the `scaffold-drift` CI job on every PR |
+
+## Will this work on my phone?
+
+Honest answer: **it works today on one device we've actually tested** — an LG
+G8 ThinQ (Snapdragon 855, 5.5 GB RAM, Android 12). Everything else in the
+table below is a projection from that baseline. If your phone runs it well,
+please [submit a benchmark](benchmarks/README.md) and we'll fold your numbers
+in so the next person looking at this table gets reality, not guesses.
+
+| Device class | RAM | Example SoCs | Recommended model | Status |
+|---|---|---|---|---|
+| **Tested baseline** | 5.5 GB | Snapdragon 855 (LG G8 ThinQ) | `qwen2.5:1.5b` @ **7.4 tok/s** warm | ✅ real numbers |
+| **Faster flagship** | 6-12 GB | Snapdragon 865, 870, 888, 8 Gen 1+; Tensor G1+ | `qwen2.5:1.5b` likely faster | 📈 projected |
+| **Tight mid-range** | 4 GB | Snapdragon 720G, 730, 765; Dimensity 700-series | `smollm2:360m` only | 📈 projected |
+| **Too tight** | ≤3 GB, or 32-bit ARM, or Android ≤8 | Anything older | — | ❌ Ollama won't run |
+
+> **Rule of thumb:** You need ~2x the model download size in **free** RAM. A
+> 6 GB phone with 2.8 GB free comfortably runs anything up to ~1.5B
+> parameters. The scaffolder's optional `--dry-run`-flavoured preflight is on
+> the v0.4 wishlist — for now, the best check is running
+> `scripts/bench.sh --runs 1` and seeing if it completes.
 
 ## Model Recommendations
 
@@ -168,19 +223,17 @@ your own phone to generate a directly comparable report and submit it to
 [`benchmarks/prompts.json`](benchmarks/prompts.json) means every contributed
 benchmark is comparable to every other.
 
-| Model | Download | Speed (measured on Snapdragon 865, LG V60) | Best For |
+| Model | Download | Speed (measured on Snapdragon 855, LG G8 ThinQ) | Best For |
 |-------|----------|---------------------------------------------|----------|
 | `qwen2.5:1.5b` | ~1 GB | **7.38 tok/s** warm, 7.28 cold ([report](benchmarks/lge-lm-g850-msmnile-qwen2-5-1-5b.md)) | General chat, reasoning, code |
 | `gemma3:1b`    | ~0.8 GB | **9.60 tok/s** warm, 9.58 cold ([report](benchmarks/lge-lm-g850-msmnile-gemma3-1b.md)) | Simple chat, summaries |
 | `smollm2:360m` | ~200 MB | **12.72 tok/s** warm, 12.99 cold ([report](benchmarks/lge-lm-g850-msmnile-smollm2-360m.md)) | Quick answers, low RAM devices |
 
-All three numbers are from the same LG V60 ThinQ (Snapdragon 865, 5497 MiB
-RAM, Android 12, Ollama 0.20.5, 2 runs each) against the fixed
-[`benchmarks/prompts.json`](benchmarks/prompts.json). Run the same bench on
-your phone and submit the result — see
+All three numbers are from the same LG G8 ThinQ (`LM-G850`, SoC `msmnile` =
+Snapdragon 855, 5497 MiB RAM, Android 12, Ollama 0.20.5, 2 runs each) against
+the fixed [`benchmarks/prompts.json`](benchmarks/prompts.json). Run the same
+bench on your phone and submit the result — see
 [`benchmarks/README.md`](benchmarks/README.md).
-
-> **Rule of thumb:** You need ~2x the model download size in available RAM. A 6GB phone with 2.8GB free can run anything up to ~1.5B parameters comfortably.
 
 ## Building Apps
 
