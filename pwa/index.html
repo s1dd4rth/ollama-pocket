@@ -107,29 +107,26 @@ button {
 }
 
 .launcher-logo {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--white);
-  color: var(--black);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  /* Wordmark SVG is designed on a white background with black ink.
+     Inverting flips it to white ink for the dark launcher. 36px tall
+     gives the llama detail enough presence without dominating the
+     header strip. */
+  width: auto;
+  height: 36px;
+  display: block;
+  filter: invert(1);
   flex: 0 0 auto;
 }
 
 .launcher-title {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  white-space: nowrap;
+  /* Hidden visually — the logo SVG contains the wordmark already.
+     Still in the DOM for screen readers and fallback copy. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .launcher-status {
@@ -437,7 +434,7 @@ button {
 <body>
   <header class="launcher-header">
     <div class="launcher-header__left">
-      <span class="launcher-logo" aria-hidden="true">OP</span>
+      <img class="launcher-logo" src="./logo.svg" alt="olladroid" />
       <span class="launcher-title">OLLADROID</span>
     </div>
     <span class="launcher-status" id="ping-status" data-state="init">Checking</span>
