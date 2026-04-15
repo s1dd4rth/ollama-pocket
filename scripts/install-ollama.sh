@@ -221,6 +221,39 @@ copy_pwa_files() {
 
 copy_pwa_files || true
 
+# -- Add bin/olladroid to PATH (idempotent) --
+# The scaffolder CLI invocation is now `olladroid new <slug>` instead of
+# `node cli/new.js --slug <slug> ...`. The wrapper lives at
+# $REPO_ROOT/bin/olladroid, so add that directory to PATH in ~/.bashrc if
+# it isn't already there. Idempotent: the marker string means re-running
+# install-ollama.sh won't stack duplicate exports.
+add_olladroid_to_path() {
+  local repo_root
+  repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+  local bin_dir="$repo_root/bin"
+  local bashrc="$HOME/.bashrc"
+  local marker="# olladroid: bin PATH"
+
+  if [ ! -d "$bin_dir" ]; then
+    info "bin/ not found at $bin_dir — skipping PATH setup"
+    return 0
+  fi
+  touch "$bashrc"
+  if grep -Fq "$marker" "$bashrc" 2>/dev/null; then
+    info "bin/olladroid already on PATH via ~/.bashrc"
+    return 0
+  fi
+  {
+    echo ""
+    echo "$marker"
+    echo "export PATH=\"$bin_dir:\$PATH\""
+  } >> "$bashrc"
+  ok "Added $bin_dir to PATH in ~/.bashrc"
+  info "Run \`source ~/.bashrc\` (or open a new Termux session) to pick it up"
+}
+
+add_olladroid_to_path || true
+
 # -- Done --
 SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 

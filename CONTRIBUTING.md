@@ -34,6 +34,7 @@ This keeps history readable and lets us automate `CHANGELOG.md` later.
 - **Shell scripts**: run `shellcheck scripts/*.sh` before pushing. CI will fail on errors.
 - **SDK**: `node --test sdk/test/*.test.js` — zero deps, runs on Node 18+.
 - **CLI**: `node --test cli/test/*.test.js` — same.
+- **CLI wrapper**: `node --test bin/test/*.test.js` — spawns `bin/olladroid` as a child process to verify dispatch routing + `--version` / `--help` / unknown-subcommand exit codes.
 - **Scaffold drift**: if you touched `sdk/olladroid.js`, `templates/`, or `cli/scaffold.js`, run the one-liner below to regenerate `examples/spell-bee/` and commit the result (see [Scaffold drift check](#scaffold-drift-check)).
 - **PWA**: open `pwa/chat.html` in a browser and verify it still loads and can talk to an Ollama instance.
 - **Docs**: if you have Jekyll installed, run `bundle exec jekyll serve` from the repo root and check `docs/`.
@@ -151,23 +152,29 @@ per-app config:
 **Testing your template locally:**
 
 ```bash
-# 1. Rescaffold into a throwaway directory under apps/
-node cli/new.js --non-interactive \
+# 1. Rescaffold into a throwaway slug under pwa/apps/
+olladroid new --non-interactive \
   --slug my-template-test \
   --template <category>/<name> \
   --age-group 6-8 \
   --model qwen2.5:1.5b \
-  --host http://localhost:11434 \
-  --output apps/my-template-test \
   --skip-detection
 
-# 2. Serve and open in Chrome
-python3 -m http.server 8000 --directory apps/my-template-test
+# 2. Start the server + launcher, which picks up the new tile from
+#    pwa/apps.json automatically:
+bash scripts/start-ollama.sh --chat
+# Open http://localhost:8000/ and tap the tile for `my-template-test`.
 ```
 
-CI runs `node --test sdk/test/*.test.js cli/test/*.test.js` and the
-scaffold-drift job on every PR. If your template changes drift the reference
-output, the drift check will fail — see the next section for the fix.
+`olladroid new` and `node cli/new.js` are equivalent — the bin wrapper is a
+thin Node dispatcher over the same modules. CI still invokes `node cli/new.js`
+directly in its drift job so contributors without the CLI on PATH get the
+same behaviour.
+
+CI runs `node --test sdk/test/*.test.js cli/test/*.test.js bin/test/*.test.js`
+and the scaffold-drift job on every PR. If your template changes drift the
+reference output, the drift check will fail — see the next section for the
+fix.
 
 ## Scaffold drift check
 

@@ -190,7 +190,8 @@ Everything under `pwa/` is static HTML served by Python's `http.server` — noth
 | `pwa/manifest.json` | PWA manifest for "Add to Home Screen" |
 | `pwa/sw.js` | Service worker for offline caching |
 | `sdk/olladroid.js` | UMD-lite SDK inlined into every scaffolded app: `OllamaClient`, `SessionManager`, `EventBus`, `pickModel`, `structuredChat`, `safeJSONForHTMLScript`, `StructuredChatError` |
-| `cli/new.js` | Scaffolder — `node cli/new.js [--non-interactive ...]` writes a new app under `pwa/apps/<slug>/` and registers it in `pwa/apps.json` |
+| `bin/olladroid` | Thin Node CLI wrapper. After install, `olladroid new`, `olladroid update <app-dir>`, `olladroid --version`, `olladroid --help` — dispatches into `cli/new.js` / `cli/update.js` |
+| `cli/new.js` | Scaffolder — invoked by `olladroid new` (or `node cli/new.js` directly). Writes a new app under `pwa/apps/<slug>/` and registers it in `pwa/apps.json` |
 | `cli/apps-manifest.js` | Read/write API for `pwa/apps.json` — stable key order, stable sort, tolerates missing file by returning the default set |
 | `cli/update.js` | Re-inlines the current SDK into an already-scaffolded app, preserving its `APP_CONFIG` block |
 | `templates/_base/` | Shared HTML shell + CSS tokens every template inherits from (TE design language) |
@@ -281,34 +282,40 @@ is ~200 lines.
 
 ```bash
 # 1. Make sure Ollama is running and `qwen2.5:1.5b` is installed
-ollama pull qwen2.5:1.5b
-bash scripts/start-ollama.sh
+proot-distro login debian -- ollama pull qwen2.5:1.5b
+bash ~/olladroid/scripts/start-ollama.sh --wifi --chat
 
-# 2. Scaffold an app. Node 18+ built-ins only, zero npm install.
-node cli/new.js
+# 2. In a second Termux tab, scaffold an app. Node 18+ built-ins only, zero
+#    npm install. `olladroid` is on your PATH after install-ollama.sh adds
+#    ~/olladroid/bin to ~/.bashrc — run `source ~/.bashrc` once if it isn't
+#    picked up yet.
+olladroid new
 # …or non-interactive, for scripts and CI:
-node cli/new.js --non-interactive \
+olladroid new --non-interactive \
   --slug spell-bee-demo \
   --template kids-game/spell-bee \
   --age-group 6-8 \
-  --model qwen2.5:1.5b \
-  --host http://localhost:11434 \
-  --output apps/spell-bee-demo
+  --model qwen2.5:1.5b
 
-# 3. Serve it locally and open in Chrome
-python3 -m http.server 8000 --directory apps/spell-bee-demo
-# Open http://localhost:8000/
+# 3. The scaffolded app lands under pwa/apps/spell-bee-demo/ and auto-
+#    registers in pwa/apps.json. Reload the launcher tab in Chrome — the new
+#    tile appears next to Chat and Spell Bee. Tap it and you're playing.
 ```
 
-**Reference output:** [`examples/spell-bee/`](examples/spell-bee/) is the
-byte-deterministic scaffold output, regenerated and diff-checked in CI on
-every PR so edits to `sdk/olladroid.js`, the base template, or the Spell Bee
-template never silently break the scaffolder.
+Prefer not to put anything on your PATH? `node cli/new.js ...` works too and
+does exactly the same thing — the `olladroid` command is a thin Node
+dispatcher over the same `cli/new.js` and `cli/update.js` modules.
+
+**Reference output:** [`examples/spell-bee/`](examples/spell-bee/) and
+[`examples/summariser/`](examples/summariser/) are the byte-deterministic
+scaffold outputs, regenerated and diff-checked in CI on every PR so edits to
+`sdk/olladroid.js`, the base template, or any reference template never
+silently break the scaffolder.
 
 **Escape hatch for the inlined SDK:** scaffolded apps have the entire
-`sdk/olladroid.js` inlined into `<script>` at scaffold time. When the SDK gets
-a bug fix, run `node cli/update.js apps/<slug>` to re-inline the new version
-into an existing app without losing the embedded `app-config`.
+`sdk/olladroid.js` inlined into `<script>` at scaffold time. When the SDK
+gets a bug fix, run `olladroid update pwa/apps/<slug>` to re-inline the new
+version into an existing app without losing the embedded `app-config`.
 
 Writing a new template is documented in
 [`CONTRIBUTING.md`](CONTRIBUTING.md#adding-a-template).
