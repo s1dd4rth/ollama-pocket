@@ -45,7 +45,7 @@
     // Version + constants
     // -------------------------------------------------------------------------
 
-    var SDK_VERSION = '0.3.0-dev';
+    var SDK_VERSION = '0.3.0';
     var MIN_OLLAMA_VERSION = '0.5.0';
 
     // Models verified to produce reliable JSON via Ollama's `format` parameter.
