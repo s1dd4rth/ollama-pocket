@@ -60,20 +60,30 @@ function escapeHTMLText(value) {
 
 function buildAppConfig(opts) {
   // The runtime config blob embedded as <script type="application/json"
-  // id="app-config">. Kept minimal on purpose — the stub PR only reads
-  // appName/host/defaultModel. Richer fields (systemPrompt, schemas,
-  // ageGroup-derived copy) land with the Spell Bee template PR.
-  return {
+  // id="app-config">. Kept minimal on purpose — templates read only the
+  // fields they need. `ageGroup` is present only for kids-game templates;
+  // productivity / creative templates omit the key entirely rather than
+  // carrying a dangling null through APP_CONFIG.
+  //
+  // Field order is significant: examples/<slug>/index.html is byte-
+  // compared by CI's scaffold-drift job, so keep the insertion order
+  // stable (and in particular keep `ageGroup` between `template` and
+  // `defaultModel` whenever it's present — that's the order the
+  // pre-v0.3 examples/spell-bee/ reference was scaffolded with).
+  const cfg = {
     appName: opts.appName,
     appSlug: opts.slug,
     category: opts.category,
     template: opts.templateName,
-    ageGroup: opts.ageGroup,
-    defaultModel: opts.model,
-    host: opts.host,
-    sdkVersion: Pocket.VERSION,
-    scaffoldedAt: opts.scaffoldedAt || new Date().toISOString(),
   };
+  if (opts.ageGroup) {
+    cfg.ageGroup = opts.ageGroup;
+  }
+  cfg.defaultModel = opts.model;
+  cfg.host = opts.host;
+  cfg.sdkVersion = Pocket.VERSION;
+  cfg.scaffoldedAt = opts.scaffoldedAt || new Date().toISOString();
+  return cfg;
 }
 
 function buildManifest(opts) {

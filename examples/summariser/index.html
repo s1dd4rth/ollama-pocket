@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <title>Summariser</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>/* =============================================================================
+ * templates/_base/style.css — ollama-pocket shared base layout
+ *
+ * Design language: Teenage Engineering, mirroring pwa/chat.html.
+ *   - Black background (#000000), white text, seven-step gray ramp.
+ *   - Single accent: #ff5c00 (TE orange).
+ *   - Space Mono for UI chrome (labels, tags, status indicators).
+ *   - DM Sans for body text (hints, feedback sentences).
+ *   - Square corners. 1–2px borders. No drop shadows, no gradients.
+ *   - Uppercase labels with heavy letter-spacing (1–3px) at 9–11px.
+ *   - Square status dots, not round. Invert-on-active buttons.
+ *
+ * Design constraints (from requirements/plans/scaffolding-system.md):
+ *   - Mobile-first. Every scaffolded app must be usable on a phone in one hand.
+ *   - Respect prefers-reduced-motion.
+ *   - 48px minimum tap target where the user actually needs to tap (WCAG 2.5.5).
+ *   - Keyboard focus must always be visible.
+ *   - Safe-area insets for notches, gesture bars, rounded corners.
+ *   - Tokens as CSS variables so per-template overrides stay scoped.
+ *   - Dark only. The TE aesthetic is dark — no prefers-color-scheme flip.
+ *
+ * Fonts: Space Mono + DM Sans. Scaffolder copies pwa/fonts/ into each app
+ * so these @font-face URLs resolve; if they 404 (test env), font-display:
+ * swap falls through to the system monospace / system-ui stacks.
+ *
+ * What lives here vs in a per-template stylesheet:
+ *   - Tokens (colour, space, radius, type scale)
+ *   - Element defaults (button, input, h1-h4, p, pre, code, a)
+ *   - The shared header (.pocket-header) + info bar + main
+ *   - Utility primitives: .pocket-banner, .pocket-stack, .pocket-info-tag
+ * Per-template CSS goes inline in body.html; don't bloat _base with
+ * game-specific layout.
+ * ========================================================================== */
+
+/* -----------------------------------------------------------------------------
+ * Fonts — woff2 shipped from pwa/fonts/, copied per-app by cli/scaffold.js
+ * -------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Space Mono';
+  src: url('./fonts/space-mono-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  src: url('./fonts/space-mono-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/dm-sans-variable.woff2') format('woff2-variations'),
+       url('./fonts/dm-sans-variable.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* -----------------------------------------------------------------------------
+ * Tokens
+ * -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+
+  /* Greyscale ramp — matches pwa/chat.html so the whole project reads as
+   * one design system. */
+  --pocket-black: #000000;
+  --pocket-white: #ffffff;
+  --pocket-gray-1: #111111;
+  --pocket-gray-2: #1a1a1a;
+  --pocket-gray-3: #222222;
+  --pocket-gray-4: #333333;
+  --pocket-gray-5: #666666;
+  --pocket-gray-6: #999999;
+  --pocket-gray-7: #cccccc;
+  --pocket-orange: #ff5c00;
+
+  /* Semantic aliases — keeps `--pocket-bg` etc. consistent with earlier
+   * scaffolding work without flipping every template ref when the palette
+   * changes. */
+  --pocket-bg: var(--pocket-black);
+  --pocket-bg-raised: var(--pocket-gray-1);
+  --pocket-bg-hover: var(--pocket-gray-2);
+  --pocket-fg: var(--pocket-white);
+  --pocket-fg-muted: var(--pocket-gray-6);
+  --pocket-fg-subtle: var(--pocket-gray-5);
+  --pocket-border-color: var(--pocket-gray-3);
+  --pocket-border-strong: var(--pocket-gray-4);
+  --pocket-accent: var(--pocket-orange);
+  --pocket-accent-hover: #ff7722;
+  --pocket-accent-fg: var(--pocket-black);
+  --pocket-success: var(--pocket-white);  /* TE palette encodes state via typography, not colour */
+  --pocket-warning: var(--pocket-orange);
+  --pocket-error: var(--pocket-gray-5);
+  --pocket-focus-ring: var(--pocket-orange);
+
+  /* Spacing scale — base 4px, tight on mobile. */
+  --pocket-space-1: 0.25rem;
+  --pocket-space-2: 0.5rem;
+  --pocket-space-3: 0.75rem;
+  --pocket-space-4: 1rem;
+  --pocket-space-5: 1.5rem;
+  --pocket-space-6: 2rem;
+  --pocket-space-7: 3rem;
+
+  /* Type scale — small by default; chrome is intentionally tiny (9–11px)
+   * with heavy tracking, body text reads at 13–14px. */
+  --pocket-font-size-2xs: 0.5625rem;  /* 9px  — chrome labels */
+  --pocket-font-size-xs: 0.6875rem;   /* 11px — tags, captions */
+  --pocket-font-size-sm: 0.8125rem;   /* 13px — body */
+  --pocket-font-size-base: 0.875rem;  /* 14px — controls */
+  --pocket-font-size-md: 1rem;        /* 16px — prompts */
+  --pocket-font-size-lg: 1.125rem;    /* 18px — hints */
+  --pocket-font-size-xl: 1.5rem;      /* 24px — emphasis */
+  --pocket-font-size-2xl: 2rem;       /* 32px — hero */
+
+  --pocket-line-height-tight: 1.15;
+  --pocket-line-height-body: 1.6;
+
+  /* Layout */
+  --pocket-max-width: 40rem;
+  --pocket-header-height: 48px;
+
+  /* Accessibility */
+  --pocket-tap-min: 48px;
+  --pocket-focus-ring-width: 2px;
+  --pocket-focus-ring-offset: 2px;
+
+  /* Motion */
+  --pocket-transition-fast: 120ms ease;
+  --pocket-transition-slow: 240ms ease;
+
+  /* Fonts — Space Mono fallbacks to Courier, DM Sans fallbacks to system-ui. */
+  --pocket-mono: 'Space Mono', 'SF Mono', 'Courier New', Menlo, Consolas, monospace;
+  --pocket-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --pocket-safe-top: env(safe-area-inset-top, 0px);
+  --pocket-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --pocket-safe-left: env(safe-area-inset-left, 0px);
+  --pocket-safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* -----------------------------------------------------------------------------
+ * Reset + base
+ * -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background: var(--pocket-bg);
+  color: var(--pocket-fg);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-base);
+  line-height: var(--pocket-line-height-body);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The `hidden` attribute must always win. The UA sheet sets
+ * `[hidden] { display: none }`, but author rules like `button { display:
+ * inline-flex }` out-cascade it and leave `<button hidden>` visible. */
+[hidden] {
+  display: none !important;
+}
+
+/* Typography defaults */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--pocket-mono);
+  font-weight: 700;
+  line-height: var(--pocket-line-height-tight);
+}
+
+h1 {
+  font-size: var(--pocket-font-size-2xl);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: var(--pocket-font-size-xl);
+  letter-spacing: -0.005em;
+}
+
+h3 {
+  font-size: var(--pocket-font-size-lg);
+}
+
+p {
+  font-family: var(--pocket-sans);
+  margin: 0 0 var(--pocket-space-3);
+  color: var(--pocket-gray-7);
+  line-height: 1.7;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--pocket-orange);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+code,
+kbd,
+samp {
+  font-family: var(--pocket-mono);
+  font-size: 0.95em;
+  padding: 1px 6px;
+  background: var(--pocket-gray-2);
+  border: 1px solid var(--pocket-gray-3);
+  color: var(--pocket-orange);
+}
+
+pre {
+  margin: 0 0 var(--pocket-space-3);
+  padding: var(--pocket-space-3) var(--pocket-space-4);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-3);
+  overflow-x: auto;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  color: var(--pocket-gray-7);
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--pocket-gray-3);
+  margin: var(--pocket-space-5) 0;
+}
+
+/* Keyboard focus — always visible, orange outline. */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--pocket-focus-ring-width) solid var(--pocket-focus-ring);
+  outline-offset: var(--pocket-focus-ring-offset);
+}
+
+/* -----------------------------------------------------------------------------
+ * Layout — header, info bar, main
+ * -------------------------------------------------------------------------- */
+
+.pocket-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pocket-space-3);
+  min-height: var(--pocket-header-height);
+  padding: calc(10px + var(--pocket-safe-top)) var(--pocket-space-4) 10px;
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  background: var(--pocket-black);
+  border-bottom: 1px solid var(--pocket-gray-3);
+  font-family: var(--pocket-mono);
+}
+
+.pocket-header__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pocket-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+/* TE-style logo square with 2-letter app mark. Templates set textContent
+ * via JS (or leave the default markup). */
+.pocket-logo {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pocket-black);
+  border: 2px solid var(--pocket-white);
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--pocket-white);
+  flex: 0 0 auto;
+}
+
+#app-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pocket-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status indicator — a square dot (not round) + uppercase label. */
+#connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-6);
+  font-weight: 400;
+}
+
+#connection-status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--pocket-gray-5);
+  border-radius: 0; /* square */
+  transition: background var(--pocket-transition-fast);
+}
+
+#connection-status:empty {
+  display: none;
+}
+
+#connection-status[data-state="ok"]::before {
+  background: var(--pocket-white);
+}
+
+#connection-status[data-state="warn"]::before {
+  background: var(--pocket-orange);
+  animation: pocket-blink 0.8s step-end infinite;
+}
+
+#connection-status[data-state="err"]::before {
+  background: var(--pocket-gray-5);
+}
+
+@keyframes pocket-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
+
+/* Info bar — renders model / ageGroup / score tags in a thin strip below
+ * the header. Optional; templates that don't want it simply omit the
+ * .pocket-info-bar block. */
+.pocket-info-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--pocket-space-3);
+  padding: 6px var(--pocket-space-4);
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  border-bottom: 1px solid var(--pocket-gray-3);
+  background: var(--pocket-gray-1);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-5);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pocket-info-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.pocket-info-bar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.pocket-info-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--pocket-gray-4);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  letter-spacing: 1px;
+  color: var(--pocket-gray-6);
+  text-transform: none;
+  white-space: nowrap;
+}
+
+main#app-root {
+  width: 100%;
+  max-width: var(--pocket-max-width);
+  margin: 0 auto;
+  padding: var(--pocket-space-5) var(--pocket-space-4);
+  padding-left: calc(var(--pocket-space-4) + var(--pocket-safe-left));
+  padding-right: calc(var(--pocket-space-4) + var(--pocket-safe-right));
+  padding-bottom: calc(var(--pocket-space-6) + var(--pocket-safe-bottom));
+  flex: 1 1 auto;
+}
+
+/* -----------------------------------------------------------------------------
+ * Controls — square buttons, invert on active
+ * -------------------------------------------------------------------------- */
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pocket-space-2);
+  min-height: var(--pocket-tap-min);
+  min-width: var(--pocket-tap-min);
+  padding: 0 var(--pocket-space-5);
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border: 2px solid var(--pocket-white);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background var(--pocket-transition-fast),
+    color var(--pocket-transition-fast),
+    border-color var(--pocket-transition-fast);
+  user-select: none;
+}
+
+button:hover:not(:disabled) {
+  background: var(--pocket-gray-7);
+  border-color: var(--pocket-gray-7);
+}
+
+button:active:not(:disabled) {
+  background: var(--pocket-black);
+  color: var(--pocket-white);
+  border-color: var(--pocket-white);
+}
+
+button:disabled {
+  background: transparent;
+  color: var(--pocket-gray-4);
+  border-color: var(--pocket-gray-4);
+  cursor: not-allowed;
+}
+
+button[data-variant="accent"] {
+  background: var(--pocket-orange);
+  color: var(--pocket-black);
+  border-color: var(--pocket-orange);
+}
+
+button[data-variant="accent"]:hover:not(:disabled) {
+  background: var(--pocket-accent-hover);
+  border-color: var(--pocket-accent-hover);
+}
+
+button[data-variant="accent"]:active:not(:disabled) {
+  background: var(--pocket-black);
+  color: var(--pocket-orange);
+  border-color: var(--pocket-orange);
+}
+
+button[data-variant="secondary"] {
+  background: transparent;
+  color: var(--pocket-white);
+  border-color: var(--pocket-gray-4);
+}
+
+button[data-variant="secondary"]:hover:not(:disabled) {
+  background: var(--pocket-gray-2);
+  border-color: var(--pocket-gray-5);
+}
+
+button[data-variant="secondary"]:active:not(:disabled) {
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border-color: var(--pocket-white);
+}
+
+button[data-variant="ghost"] {
+  background: transparent;
+  color: var(--pocket-gray-6);
+  border-color: transparent;
+}
+
+button[data-variant="ghost"]:hover:not(:disabled) {
+  color: var(--pocket-white);
+  border-color: var(--pocket-gray-4);
+}
+
+button[data-variant="ghost"]:active:not(:disabled) {
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+  border-color: var(--pocket-white);
+}
+
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+  font-family: var(--pocket-sans);
+  font-size: var(--pocket-font-size-md);
+  display: block;
+  width: 100%;
+  min-height: var(--pocket-tap-min);
+  padding: var(--pocket-space-3) 0;
+  background: transparent;
+  color: var(--pocket-white);
+  border: none;
+  border-bottom: 1px solid var(--pocket-gray-4);
+  border-radius: 0;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--pocket-transition-fast);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-bottom-color: var(--pocket-white);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--pocket-gray-5);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+label {
+  display: block;
+  margin-bottom: var(--pocket-space-2);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pocket-gray-5);
+}
+
+/* -----------------------------------------------------------------------------
+ * Utility primitives
+ * -------------------------------------------------------------------------- */
+
+.pocket-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pocket-space-4);
+}
+
+.pocket-stack--tight {
+  gap: var(--pocket-space-2);
+}
+
+.pocket-stack--loose {
+  gap: var(--pocket-space-6);
+}
+
+/* Double-border card — TE-style section container. */
+.pocket-card {
+  position: relative;
+  padding: var(--pocket-space-4) var(--pocket-space-5);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-3);
+}
+
+.pocket-card--double::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1px solid var(--pocket-gray-3);
+  pointer-events: none;
+}
+
+/* Banner: inline notifications. Border-only, uppercase mono label. */
+.pocket-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--pocket-space-3);
+  padding: var(--pocket-space-3) var(--pocket-space-4);
+  background: var(--pocket-gray-1);
+  border: 1px solid var(--pocket-gray-4);
+  font-family: var(--pocket-mono);
+  font-size: var(--pocket-font-size-xs);
+  letter-spacing: 0.5px;
+  color: var(--pocket-gray-7);
+}
+
+.pocket-banner::before {
+  content: "!";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background: var(--pocket-gray-4);
+  color: var(--pocket-white);
+  font-weight: 700;
+  border-radius: 0;
+}
+
+.pocket-banner[data-tone="warn"] {
+  border-color: var(--pocket-orange);
+  color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="warn"]::before {
+  background: var(--pocket-orange);
+  color: var(--pocket-black);
+}
+
+.pocket-banner[data-tone="err"] {
+  border-color: var(--pocket-gray-5);
+  color: var(--pocket-gray-6);
+}
+
+.pocket-banner[data-tone="err"]::before {
+  content: "X";
+  background: var(--pocket-gray-5);
+  color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="ok"] {
+  border-color: var(--pocket-white);
+}
+
+.pocket-banner[data-tone="ok"]::before {
+  content: "✓";
+  background: var(--pocket-white);
+  color: var(--pocket-black);
+}
+
+/* Visually hidden, still readable by screen readers. */
+.pocket-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -----------------------------------------------------------------------------
+ * Responsive tweaks — mobile-first, one breakpoint at tablet/desktop
+ * -------------------------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  :root {
+    --pocket-header-height: 56px;
+  }
+
+  .pocket-header {
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+
+  .pocket-info-bar {
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+
+  main#app-root {
+    padding: var(--pocket-space-6) var(--pocket-space-5);
+    padding-left: calc(var(--pocket-space-5) + var(--pocket-safe-left));
+    padding-right: calc(var(--pocket-space-5) + var(--pocket-safe-right));
+  }
+}
+
+/* -----------------------------------------------------------------------------
+ * Motion preferences
+ * -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+  <script type="application/json" id="app-config">{"appName":"Summariser","appSlug":"summariser","category":"productivity","template":"productivity/summariser","defaultModel":"qwen2.5:1.5b","host":"http://localhost:11434","sdkVersion":"0.3.0-dev","scaffoldedAt":"2026-01-01T00:00:00.000Z"}</script>
+  <script>// =============================================================================
+// sdk/pocket.js — ollama-pocket shared SDK
+//
+// UMD-lite module that runs identically in three contexts with ZERO source
+// transformation:
+//
+//   1. Inlined into a scaffolded <script> block (non-module, plain script)
+//   2. <script src="pocket.js"> loaded from disk
+//   3. require('./pocket.js') in Node.js for unit tests and the CLI
+//
+// The wrapper at the bottom either assigns to `window.Pocket` (browser) or
+// to `module.exports` (Node). The inline-script path uses the `window.Pocket`
+// branch, so every scaffolded app accesses the SDK as `Pocket.OllamaClient`,
+// `Pocket.SessionManager`, etc. — no ES-module scoping trap.
+//
+// Why not ES modules: an inline <script type="module"> has its own module
+// scope, so `export class OllamaClient` would be unreachable from the
+// template's app-script in the same document. The scaffolding-system plan
+// dug into this at length — see requirements/plans/scaffolding-system.md.
+//
+// Target: bash 3.2-equivalent portability for JS — works on Node 18+ and
+// any modern browser (Chrome 90+ per REQUIREMENTS.md).
+// =============================================================================
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
+  } else {
+    root.Pocket = api;
+  }
+})(
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof window !== 'undefined'
+      ? window
+      : typeof self !== 'undefined'
+        ? self
+        : this,
+  function () {
+    'use strict';
+
+    // -------------------------------------------------------------------------
+    // Version + constants
+    // -------------------------------------------------------------------------
+
+    var SDK_VERSION = '0.3.0-dev';
+    var MIN_OLLAMA_VERSION = '0.5.0';
+
+    // Models verified to produce reliable JSON via Ollama's `format` parameter.
+    // `gemma3:1b` and `smollm2:360m` are DELIBERATELY excluded from `structured`
+    // because they hallucinate JSON under grammar constraints at that size.
+    // See requirements/plans/scaffolding-system.md for the reasoning.
+    var MODEL_PREFERENCES = {
+      structured: [
+        /^qwen2\.5:(1\.5b|3b|7b|14b|32b|72b)(-.*)?$/,
+        /^qwen2\.5-coder:/,
+        /^llama3\.[123]:(1b|3b|8b)(-.*)?$/,
+        /^phi3(\.5)?:/,
+        /^gemma2:2b(-.*)?$/,
+      ],
+      // Free-form chat accepts anything. No filter.
+      chat: [/./],
+    };
+
+    // -------------------------------------------------------------------------
+    // Errors
+    // -------------------------------------------------------------------------
+
+    function StructuredChatError(message, details) {
+      var err = new Error(message);
+      err.name = 'StructuredChatError';
+      err.details = details || {};
+      return err;
+    }
+    StructuredChatError.prototype = Object.create(Error.prototype);
+
+    // -------------------------------------------------------------------------
+    // Utility: pickModel — first matching regex in the preference list
+    // -------------------------------------------------------------------------
+
+    function pickModel(availableModels, capability) {
+      if (!availableModels || availableModels.length === 0) return null;
+      var key = capability || 'chat';
+      var patterns = MODEL_PREFERENCES[key] || MODEL_PREFERENCES.chat;
+      for (var i = 0; i < patterns.length; i++) {
+        for (var j = 0; j < availableModels.length; j++) {
+          if (patterns[i].test(availableModels[j])) {
+            return availableModels[j];
+          }
+        }
+      }
+      return null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: safeJSONForHTMLScript
+    //
+    // JSON.stringify does NOT escape `<`, `>`, or `&`, so a user-controlled
+    // value containing `<\/script>` can break out of a
+    // <script type="application/json"> block. This wrapper escapes those plus
+    // U+2028/U+2029 (which are literal newlines in JavaScript but not in JSON,
+    // and can break inline scripts in some browsers).
+    // -------------------------------------------------------------------------
+
+    function safeJSONForHTMLScript(value) {
+      return JSON.stringify(value)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility: compareSemver — returns -1, 0, +1 for a < b, a === b, a > b
+    // Handles the "0.5.0" / "0.20.5" / "1.2.3-rc1" shape Ollama uses.
+    // -------------------------------------------------------------------------
+
+    function compareSemver(a, b) {
+      var aParts = String(a).replace(/[^0-9.].*$/, '').split('.').map(Number);
+      var bParts = String(b).replace(/[^0-9.].*$/, '').split('.').map(Number);
+      var n = Math.max(aParts.length, bParts.length);
+      for (var i = 0; i < n; i++) {
+        var av = aParts[i] || 0;
+        var bv = bParts[i] || 0;
+        if (av < bv) return -1;
+        if (av > bv) return 1;
+      }
+      return 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // OllamaClient — HTTP client for the Ollama API
+    // -------------------------------------------------------------------------
+
+    function OllamaClient(options) {
+      options = options || {};
+      this.host = options.host || this._detectHost();
+      this.defaultModel = options.model || null;
+      // Injectable for tests. Falls back to the runtime's global fetch,
+      // but wraps it in a closure so the call site isn't `this._fetch(...)`
+      // — WebIDL-backed browser implementations throw
+      // "Illegal invocation" when fetch is invoked with a receiver other
+      // than the global (Chrome, Safari). Node's global fetch doesn't care,
+      // but the browser path is the one that actually ships to users.
+      if (options.fetch) {
+        var userFetch = options.fetch;
+        this._fetch = function (url, init) { return userFetch(url, init); };
+      } else if (typeof fetch !== 'undefined') {
+        this._fetch = function (url, init) { return fetch(url, init); };
+      } else {
+        this._fetch = null;
+      }
+      // Memoised version check (populated on first structuredChat)
+      this._versionCache = null;
+      this._versionWarned = false;
+    }
+
+    OllamaClient.prototype._detectHost = function () {
+      if (typeof window !== 'undefined' && window.OLLAMA_HOST) {
+        return window.OLLAMA_HOST;
+      }
+      if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+        return window.location.protocol + '//' + window.location.hostname + ':11434';
+      }
+      return 'http://localhost:11434';
+    };
+
+    OllamaClient.prototype._request = function (path, init) {
+      if (!this._fetch) {
+        return Promise.reject(new Error('no fetch available — pass { fetch: ... } to OllamaClient'));
+      }
+      return this._fetch(this.host + path, init || {});
+    };
+
+    OllamaClient.prototype._post = function (path, body) {
+      return this._request(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    };
+
+    OllamaClient.prototype.ping = function () {
+      var self = this;
+      return this._request('/api/tags').then(
+        function (res) {
+          if (!res.ok) return { ok: false, models: [], error: 'HTTP ' + res.status };
+          return res.json().then(function (data) {
+            var models = (data.models || []).map(function (m) {
+              return m.name;
+            });
+            return { ok: true, models: models };
+          });
+        },
+        function (err) {
+          return { ok: false, models: [], error: err.message || String(err) };
+        }
+      );
+    };
+
+    OllamaClient.prototype.version = function () {
+      if (this._versionCache) return Promise.resolve(this._versionCache);
+      var self = this;
+      return this._request('/api/version').then(function (res) {
+        if (!res.ok) {
+          self._versionCache = { version: 'unknown', compatible: false, minimum: MIN_OLLAMA_VERSION };
+          return self._versionCache;
+        }
+        return res.json().then(function (data) {
+          var v = data.version || 'unknown';
+          var compatible = v !== 'unknown' && compareSemver(v, MIN_OLLAMA_VERSION) >= 0;
+          self._versionCache = { version: v, compatible: compatible, minimum: MIN_OLLAMA_VERSION };
+          return self._versionCache;
+        });
+      });
+    };
+
+    OllamaClient.prototype.models = function () {
+      return this.ping().then(function (result) {
+        if (!result.ok) throw new Error(result.error || 'ping failed');
+        return result.models;
+      });
+    };
+
+    OllamaClient.prototype.chat = function (messages, options) {
+      options = options || {};
+      var body = {
+        model: options.model || this.defaultModel,
+        messages: messages,
+        stream: false,
+      };
+      if (options.options) body.options = options.options;
+      return this._post('/api/chat', body).then(function (res) {
+        if (!res.ok) throw new Error('chat failed: HTTP ' + res.status);
+        return res.json().then(function (data) {
+          return (data.message && data.message.content) || '';
+        });
+      });
+    };
+
+    // streamChat — parses Ollama's NDJSON chat stream, calls onChunk(text, full)
+    // for each incremental response. onChunk can return `false` to abort early.
+    // Returns the full concatenated content when the stream ends (or is aborted).
+    OllamaClient.prototype.streamChat = function (messages, options, onChunk) {
+      options = options || {};
+      var body = {
+        model: options.model || this.defaultModel,
+        messages: messages,
+        stream: true,
+      };
+      if (options.options) body.options = options.options;
+
+      return this._post('/api/chat', body).then(function (res) {
+        if (!res.ok) throw new Error('streamChat failed: HTTP ' + res.status);
+        if (!res.body || !res.body.getReader) {
+          // Fallback for environments without streaming (tests, old Node).
+          return res.text().then(function (text) {
+            return parseNDJSONBuffer(text, onChunk);
+          });
+        }
+        var reader = res.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        var full = '';
+        var aborted = false;
+
+        function pump() {
+          return reader.read().then(function (chunk) {
+            if (aborted) return full;
+            if (chunk.done) {
+              // Drain the last line.
+              if (buffer.trim()) {
+                var parsed = safeParseLine(buffer);
+                if (parsed && parsed.message && parsed.message.content) {
+                  full += parsed.message.content;
+                  if (onChunk) onChunk(parsed.message.content, parsed);
+                }
+              }
+              return full;
+            }
+            buffer += decoder.decode(chunk.value, { stream: true });
+            var lines = buffer.split('\n');
+            buffer = lines.pop(); // keep partial last line
+            for (var i = 0; i < lines.length; i++) {
+              var line = lines[i].trim();
+              if (!line) continue;
+              var j = safeParseLine(line);
+              if (!j) continue;
+              if (j.message && typeof j.message.content === 'string') {
+                full += j.message.content;
+                if (onChunk) {
+                  var result = onChunk(j.message.content, j);
+                  if (result === false) {
+                    aborted = true;
+                    reader.cancel();
+                    return full;
+                  }
+                }
+              }
+              if (j.done) {
+                return full;
+              }
+            }
+            return pump();
+          });
+        }
+        return pump();
+      });
+    };
+
+    // Helper shared between stream path and fallback path.
+    function safeParseLine(line) {
+      try {
+        return JSON.parse(line);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Fallback NDJSON parser for environments without ReadableStream.
+    function parseNDJSONBuffer(text, onChunk) {
+      var full = '';
+      var lines = text.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        var j = safeParseLine(line);
+        if (!j) continue;
+        if (j.message && typeof j.message.content === 'string') {
+          full += j.message.content;
+          if (onChunk) {
+            var result = onChunk(j.message.content, j);
+            if (result === false) return full;
+          }
+        }
+      }
+      return full;
+    }
+
+    // structuredChat — Ollama's `format` parameter forces JSON output matching
+    // the provided schema. First attempt goes through cleanly. If parsing fails
+    // (malformed JSON, missing required key), retry once with an explicit
+    // system message reminding the model to return valid JSON. Second failure
+    // throws StructuredChatError with the raw response attached.
+    OllamaClient.prototype.structuredChat = function (messages, schema, options) {
+      options = options || {};
+      var self = this;
+
+      // Check version lazily — warn once, don't block.
+      var versionCheck = this.version().then(function (info) {
+        if (!info.compatible && !self._versionWarned) {
+          self._versionWarned = true;
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn(
+              '[Pocket] Ollama version ' + info.version +
+              ' is older than the ' + MIN_OLLAMA_VERSION +
+              ' minimum recommended for structured output. ' +
+              'structuredChat() may return prose instead of JSON.'
+            );
+          }
+        }
+      });
+
+      function tryOnce(extraMessages) {
+        var body = {
+          model: options.model || self.defaultModel,
+          messages: (extraMessages || []).concat(messages),
+          stream: false,
+          format: schema,
+        };
+        if (options.options) body.options = options.options;
+        return self._post('/api/chat', body).then(function (res) {
+          if (!res.ok) {
+            throw StructuredChatError('HTTP ' + res.status, { status: res.status });
+          }
+          return res.json().then(function (data) {
+            var raw = (data.message && data.message.content) || '';
+            if (!raw) {
+              throw StructuredChatError('empty response from model', { raw: '', data: data });
+            }
+            var parsed;
+            try {
+              parsed = JSON.parse(raw);
+            } catch (e) {
+              throw StructuredChatError('JSON.parse failed: ' + e.message, { raw: raw });
+            }
+            // Shallow check: all schema.required keys must be present on the
+            // parsed object. We do NOT check types — Ollama's grammar-constrained
+            // output handles that, and deep validation would pull in ajv or
+            // similar. Keep the SDK zero-dep.
+            if (schema && schema.required && Array.isArray(schema.required)) {
+              for (var k = 0; k < schema.required.length; k++) {
+                var key = schema.required[k];
+                if (!Object.prototype.hasOwnProperty.call(parsed, key)) {
+                  throw StructuredChatError(
+                    'missing required key "' + key + '"',
+                    { raw: raw, parsed: parsed }
+                  );
+                }
+              }
+            }
+            return parsed;
+          });
+        });
+      }
+
+      return versionCheck.then(function () {
+        return tryOnce().catch(function (err) {
+          if (!err || err.name !== 'StructuredChatError') throw err;
+          // One retry with explicit nudge.
+          var nudge = [
+            {
+              role: 'system',
+              content:
+                'Your previous response could not be parsed as valid JSON. ' +
+                'Return ONLY valid JSON matching the requested schema. ' +
+                'No prose. No markdown code fences. No commentary.',
+            },
+          ];
+          return tryOnce(nudge);
+        });
+      });
+    };
+
+    // -------------------------------------------------------------------------
+    // SessionManager — localStorage-backed history + arbitrary state
+    // -------------------------------------------------------------------------
+
+    function SessionManager(options) {
+      options = options || {};
+      this.key = options.key || 'default';
+      this.maxTurns = options.maxTurns || 50;
+      // Injectable for tests. Falls back to window.localStorage.
+      this._storage = options.storage || (
+        typeof localStorage !== 'undefined' ? localStorage : null
+      );
+      // In-memory fallback so SessionManager is still usable (just not persisted)
+      // when localStorage is unavailable (incognito, Node, tests without stub).
+      this._memory = {};
+    }
+
+    SessionManager.prototype._keyFor = function (suffix) {
+      return 'pocket:' + this.key + ':' + suffix;
+    };
+
+    SessionManager.prototype._read = function (suffix) {
+      var k = this._keyFor(suffix);
+      // Storage is authoritative when it works. If it throws or returns null
+      // (nothing ever saved there), fall through to the in-memory backup.
+      if (this._storage) {
+        try {
+          var raw = this._storage.getItem(k);
+          if (raw !== null) return JSON.parse(raw);
+        } catch (e) {
+          // Read threw — fall through to memory
+        }
+      }
+      return this._memory[k] !== undefined ? this._memory[k] : null;
+    };
+
+    SessionManager.prototype._write = function (suffix, value) {
+      var k = this._keyFor(suffix);
+      // Always write to memory as a backup. This makes the SDK robust to
+      // storage that partially works — e.g. Safari private mode where
+      // setItem throws QuotaExceededError, or a pathological storage where
+      // getItem throws but setItem returns normally. The test suite exercises
+      // both.
+      this._memory[k] = value;
+      if (this._storage) {
+        try {
+          this._storage.setItem(k, JSON.stringify(value));
+        } catch (e) {
+          // Already mirrored to memory; swallow.
+        }
+      }
+    };
+
+    SessionManager.prototype._delete = function (suffix) {
+      var k = this._keyFor(suffix);
+      if (this._storage) {
+        try {
+          this._storage.removeItem(k);
+        } catch (e) {
+          // ignore
+        }
+      }
+      delete this._memory[k];
+    };
+
+    SessionManager.prototype.add = function (role, content) {
+      var history = this._read('history') || [];
+      history.push({ role: role, content: content });
+      // Trim to maxTurns, dropping oldest first.
+      if (history.length > this.maxTurns) {
+        history = history.slice(history.length - this.maxTurns);
+      }
+      this._write('history', history);
+    };
+
+    SessionManager.prototype.get = function () {
+      return this._read('history') || [];
+    };
+
+    SessionManager.prototype.clear = function () {
+      this._delete('history');
+      this._delete('state');
+    };
+
+    SessionManager.prototype.save = function (extraData) {
+      this._write('state', extraData);
+    };
+
+    SessionManager.prototype.load = function () {
+      return this._read('state');
+    };
+
+    // -------------------------------------------------------------------------
+    // EventBus — tiny pub/sub, no deps
+    // -------------------------------------------------------------------------
+
+    function EventBus() {
+      this._handlers = {};
+    }
+
+    EventBus.prototype.on = function (event, handler) {
+      if (!this._handlers[event]) this._handlers[event] = [];
+      this._handlers[event].push(handler);
+    };
+
+    EventBus.prototype.off = function (event, handler) {
+      if (!this._handlers[event]) return;
+      this._handlers[event] = this._handlers[event].filter(function (h) {
+        return h !== handler;
+      });
+    };
+
+    EventBus.prototype.once = function (event, handler) {
+      var self = this;
+      function wrapped(payload) {
+        self.off(event, wrapped);
+        handler(payload);
+      }
+      this.on(event, wrapped);
+    };
+
+    EventBus.prototype.emit = function (event, payload) {
+      if (!this._handlers[event]) return;
+      // Snapshot the handler list so once() unsubscribes don't affect the
+      // current emit iteration.
+      var handlers = this._handlers[event].slice();
+      for (var i = 0; i < handlers.length; i++) {
+        handlers[i](payload);
+      }
+    };
+
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
+
+    return {
+      VERSION: SDK_VERSION,
+      MIN_OLLAMA_VERSION: MIN_OLLAMA_VERSION,
+      MODEL_PREFERENCES: MODEL_PREFERENCES,
+      OllamaClient: OllamaClient,
+      SessionManager: SessionManager,
+      EventBus: EventBus,
+      StructuredChatError: StructuredChatError,
+      pickModel: pickModel,
+      safeJSONForHTMLScript: safeJSONForHTMLScript,
+      compareSemver: compareSemver,
+    };
+  }
+);
+</script>
+</head>
+<body>
+  <header class="pocket-header" role="banner">
+    <div class="pocket-header__left">
+      <div class="pocket-logo" id="app-logo" aria-hidden="true">::</div>
+      <span id="app-title">Summariser</span>
+    </div>
+    <div class="pocket-header__right">
+      <span id="connection-status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <div class="pocket-info-bar" id="info-bar" role="region" aria-label="Session info">
+    <span class="pocket-info-bar__group">
+      <span>Model</span>
+      <span class="pocket-info-tag" id="model-badge">—</span>
+    </span>
+    <span class="pocket-info-bar__group">
+      <span>Host</span>
+      <span class="pocket-info-tag" id="host-badge">local</span>
+    </span>
+  </div>
+
+  <main id="app-root"><!-- templates/productivity/summariser/body.html
+     Summariser v1 — Teenage Engineering aesthetic.
+     3-state FSM: idle → thinking → showing_summary → idle
+                                  ↘ error → idle
+     Per-template CSS lives inline in this <style> block because the
+     base scaffolder doesn't add a per-template stylesheet marker. -->
+
+<style>
+  .summariser {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-5);
+  }
+
+  /* Section label — TE-style "01 / PASTE TEXT" uppercase tag. */
+  .sm-label {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-2);
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sm-label__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: var(--pocket-white);
+    color: var(--pocket-black);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .sm-label__line {
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--pocket-gray-3);
+  }
+
+  /* Top strip: title + kicker */
+  .sm-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--pocket-space-4);
+    padding-bottom: var(--pocket-space-4);
+    border-bottom: 1px solid var(--pocket-gray-3);
+  }
+
+  .sm-top__title {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xl);
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--pocket-white);
+    margin: 0;
+    line-height: 1;
+  }
+
+  .sm-top__subtitle {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+    margin-top: 4px;
+  }
+
+  .sm-top__badge {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-black);
+    background: var(--pocket-white);
+    padding: 4px 8px;
+    flex: 0 0 auto;
+  }
+
+  /* Panels — one per FSM state. hidden attr gates visibility. */
+  .sm-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-4);
+  }
+
+  /* Textarea — reuses base `.pocket-card` framing. */
+  .sm-textarea-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+  }
+
+  .sm-textarea {
+    width: 100%;
+    min-height: 220px;
+    padding: var(--pocket-space-3) var(--pocket-space-3);
+    background: var(--pocket-black);
+    color: var(--pocket-white);
+    border: 1px solid var(--pocket-gray-3);
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .sm-textarea:focus {
+    outline: none;
+    border-color: var(--pocket-white);
+  }
+
+  .sm-textarea:focus-visible {
+    outline: 2px solid var(--pocket-orange);
+    outline-offset: 2px;
+  }
+
+  .sm-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sm-counter[data-tone="warn"] {
+    color: var(--pocket-orange);
+  }
+
+  .sm-counter[data-tone="err"] {
+    color: var(--pocket-white);
+  }
+
+  .sm-counter__value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Thinking indicator — TE-style orange pulse square + label. */
+  .sm-thinking {
+    display: flex;
+    align-items: center;
+    gap: var(--pocket-space-3);
+    padding: var(--pocket-space-5) 0;
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-sm);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-white);
+  }
+
+  .sm-thinking__dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background: var(--pocket-orange);
+    animation: sm-pulse 900ms steps(1, end) infinite;
+  }
+
+  @keyframes sm-pulse {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0.25; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sm-thinking__dot { animation: none; opacity: 1; }
+  }
+
+  /* Summary result cards */
+  .sm-result {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-4);
+  }
+
+  .sm-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+    padding: var(--pocket-space-4);
+    border: 1px solid var(--pocket-gray-3);
+    background: var(--pocket-black);
+  }
+
+  .sm-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pocket-space-2);
+  }
+
+  .sm-card__title {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+    margin: 0;
+  }
+
+  .sm-card__meta {
+    font-family: var(--pocket-mono);
+    font-size: var(--pocket-font-size-2xs);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--pocket-gray-5);
+  }
+
+  .sm-card__tldr {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-lg);
+    line-height: 1.4;
+    color: var(--pocket-white);
+    margin: 0;
+  }
+
+  .sm-card__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+  }
+
+  .sm-card__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--pocket-space-3);
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.4;
+    color: var(--pocket-white);
+  }
+
+  .sm-card__list li::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    margin-top: 10px;
+    background: var(--pocket-orange);
+  }
+
+  .sm-result__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-2);
+  }
+
+  /* Error panel */
+  .sm-error {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pocket-space-3);
+  }
+
+  .sm-error__message {
+    font-family: var(--pocket-sans);
+    font-size: var(--pocket-font-size-md);
+    line-height: 1.5;
+    color: var(--pocket-white);
+    margin: 0;
+  }
+
+  /* Spell-bee-style word break for long model output */
+  .sm-card__tldr,
+  .sm-card__list li {
+    overflow-wrap: anywhere;
+  }
+</style>
+
+<section class="summariser" aria-label="Summariser">
+  <div class="sm-top">
+    <div>
+      <h1 class="sm-top__title" id="sm-title">SUMMARISER</h1>
+      <div class="sm-top__subtitle" id="sm-subtitle">TLDR / BULLETS / KEY POINTS</div>
+    </div>
+    <span class="sm-top__badge" id="sm-state-badge" data-state="idle">READY</span>
+  </div>
+
+  <!-- =========================================================================
+       Panel: idle — paste + summarise button
+       ========================================================================= -->
+  <div class="sm-panel" data-state="idle">
+    <div class="sm-label">
+      <span class="sm-label__num">01</span>
+      <span>PASTE TEXT</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="sm-textarea-wrap">
+      <label for="paste-input" class="pocket-sr-only">Text to summarise</label>
+      <textarea
+        id="paste-input"
+        class="sm-textarea"
+        placeholder="Paste an article, a meeting transcript, an email thread — anything up to 2000 characters."
+        maxlength="2000"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+      ></textarea>
+      <div class="sm-counter" id="sm-counter" data-tone="ok">
+        <span>CHARS</span>
+        <span><span class="sm-counter__value" id="sm-counter-value">0</span> / 2000</span>
+      </div>
+    </div>
+
+    <button
+      id="btn-summarise"
+      type="button"
+      data-variant="accent"
+      disabled
+    >Summarise</button>
+  </div>
+
+  <!-- =========================================================================
+       Panel: thinking — orange pulse while structuredChat runs
+       ========================================================================= -->
+  <div class="sm-panel" data-state="thinking" hidden>
+    <div class="sm-label">
+      <span class="sm-label__num">02</span>
+      <span>SUMMARISING</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="sm-thinking">
+      <span class="sm-thinking__dot" aria-hidden="true"></span>
+      <span>Reading your text</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Panel: showing_summary — TL;DR + bullets + key points
+       ========================================================================= -->
+  <div class="sm-panel" data-state="showing_summary" hidden>
+    <div class="sm-label">
+      <span class="sm-label__num">03</span>
+      <span>SUMMARY</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="sm-result">
+      <div class="sm-card" id="sm-card-tldr">
+        <div class="sm-card__header">
+          <h2 class="sm-card__title">TLDR</h2>
+          <span class="sm-card__meta" id="sm-meta-chars">—</span>
+        </div>
+        <p class="sm-card__tldr" id="sm-tldr-text"></p>
+      </div>
+
+      <div class="sm-card" id="sm-card-bullets">
+        <div class="sm-card__header">
+          <h2 class="sm-card__title">BULLETS</h2>
+          <span class="sm-card__meta" id="sm-meta-bullets">—</span>
+        </div>
+        <ul class="sm-card__list" id="sm-bullets-list"></ul>
+      </div>
+
+      <div class="sm-card" id="sm-card-keypoints">
+        <div class="sm-card__header">
+          <h2 class="sm-card__title">KEY POINTS</h2>
+          <span class="sm-card__meta" id="sm-meta-keypoints">—</span>
+        </div>
+        <ul class="sm-card__list" id="sm-keypoints-list"></ul>
+      </div>
+    </div>
+
+    <div class="sm-result__actions">
+      <button id="btn-new-summary" type="button" data-variant="accent">New summary</button>
+      <button id="btn-copy" type="button" data-variant="secondary">Copy TLDR</button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Panel: error — structured call failed or returned junk
+       ========================================================================= -->
+  <div class="sm-panel" data-state="error" hidden>
+    <div class="sm-label">
+      <span class="sm-label__num">!!</span>
+      <span>ERROR</span>
+      <span class="sm-label__line" aria-hidden="true"></span>
+    </div>
+
+    <div class="pocket-banner" data-tone="err">
+      <p class="sm-error__message" id="sm-error-message">Something went wrong.</p>
+    </div>
+
+    <button id="btn-retry" type="button" data-variant="accent">Try again</button>
+  </div>
+</section>
+</main>
+
+  <script>// templates/productivity/summariser/app.js
+// Summariser v1 — the controller for a paste-text → structured summary app.
+//
+// FSM: idle → thinking → (showing_summary | error) → idle
+//
+// One structuredChat call per summarise:
+//   schema: { tldr: string, bullets: string[], key_points: string[] }
+//
+// Unlike Spell Bee there is no session, no score, no round persistence.
+// The only persisted bit of state is the last successful summary under
+// SessionManager key "summariser-<slug>", so a reload restores the
+// showing_summary panel instead of dropping back to an empty textarea.
+// That trades a tiny amount of privacy (last summary sits in
+// localStorage) for the common-case ergonomics of closing and reopening
+// the PWA without losing what you just produced.
+//
+// Input is capped at 2000 chars (maxlength on the textarea + a JS
+// guard) to stay inside qwen2.5:1.5b's effective mobile context budget.
+
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Config + SDK lookup
+  // ---------------------------------------------------------------------------
+
+  var config = {};
+  try {
+    var configEl = document.getElementById('app-config');
+    if (configEl) config = JSON.parse(configEl.textContent || '{}');
+  } catch (err) {
+    console.error('[summariser] app-config JSON parse failed:', err);
+  }
+
+  var titleEl = document.getElementById('app-title');
+  if (titleEl && config.appName) titleEl.textContent = formatTitleMono(config.appName);
+  var logoEl = document.getElementById('app-logo');
+  if (logoEl && config.appName) logoEl.textContent = buildLogoGlyph(config.appName);
+  var modelBadgeEl = document.getElementById('model-badge');
+  if (modelBadgeEl && config.defaultModel) modelBadgeEl.textContent = config.defaultModel;
+  var hostBadgeEl = document.getElementById('host-badge');
+  if (hostBadgeEl) hostBadgeEl.textContent = formatHostLabel(config.host);
+  var titleRootEl = document.getElementById('sm-title');
+  if (titleRootEl && config.appName) titleRootEl.textContent = formatTitleMono(config.appName);
+  var connectionStatusEl = document.getElementById('connection-status');
+
+  function buildLogoGlyph(name) {
+    var cleaned = (name || '').replace(/[^a-zA-Z0-9 ]/g, ' ').trim();
+    var parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return '::';
+  }
+
+  function formatHostLabel(host) {
+    if (!host) return 'local';
+    return host.replace(/^https?:\/\//, '').replace(/:11434$/, '') || 'local';
+  }
+
+  function formatTitleMono(name) {
+    return (name || '').toUpperCase().replace(/\s+/g, '_');
+  }
+
+  if (!window.Pocket || !window.Pocket.OllamaClient) {
+    console.error('[summariser] window.Pocket is not loaded — is sdk/pocket.js inlined correctly?');
+    var root = document.querySelector('.summariser');
+    if (root) {
+      root.innerHTML =
+        '<div class="pocket-banner" data-tone="err">' +
+        'SDK failed to load. Refresh the page.' +
+        '</div>';
+    }
+    return;
+  }
+
+  var Pocket = window.Pocket;
+
+  // ---------------------------------------------------------------------------
+  // SDK instances
+  // ---------------------------------------------------------------------------
+
+  var client = new Pocket.OllamaClient({
+    host: config.host,
+    model: config.defaultModel,
+  });
+
+  var session = new Pocket.SessionManager({
+    key: 'summariser-' + (config.appSlug || 'default'),
+    maxTurns: 1,
+  });
+
+  // ---------------------------------------------------------------------------
+  // JSON schema — Ollama grammar-constrained output
+  // ---------------------------------------------------------------------------
+
+  var SUMMARY_SCHEMA = {
+    type: 'object',
+    properties: {
+      tldr: { type: 'string' },
+      bullets: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+      key_points: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+    },
+    required: ['tldr', 'bullets', 'key_points'],
+  };
+
+  var SYSTEM_PROMPT = [
+    'You are a precise summarisation assistant.',
+    'Always respond with valid JSON only. No prose, no markdown, no code fences.',
+    'Never add information that was not present in the source text.',
+    'TLDR: one sentence, at most 200 characters, capturing the single most important takeaway.',
+    'Bullets: 3 to 5 short sentences, each at most 120 characters, covering the main facts.',
+    'Key points: 3 to 5 short phrases naming the distinct topics, names, numbers, or decisions worth remembering.',
+    'Prefer the language of the source text.',
+  ].join('\n');
+
+  // ---------------------------------------------------------------------------
+  // State + element refs
+  // ---------------------------------------------------------------------------
+
+  var MAX_CHARS = 2000;
+  var WARN_CHARS = 1800;
+
+  var state = 'idle';
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  var panels = document.querySelectorAll('.sm-panel');
+  var stateBadgeEl = $('sm-state-badge');
+  var pasteInputEl = $('paste-input');
+  var counterEl = $('sm-counter');
+  var counterValueEl = $('sm-counter-value');
+  var btnSummariseEl = $('btn-summarise');
+  var btnNewSummaryEl = $('btn-new-summary');
+  var btnCopyEl = $('btn-copy');
+  var btnRetryEl = $('btn-retry');
+  var tldrTextEl = $('sm-tldr-text');
+  var bulletsListEl = $('sm-bullets-list');
+  var keypointsListEl = $('sm-keypoints-list');
+  var metaCharsEl = $('sm-meta-chars');
+  var metaBulletsEl = $('sm-meta-bullets');
+  var metaKeypointsEl = $('sm-meta-keypoints');
+  var errorMessageEl = $('sm-error-message');
+
+  // Cache the last text so Retry re-runs against the same input without
+  // forcing the user to re-paste.
+  var lastInput = '';
+
+  // ---------------------------------------------------------------------------
+  // FSM transitions
+  // ---------------------------------------------------------------------------
+
+  function setState(next) {
+    state = next;
+    for (var i = 0; i < panels.length; i++) {
+      panels[i].hidden = panels[i].dataset.state !== next;
+    }
+    if (stateBadgeEl) {
+      stateBadgeEl.dataset.state = next;
+      stateBadgeEl.textContent = badgeLabel(next);
+    }
+    // Focus the most useful control in each state.
+    Promise.resolve().then(function () {
+      if (next === 'idle' && pasteInputEl) {
+        pasteInputEl.focus();
+      } else if (next === 'showing_summary' && btnNewSummaryEl) {
+        btnNewSummaryEl.focus();
+      } else if (next === 'error' && btnRetryEl) {
+        btnRetryEl.focus();
+      }
+    });
+  }
+
+  function badgeLabel(s) {
+    if (s === 'idle') return 'READY';
+    if (s === 'thinking') return 'THINKING';
+    if (s === 'showing_summary') return 'DONE';
+    if (s === 'error') return 'ERROR';
+    return s.toUpperCase();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Counter + button enabled state
+  // ---------------------------------------------------------------------------
+
+  function updateCounter() {
+    if (!pasteInputEl) return;
+    var raw = pasteInputEl.value || '';
+    // Clamp to MAX_CHARS in case a paste blew past the maxlength attr
+    // (some mobile IMEs allow it; better to cut than send garbage).
+    if (raw.length > MAX_CHARS) {
+      raw = raw.slice(0, MAX_CHARS);
+      pasteInputEl.value = raw;
+    }
+    var n = raw.length;
+    if (counterValueEl) counterValueEl.textContent = String(n);
+    if (counterEl) {
+      if (n >= MAX_CHARS) counterEl.dataset.tone = 'err';
+      else if (n >= WARN_CHARS) counterEl.dataset.tone = 'warn';
+      else counterEl.dataset.tone = 'ok';
+    }
+    if (btnSummariseEl) {
+      btnSummariseEl.disabled = n === 0;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Summarise flow — one structuredChat call, then render
+  // ---------------------------------------------------------------------------
+
+  function runSummarise() {
+    if (!pasteInputEl) return;
+    var text = (pasteInputEl.value || '').trim();
+    if (!text) return;
+    lastInput = text;
+    setState('thinking');
+
+    var messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: 'Summarise the following text.\n\n---\n' + text + '\n---\nReturn valid JSON matching the schema.' },
+    ];
+
+    client.structuredChat(messages, SUMMARY_SCHEMA).then(
+      function (response) {
+        if (!response || typeof response.tldr !== 'string' || !response.tldr.trim()) {
+          throw new Error('empty tldr in response');
+        }
+        var summary = normaliseSummary(response);
+        renderSummary(summary, text);
+        persist(summary, text);
+        setState('showing_summary');
+      },
+      function (err) {
+        console.warn('[summariser] structuredChat failed:', err);
+        showError(err);
+      }
+    );
+  }
+
+  function normaliseSummary(raw) {
+    return {
+      tldr: String(raw.tldr || '').trim().slice(0, 400),
+      bullets: Array.isArray(raw.bullets)
+        ? raw.bullets.map(function (b) { return String(b || '').trim(); }).filter(Boolean).slice(0, 8)
+        : [],
+      key_points: Array.isArray(raw.key_points)
+        ? raw.key_points.map(function (k) { return String(k || '').trim(); }).filter(Boolean).slice(0, 8)
+        : [],
+    };
+  }
+
+  function renderSummary(summary, sourceText) {
+    if (tldrTextEl) tldrTextEl.textContent = summary.tldr || '—';
+    if (metaCharsEl) metaCharsEl.textContent = (sourceText.length + ' CHARS IN');
+    renderList(bulletsListEl, summary.bullets, 'No bullets returned.');
+    if (metaBulletsEl) metaBulletsEl.textContent = summary.bullets.length + ' ITEMS';
+    renderList(keypointsListEl, summary.key_points, 'No key points returned.');
+    if (metaKeypointsEl) metaKeypointsEl.textContent = summary.key_points.length + ' ITEMS';
+  }
+
+  function renderList(listEl, items, emptyLabel) {
+    if (!listEl) return;
+    // Clear previous children without innerHTML= to avoid any chance of
+    // content from a hostile model sneaking through as markup.
+    while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+    if (!items || items.length === 0) {
+      var li = document.createElement('li');
+      li.textContent = emptyLabel;
+      listEl.appendChild(li);
+      return;
+    }
+    for (var i = 0; i < items.length; i++) {
+      var item = document.createElement('li');
+      item.textContent = items[i];
+      listEl.appendChild(item);
+    }
+  }
+
+  function showError(err) {
+    if (errorMessageEl) {
+      var msg;
+      if (err && err.name === 'StructuredChatError') {
+        msg = 'The model returned output that did not match the expected shape. Try a shorter input or run: ollama pull qwen2.5:1.5b';
+      } else if (err && /fetch|network|failed to fetch/i.test(err.message || '')) {
+        msg = 'Could not reach the Ollama host at ' + (config.host || 'localhost') + '. Is the server running?';
+      } else {
+        msg = (err && err.message) ? err.message : 'Unknown error while summarising.';
+      }
+      errorMessageEl.textContent = msg;
+    }
+    setState('error');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Persistence — restore the last successful summary on load
+  // ---------------------------------------------------------------------------
+
+  function persist(summary, sourceText) {
+    try {
+      session.save({ summary: summary, sourceText: sourceText, savedAt: Date.now() });
+    } catch (err) {
+      console.warn('[summariser] session.save failed (non-fatal):', err);
+    }
+  }
+
+  function restore() {
+    var saved = null;
+    try {
+      saved = session.load();
+    } catch (err) {
+      console.warn('[summariser] session.load failed:', err);
+      return;
+    }
+    if (!saved || typeof saved !== 'object' || !saved.summary) return;
+    lastInput = String(saved.sourceText || '');
+    if (pasteInputEl) pasteInputEl.value = lastInput;
+    updateCounter();
+    renderSummary(saved.summary, lastInput);
+    setState('showing_summary');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Event wiring
+  // ---------------------------------------------------------------------------
+
+  if (pasteInputEl) {
+    pasteInputEl.addEventListener('input', updateCounter);
+    pasteInputEl.addEventListener('keydown', function (e) {
+      // Ctrl/Cmd+Enter submits — standard textarea shortcut convention.
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runSummarise();
+      }
+    });
+  }
+
+  if (btnSummariseEl) btnSummariseEl.addEventListener('click', runSummarise);
+  if (btnRetryEl) btnRetryEl.addEventListener('click', runSummarise);
+  if (btnNewSummaryEl) {
+    btnNewSummaryEl.addEventListener('click', function () {
+      if (pasteInputEl) {
+        pasteInputEl.value = '';
+        updateCounter();
+      }
+      lastInput = '';
+      setState('idle');
+    });
+  }
+
+  if (btnCopyEl) {
+    btnCopyEl.addEventListener('click', function () {
+      var text = tldrTextEl ? tldrTextEl.textContent || '' : '';
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          function () {
+            flashButton(btnCopyEl, 'Copied!');
+          },
+          function () {
+            flashButton(btnCopyEl, 'Copy failed');
+          }
+        );
+      } else {
+        flashButton(btnCopyEl, 'No clipboard');
+      }
+    });
+  }
+
+  function flashButton(btn, label) {
+    var original = btn.textContent;
+    btn.textContent = label;
+    btn.disabled = true;
+    setTimeout(function () {
+      btn.textContent = original;
+      btn.disabled = false;
+    }, 1200);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Boot
+  // ---------------------------------------------------------------------------
+
+  updateCounter();
+  restore();
+  if (state === 'idle' && connectionStatusEl) {
+    // Best-effort connectivity check. ping() always resolves — either with
+    // { ok: true, models: [...] } or { ok: false, error: ... }. Never
+    // rejects. Doesn't block the UI; if the host is actually unreachable
+    // we'll surface the error on the first Summarise click anyway.
+    client.ping().then(function (result) {
+      if (result && result.ok) {
+        connectionStatusEl.dataset.state = 'ok';
+        connectionStatusEl.textContent = 'connected';
+      } else {
+        connectionStatusEl.dataset.state = 'err';
+        connectionStatusEl.textContent = 'offline';
+      }
+    });
+  }
+})();
+</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    }
+  </script>
+</body>
+</html>
