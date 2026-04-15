@@ -1,5 +1,9 @@
 # olladroid
 
+<p align="center">
+  <img src="pwa/logo.svg" alt="olladroid — llama in a pill-shaped wordmark" width="320" />
+</p>
+
 [![CI](https://github.com/s1dd4rth/olladroid/actions/workflows/ci.yml/badge.svg)](https://github.com/s1dd4rth/olladroid/actions/workflows/ci.yml)
 
 **The AI app framework that fits in one phone — offline, private, yours.**
