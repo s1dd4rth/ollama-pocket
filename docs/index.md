@@ -192,24 +192,34 @@ That 2.8GB is enough to run a 1.5B parameter model comfortably.
 
 **Important:** Install from **F-Droid**, not the Play Store. The Play Store version is outdated and broken.
 
-### Option A: Install via F-Droid app
+### Option A: Install via ADB from your PC (recommended)
 
-1. Install [F-Droid](https://f-droid.org)
-2. Search for "Termux"
-3. Install it
-
-### Option B: Install via ADB (what I did)
+This is the most reliable path. Download the Termux APK from the [official Termux GitHub releases](https://github.com/termux/termux-app/releases) and sideload it via ADB. Works identically on **Mac, Linux, and Windows** (as long as ADB is on your PATH from Step 1).
 
 ```bash
-# Download the APK
-curl -L -o termux.apk "https://f-droid.org/repo/com.termux_1000.apk"
+# On your PC — download the latest arm64 APK from Termux GitHub releases
+# (check https://github.com/termux/termux-app/releases for the newest version)
+curl -L -o termux.apk \
+  "https://github.com/termux/termux-app/releases/download/v0.118.1/termux-app_v0.118.1+github-debug_arm64-v8a.apk"
 
-# Install it
+# Install it onto your phone via USB
 adb install termux.apk
 
 # Launch it
-adb shell am start -n com.termux/.HomeActivity
+adb shell am start -n com.termux/.app.TermuxActivity
 ```
+
+> **Why not the F-Droid APK?** The F-Droid repo version (`com.termux_1000.apk`) fails to install on Android 13+ with `INSTALL_PARSE_FAILED_NOT_APK`. The Termux GitHub releases ship standard APKs that work on all Android versions 7+.
+
+> **Windows note:** use `curl.exe` (built into Windows 10+) or download the APK in a browser and run `adb install path\to\termux.apk`.
+
+### Option B: Install via F-Droid app (alternative)
+
+1. Install the [F-Droid](https://f-droid.org) app on your phone
+2. Open F-Droid, search for "Termux"
+3. Install it from there
+
+This works but adds a step (installing F-Droid first). Option A is faster.
 
 ### Grant storage permissions
 
