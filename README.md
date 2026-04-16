@@ -204,18 +204,17 @@ Everything under `pwa/` is static HTML served by Python's `http.server` — noth
 
 ## Will this work on my phone?
 
-Honest answer: **it works today on one device we've actually tested** — an LG
-G8 ThinQ (Snapdragon 855, 5.5 GB RAM, Android 12). Everything else in the
-table below is a projection from that baseline. If your phone runs it well,
-please [submit a benchmark](benchmarks/README.md) and we'll fold your numbers
-in so the next person looking at this table gets reality, not guesses.
+Honest answer: **it works today on two devices we've actually tested**. If
+your phone runs it well, please [submit a benchmark](benchmarks/README.md)
+and we'll fold your numbers in so the next person looking at this table gets
+reality, not guesses.
 
-| Device class | RAM | Example SoCs | Recommended model | Status |
-|---|---|---|---|---|
-| **Tested baseline** | 5.5 GB | Snapdragon 855 (LG G8 ThinQ) | `qwen2.5:1.5b` @ **7.4 tok/s** warm | ✅ real numbers |
-| **Faster flagship** | 6-12 GB | Snapdragon 865, 870, 888, 8 Gen 1+; Tensor G1+ | `qwen2.5:1.5b` likely faster | 📈 projected |
-| **Tight mid-range** | 4 GB | Snapdragon 720G, 730, 765; Dimensity 700-series | `smollm2:360m` only | 📈 projected |
-| **Too tight** | ≤3 GB, or 32-bit ARM, or Android ≤8 | Anything older | — | ❌ Ollama won't run |
+| Device | SoC | RAM | Model | Warm tok/s | Status |
+|---|---|---|---|---|---|
+| **LG G8 ThinQ** | Snapdragon 855 | 5.5 GB | `qwen2.5:1.5b` | **7.4 tok/s** ([report](benchmarks/lge-lm-g850-msmnile-qwen2-5-1-5b.md)) | ✅ tested |
+| **OnePlus 9R** | Snapdragon 870 | 11.2 GB | `qwen2.5:3b` | **6.2 tok/s** ([report](benchmarks/oneplus-le2101-kona-qwen2-5-3b.md)) | ✅ tested |
+| **Tight mid-range** | SD 720G-765 | 4 GB | `smollm2:360m` | — | 📈 projected |
+| **Too tight** | ≤3 GB / 32-bit / Android ≤8 | — | — | — | ❌ won't run |
 
 > **Rule of thumb:** You need ~2x the model download size in **free** RAM. A
 > 6 GB phone with 2.8 GB free comfortably runs anything up to ~1.5B
@@ -231,16 +230,16 @@ your own phone to generate a directly comparable report and submit it to
 [`benchmarks/prompts.json`](benchmarks/prompts.json) means every contributed
 benchmark is comparable to every other.
 
-| Model | Download | Speed (measured on Snapdragon 855, LG G8 ThinQ) | Best For |
-|-------|----------|---------------------------------------------|----------|
-| `qwen2.5:1.5b` | ~1 GB | **7.38 tok/s** warm, 7.28 cold ([report](benchmarks/lge-lm-g850-msmnile-qwen2-5-1-5b.md)) | General chat, reasoning, code |
-| `gemma3:1b`    | ~0.8 GB | **9.60 tok/s** warm, 9.58 cold ([report](benchmarks/lge-lm-g850-msmnile-gemma3-1b.md)) | Simple chat, summaries |
-| `smollm2:360m` | ~200 MB | **12.72 tok/s** warm, 12.99 cold ([report](benchmarks/lge-lm-g850-msmnile-smollm2-360m.md)) | Quick answers, low RAM devices |
+| Model | Download | Device | Speed | Best For |
+|-------|----------|--------|-------|----------|
+| `qwen2.5:3b` | ~1.9 GB | OnePlus 9R (SD870) | **6.19 tok/s** warm ([report](benchmarks/oneplus-le2101-kona-qwen2-5-3b.md)) | Best quality structured JSON — needs 8+ GB RAM |
+| `qwen2.5:1.5b` | ~1 GB | LG G8 (SD855) | **7.38 tok/s** warm ([report](benchmarks/lge-lm-g850-msmnile-qwen2-5-1-5b.md)) | General chat, reasoning, code — fits 4-6 GB RAM |
+| `gemma3:1b`    | ~0.8 GB | LG G8 (SD855) | **9.60 tok/s** warm ([report](benchmarks/lge-lm-g850-msmnile-gemma3-1b.md)) | Simple chat, summaries — fast but unreliable for structured JSON |
+| `smollm2:360m` | ~200 MB | LG G8 (SD855) | **12.72 tok/s** warm ([report](benchmarks/lge-lm-g850-msmnile-smollm2-360m.md)) | Quick answers, low RAM — not suitable for scaffolded apps |
 
-All three numbers are from the same LG G8 ThinQ (`LM-G850`, SoC `msmnile` =
-Snapdragon 855, 5497 MiB RAM, Android 12, Ollama 0.20.5, 2 runs each) against
-the fixed [`benchmarks/prompts.json`](benchmarks/prompts.json). Run the same
-bench on your phone and submit the result — see
+Two phones, four models, all measured against the fixed
+[`benchmarks/prompts.json`](benchmarks/prompts.json). Run the same bench on
+your phone and submit the result — see
 [`benchmarks/README.md`](benchmarks/README.md).
 
 ## Building Apps
