@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-04-16
+
+**Ship-ready release.** Seven fixes and one new benchmark accumulated since v0.3.1, all discovered during the clean-install demo recording on an OnePlus 9R (Snapdragon 870, 11.2 GB RAM, Android 14) — the second tested device alongside the LG G8 ThinQ.
+
+### Added
+- **OnePlus 9R benchmark** — `qwen2.5:3b` at **6.19 tok/s** warm on Snapdragon 870 / 11.2 GB RAM ([report](benchmarks/oneplus-le2101-kona-qwen2-5-3b.md)). Second real-device data point. README preflight table updated from projections to two verified rows.
+- **Gemma 4 `e2b` / `e4b`** added to the SDK's `MODEL_PREFERENCES.structured` whitelist so `pickModel` auto-selects them when available. (Note: both models turned out too large for 11 GB phones in practice — 7.2 GB and 9.6 GB downloads respectively.)
+
+### Fixed
+- **`install-ollama.sh`: missing `nodejs-lts`** — the scaffolder CLI (`olladroid new` / `node cli/new.js`) fails on a fresh device because Node.js was never installed. Added `nodejs-lts` to the `pkg install` list.
+- **`install-ollama.sh`: dpkg conffile prompt kills `curl | bash` installs** — `pkg upgrade` prompts for config file decisions when stdin is exhausted (EOF from the pipe). Added `DEBIAN_FRONTEND=noninteractive` + `--force-confdef --force-confold` dpkg options.
+- **`start-ollama.sh`: silent exit on some devices** — `ip -4 -o addr show wlan0` fails on devices that name the WiFi interface differently or restrict netlink sockets, and `set -eo pipefail` killed the entire script before any output printed. Added `|| true` so the script falls through to `LOCAL_IP="unknown"` and the server still starts.
+- **`docs/index.md`: logo 404 on GitHub Pages** — the `<img>` referenced `../pwa/logo.svg` which lives outside the Pages-served `docs/` directory. Copied the logo into `docs/` and updated the reference.
+- **`docs/index.md`: wrong logo on OS dark mode** — the `<picture>` element selected the white-ink dark-mode logo based on `prefers-color-scheme: dark` (an OS setting), even though the Jekyll page renders a white background. Replaced with a plain `<img>` using the original black-ink logo.
+- **Termux install guide** — the F-Droid APK URL (`com.termux_1000.apk`) fails with `INSTALL_PARSE_FAILED_NOT_APK` on Android 13+. Switched the recommended path to the Termux GitHub releases APK.
+- **Logo size** — bumped from 320px to 480px so the "olladroid" wordmark text inside the pill is readable.
+
 ## [0.3.1] - 2026-04-16
 
 ### Added
