@@ -1,7 +1,10 @@
 # olladroid
 
 <p align="center">
-  <img src="pwa/logo.svg" alt="olladroid — llama in a pill-shaped wordmark" width="320" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="pwa/logo-dark.svg">
+    <img src="pwa/logo.svg" alt="olladroid — llama in a pill-shaped wordmark" width="320" />
+  </picture>
 </p>
 
 [![CI](https://github.com/s1dd4rth/olladroid/actions/workflows/ci.yml/badge.svg)](https://github.com/s1dd4rth/olladroid/actions/workflows/ci.yml)
