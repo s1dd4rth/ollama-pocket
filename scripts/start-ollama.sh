@@ -69,7 +69,11 @@ if ! command -v proot-distro &>/dev/null; then
 fi
 
 # -- Get local IP (portable: ip -o + awk, no GNU grep -P required) --
-LOCAL_IP=$(ip -4 -o addr show wlan0 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+# The `|| true` prevents `set -eo pipefail` from killing the script when `ip`
+# fails — some devices name the WiFi interface differently (wlan1, etc.) or
+# restrict netlink sockets. Falling through to "unknown" is fine; the server
+# still binds correctly, the user just won't see a WiFi IP in the banner.
+LOCAL_IP=$(ip -4 -o addr show wlan0 2>/dev/null | awk '{print $4}' | cut -d/ -f1 || true)
 [ -z "$LOCAL_IP" ] && LOCAL_IP="unknown"
 
 # -- Bind addresses: localhost by default, 0.0.0.0 with --wifi. The binding is

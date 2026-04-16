@@ -69,6 +69,7 @@ if [ ! -f "$_INSTALL_SELF" ] || [ ! -d "$(dirname "$_INSTALL_SELF")/../pwa" ]; t
   # Show progress during pkg operations. The earlier draft silenced these
   # with >/dev/null which left the user staring at a blank terminal for ~45s
   # wondering if the install had hung. Real-device testing caught this.
+  export DEBIAN_FRONTEND=noninteractive
   pkg update -y
   pkg install -y git
 
@@ -101,8 +102,14 @@ echo 'deb https://packages-cf.termux.dev/apt/termux-main/ stable main' \
 ok "Mirror pinned"
 
 # -- Step 2: Update Termux packages --
+# --force-confdef/confold tells dpkg to keep the existing config file (or
+# accept the package default for new files) without prompting. Without this,
+# a `curl | bash` pipe exhausts stdin and dpkg's conffile prompt sees EOF,
+# killing the install with "end of file on stdin at conffile prompt".
 info "Updating Termux packages..."
-pkg update -y && pkg upgrade -y
+export DEBIAN_FRONTEND=noninteractive
+pkg update -y
+pkg upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 ok "Termux packages updated"
 
 # -- Step 3: Install required Termux packages --
@@ -110,8 +117,9 @@ ok "Termux packages updated"
 # python:       runs a local static server for the PWA chat UI (--chat flag)
 # iproute2:     provides the `ip` command used by start-ollama.sh for IP detection
 # curl:         used by the PWA copy fallback to fetch the repo tarball from GitHub
-info "Installing proot-distro, python, iproute2, curl..."
-pkg install -y proot-distro python iproute2 curl
+# nodejs-lts:   runs the scaffolder CLI (olladroid new / node cli/new.js)
+info "Installing proot-distro, python, iproute2, curl, nodejs-lts..."
+pkg install -y proot-distro python iproute2 curl nodejs-lts
 ok "Termux packages installed"
 
 # -- Step 4: Install Debian --
