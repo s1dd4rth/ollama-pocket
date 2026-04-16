@@ -17,6 +17,8 @@ tiny SDK, talk to a local LLM via structured JSON. No cloud, no account, no
 data leaving the device. Your phone becomes a private AI runtime that you
 program.
 
+[**Build your first mini-app →**](https://s1dd4rth.github.io/olladroid/building-apps)
+
 It also ships a one-line installer that turns any old Android phone into a
 local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev),
 and a built-in PWA chat UI — the original v0.1.0 use case is unchanged and
