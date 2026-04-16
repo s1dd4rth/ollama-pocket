@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-16
+
 ### Added
 - **`bin/olladroid` CLI wrapper.** First-class command-line surface so scaffolding reads as `olladroid new spell-bee` instead of `node cli/new.js --slug spell-bee`. Zero-dep Node dispatcher (Node 18+ built-ins only) that routes subcommands into the existing `cli/new.js` and `cli/update.js` modules via `require()` — one process, one exit code, no bash/node boundary. `--version` / `-v` reads `SDK_VERSION` from `sdk/olladroid.js` so the wrapper can never drift from the SDK. `--help` / `-h` / no-args print usage; unknown subcommands exit 2 with usage on stderr. `scripts/install-ollama.sh` appends an idempotent `export PATH="$HOME/olladroid/bin:$PATH"` to `~/.bashrc` (guarded by a comment marker so re-running the installer doesn't stack duplicate exports). 12 new unit tests at `bin/test/olladroid.test.js` spawn `bin/olladroid` as a child process and verify the real stdout/stderr + exit code surface for version, help, routing, and error paths. CI `cli-tests` job now runs `node --test bin/test/*.test.js` alongside `cli/test/*.test.js`. README Quick Start and CONTRIBUTING template-testing recipe updated to lead with `olladroid new` (with a note that `node cli/new.js` still works — the wrapper is thin). Scaffold-drift CI continues to invoke `node cli/new.js` directly for reproducibility. **185 tests pass (173 + 12 new).**
 
