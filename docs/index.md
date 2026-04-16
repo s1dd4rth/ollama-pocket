@@ -5,10 +5,7 @@ description: "Scaffold personalised AI mini-apps that run entirely on an Android
 ---
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo-dark.svg">
-    <img src="logo.svg" alt="olladroid — llama in a pill-shaped wordmark" width="480" />
-  </picture>
+  <img src="logo.svg" alt="olladroid — llama in a pill-shaped wordmark" width="480" />
 </p>
 
 # olladroid
