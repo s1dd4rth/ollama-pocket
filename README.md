@@ -125,7 +125,15 @@ up.
 
 ## Demo
 
-All captured on an **LG G8 ThinQ** (Snapdragon 855, 5.5 GB RAM, Android 12) running `qwen2.5:1.5b` through Ollama 0.20.5. Every frame is real — no mocks, no post-processing, no cloud calls. Offline mode, real WebAPK install, real structured JSON output.
+<p align="center">
+  <a href="demo-assets/demo-youtube.mp4">
+    <img src="https://img.shields.io/badge/▶_Watch_the_51s_pitch-ff5c00?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the 51s pitch video" />
+  </a>
+</p>
+
+https://github.com/s1dd4rth/olladroid/raw/main/demo-assets/demo-youtube.mp4
+
+Validated on two phones — **LG G8 ThinQ** (SD855, 5.5 GB RAM) and **OnePlus 9R** (SD870, 11.2 GB RAM). Real models, real structured JSON, no mocks.
 
 ### The launcher
 

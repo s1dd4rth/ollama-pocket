@@ -20,10 +20,11 @@ Gemfile.lock
 # Draft blog posts — not part of the project docs
 docs/medium.md
 
-# Demo assets: only commit the storyboard stills referenced in README.
-# Everything else (raw mp4 source, earlier takes, scratch frames) stays local.
+# Demo assets: commit storyboard stills + the pitch video. Everything else
+# (raw phone recordings, earlier takes, scratch frames) stays local.
 demo-assets/*
 !demo-assets/storyboard-*.png
+!demo-assets/demo-youtube.mp4
 
 # Node
 node_modules/
