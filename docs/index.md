@@ -12,6 +12,12 @@ description: "Scaffold personalised AI mini-apps that run entirely on an Android
 
 **The AI app framework that fits in one phone — offline, private, yours.**
 
+<p align="center">
+  <video src="https://github.com/s1dd4rth/olladroid/raw/main/demo-assets/demo-youtube.mp4" width="100%" autoplay muted loop playsinline>
+    <a href="https://github.com/s1dd4rth/olladroid/raw/main/demo-assets/demo-youtube.mp4">Watch the 51-second pitch</a>
+  </video>
+</p>
+
 olladroid is a framework for building personalised AI mini-apps that run entirely on a phone you already own. Scaffold an app in one command, inline a tiny SDK, talk to a local LLM via structured JSON. No cloud, no account, no data leaving the device. Your phone becomes a private AI runtime that you program.
 
 It also ships a one-line installer that turns any old Android phone into a local AI server using [Ollama](https://ollama.com), [Termux](https://termux.dev), and a built-in PWA launcher — the original v0.1.0 use case is unchanged and still one command away.
